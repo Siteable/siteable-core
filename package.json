@@ -1,0 +1,66 @@
+{
+  "name": "@siteable/core",
+  "version": "0.1.0",
+  "description": "Siteable core engine — blocks, visual editor, config store, theme presets, HTML export. JSON-first website builder engine.",
+  "license": "MIT",
+  "type": "module",
+  "author": "Ha Nguyen",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Siteable/siteable-core.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.11",
+    "immer": "^11.1.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "sonner": "^2.0.7",
+    "lucide-react": "^0.575.0",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "jsdom": "^30.1.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "website-builder",
+    "page-builder",
+    "visual-editor",
+    "drag-and-drop",
+    "ai-website-builder",
+    "json",
+    "react",
+    "typescript",
+    "tailwindcss",
+    "landing-page",
+    "no-code",
+    "open-source",
+    "self-hosted",
+    "engine",
+    "blocks"
+  ]
+}

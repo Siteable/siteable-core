@@ -1,0 +1,9 @@
+# gitleaks config for @siteable/core
+# Extends the gitleaks default ruleset. No additional allowlist — the seed for
+# this repo is curated via `rsync --files-from=safe-list.txt` from the verified
+# packages/core/ staging tree (NF-005). Any leak (private CI/CD, PATs, worker
+# bindings) would be a safe-list failure, not a ruleset gap.
+title = "@siteable/core gitleaks config"
+
+[extend]
+useDefault = true
