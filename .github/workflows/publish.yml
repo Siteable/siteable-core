@@ -28,4 +28,4 @@ jobs:
 
       - run: npx vitest run
 
-      - run: npm stage publish --access public --provenance
+      - run: npm publish --access public --provenance
