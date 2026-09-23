@@ -1,4 +1,5 @@
 import type { BlockConfig } from '../types'
+import { defaultStatItems } from '@/lib/block-default-content'
 
 interface StatItem {
   value: string
@@ -10,12 +11,9 @@ interface StatsProps {
   items?: StatItem[]
 }
 
-const defaultStats: StatItem[] = [
-  { value: '10K+', label: 'Sites built' },
-  { value: '99.9%', label: 'Uptime' },
-  { value: '50ms', label: 'Avg. response' },
-  { value: '4.9/5', label: 'User rating' },
-]
+// ISS-005: fallback items are the block-default-content contract, shared with
+// the prop normalizer (was an inline literal, value-identical).
+const defaultStats = defaultStatItems as StatItem[]
 
 function StatsGrid({ props }: { props: StatsProps }) {
   const items = props.items || defaultStats

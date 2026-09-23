@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { BlockConfig } from '../types'
+import { defaultFaqItems } from '@/lib/block-default-content'
 
 interface FaqItem {
   question: string
@@ -13,12 +14,9 @@ interface FaqProps {
   items?: FaqItem[]
 }
 
-const defaultFaqs: FaqItem[] = [
-  { question: 'What is OpenPage?', answer: 'OpenPage is a visual website builder that uses structured JSON config as the source of truth. Both humans and AI agents can edit the same config to build beautiful websites.' },
-  { question: 'How does the JSON config work?', answer: 'Every website is represented as a JSON document with blocks, styles, and content. The visual editor reads and writes this JSON, and agents can make surgical edits via the API.' },
-  { question: 'Can I use my own components?', answer: 'Yes! OpenPage supports custom components. You can build your own blocks following our component schema and register them in the block registry.' },
-  { question: 'Is it free to use?', answer: 'OpenPage offers a free tier for personal projects with up to 5 blocks. Pro and Team plans unlock unlimited blocks, custom domains, and priority support.' },
-]
+// ISS-005: fallback FAQs are the block-default-content contract, shared with
+// the prop normalizer (was an inline literal, value-identical).
+const defaultFaqs = defaultFaqItems as FaqItem[]
 
 function AccordionItem({ item, isOpen, onToggle }: { item: FaqItem; isOpen: boolean; onToggle: () => void }) {
   return (

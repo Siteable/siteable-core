@@ -1,6 +1,7 @@
 import type { SiteConfig, BlockConfig, ThemeConfig } from '@/blocks/types'
 import { blockMetadata } from '@/lib/block-metadata'
 import { GENERATION_PROMPT } from '@/lib/generation-prompt'
+import { normalizeBlockProps } from '@/lib/prop-normalization'
 import { getTemplateForPrompt } from '@/lib/templates'
 
 const VALID_BLOCK_TYPES = new Set<string>(blockMetadata.map((b) => b.type))
@@ -35,7 +36,12 @@ export async function generateSiteConfig(
   // 2. Injected server fallback (caller-supplied; the engine is route-agnostic)
   if (onServerFallback) {
     try {
-      const config = await onServerFallback(prompt, signal)
+      const raw = await onServerFallback(prompt, signal)
+      // ISS-005: the host's result must go through the SAME validation as tier 1 —
+      // previously it was returned unchecked (object props reached blocks → crash).
+      // validateSiteConfig never throws (all inputs type-guarded), so an unexpected
+      // throw would still be caught here and degrade to the template fallback.
+      const config = validateSiteConfig(raw, prompt)
       return { config, source: 'ai' }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') throw err
@@ -113,6 +119,9 @@ function validateTheme(raw: Record<string, unknown>): Partial<ThemeConfig> {
 }
 
 function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig | null {
+  // ISS-005 hardening: blocks arrays may contain null/primitives from hostile or
+  // malformed AI output — validateSiteConfig must never throw by design.
+  if (!raw || typeof raw !== 'object') return null
   const type = raw.type as string
   if (!type || !VALID_BLOCK_TYPES.has(type)) return null
 
@@ -123,7 +132,11 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   }
 
   const defaultProps = DEFAULT_PROPS_MAP[type] || {}
-  const props = typeof raw.props === 'object' && raw.props ? { ...defaultProps, ...raw.props } : defaultProps
+  // ISS-005 root fix: raw prop VALUES are normalized against the defaultProps
+  // shape (generic, no per-block guards) before merging over the defaults.
+  const props = typeof raw.props === 'object' && raw.props
+    ? { ...defaultProps, ...normalizeBlockProps(raw.props, defaultProps) }
+    : defaultProps
 
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : `block-${type}-${index}-${Date.now()}`,

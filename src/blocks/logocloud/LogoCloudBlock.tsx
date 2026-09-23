@@ -1,11 +1,12 @@
 import type { BlockConfig } from '../types'
+// ISS-005: fallback logos are the block-default-content contract, shared with
+// the prop normalizer (was an inline literal, value-identical).
+import { defaultLogos } from '@/lib/block-default-content'
 
 interface LogoCloudProps {
   title?: string
   logos?: string[]
 }
-
-const defaultLogos = ['Vercel', 'Stripe', 'GitHub', 'Figma', 'Notion', 'Linear']
 
 function LogoPlaceholder({ name }: { name: string }) {
   return (

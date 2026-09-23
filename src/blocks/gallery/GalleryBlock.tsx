@@ -1,16 +1,15 @@
 import { ImageIcon } from 'lucide-react'
 import type { BlockConfig } from '../types'
+// ISS-005: fallback images are the block-default-content contract, shared with
+// the prop normalizer (was an inline literal; src/caption:'' additions are
+// falsy → placeholder icon + no caption div, byte-identical render).
+import { defaultGalleryImages } from '@/lib/block-default-content'
 
 interface GalleryImage {
   src?: string
   alt?: string
   caption?: string
 }
-
-const defaultImages: GalleryImage[] = [
-  { alt: 'Image 1' }, { alt: 'Image 2' }, { alt: 'Image 3' },
-  { alt: 'Image 4' }, { alt: 'Image 5' }, { alt: 'Image 6' },
-]
 
 function ImageCard({ image, tall }: { image: GalleryImage; tall?: boolean }) {
   return (
@@ -34,7 +33,7 @@ export function GalleryBlock({ block }: { block: BlockConfig }) {
   const title = props.title as string | undefined
   const images = ((props.images as GalleryImage[]) || []).length > 0
     ? (props.images as GalleryImage[])
-    : defaultImages
+    : defaultGalleryImages
 
   if (variant === 'masonry') {
     return (

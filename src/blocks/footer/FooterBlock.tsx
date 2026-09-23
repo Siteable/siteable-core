@@ -1,4 +1,5 @@
 import type { BlockConfig } from '../types'
+import { defaultFooterColumns } from '@/lib/block-default-content'
 
 interface FooterProps {
   logo: string
@@ -41,12 +42,9 @@ function FooterSimple({ props }: { props: FooterProps }) {
 }
 
 function FooterMultiColumn({ props }: { props: FooterProps }) {
-  const columns = props.columns || [
-    { title: 'Product', links: ['Features', 'Pricing', 'Changelog', 'Roadmap'] },
-    { title: 'Company', links: ['About', 'Blog', 'Careers', 'Press'] },
-    { title: 'Resources', links: ['Documentation', 'API Reference', 'Guides', 'Community'] },
-    { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'Cookie Policy'] },
-  ]
+  // ISS-005: fallback columns are the block-metadata contract (defaultFooterColumns),
+  // shared with the prop normalizer so shape and render default can never drift.
+  const columns = props.columns || defaultFooterColumns
 
   return (
     <footer className="px-6 @md:px-10 py-12 border-t border-border-subtle">

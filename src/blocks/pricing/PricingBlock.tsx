@@ -1,5 +1,6 @@
 import type { BlockConfig } from '../types'
 import { Check, Star } from 'lucide-react'
+import { defaultPricingTiers } from '@/lib/block-default-content'
 
 interface PricingTier {
   name: string
@@ -17,33 +18,9 @@ interface PricingProps {
   tiers?: PricingTier[]
 }
 
-const defaultTiers: PricingTier[] = [
-  {
-    name: 'Starter',
-    price: '$0',
-    period: '/month',
-    description: 'For personal projects',
-    features: ['1 website', '5 blocks', 'Basic export', 'Community support'],
-    cta: 'Get Started',
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    period: '/month',
-    description: 'For professionals',
-    features: ['Unlimited websites', 'All blocks', 'Custom domains', 'Priority support', 'Agent API access', 'Version history'],
-    cta: 'Upgrade to Pro',
-    featured: true,
-  },
-  {
-    name: 'Team',
-    price: '$49',
-    period: '/month',
-    description: 'For teams and agencies',
-    features: ['Everything in Pro', 'Team collaboration', 'Custom components', 'SSO', 'Dedicated support'],
-    cta: 'Contact Sales',
-  },
-]
+// ISS-005: fallback tiers are the block-metadata contract (defaultPricingTiers),
+// shared with the prop normalizer so shape and render default can never drift.
+const defaultTiers = defaultPricingTiers as PricingTier[]
 
 function PricingSimple({ props }: { props: PricingProps }) {
   const tiers = props.tiers || defaultTiers
