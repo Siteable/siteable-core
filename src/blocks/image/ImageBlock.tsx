@@ -1,5 +1,9 @@
 import { ImageIcon } from 'lucide-react'
 import type { BlockConfig } from '../types'
+// ISS-005: grid placeholder items are the block-default-content contract, shared
+// with the prop normalizer (was an inline literal; src:'' is falsy like the
+// original src:undefined → identical Placeholder render).
+import { defaultImageGridItems } from '@/lib/block-default-content'
 
 function Placeholder({ className }: { className?: string }) {
   return (
@@ -41,7 +45,7 @@ export function ImageBlock({ block }: { block: BlockConfig }) {
   if (variant === 'grid') {
     const gridImages = images.length > 0
       ? images.slice(0, 4)
-      : [{ src: undefined, alt: '1' }, { src: undefined, alt: '2' }, { src: undefined, alt: '3' }, { src: undefined, alt: '4' }]
+      : defaultImageGridItems
 
     return (
       <div className="px-6 py-12 @lg:px-16 @lg:py-16">

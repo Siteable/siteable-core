@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react'
 import type { BlockConfig } from '../types'
+// ISS-005: fallback testimonials are the block-default-content contract, shared
+// with the prop normalizer (was an inline literal; avatar:'' additions are
+// falsy → initials branch renders byte-identically).
+import { defaultTestimonials } from '@/lib/block-default-content'
 
 interface Testimonial {
   name: string
@@ -15,12 +19,6 @@ interface TestimonialsProps {
   subtitle?: string
   items?: Testimonial[]
 }
-
-const defaultTestimonials: Testimonial[] = [
-  { name: 'Sarah Chen', role: 'CEO at TechCorp', quote: 'OpenPage completely changed how we build landing pages. The JSON config approach is genius.', rating: 5 },
-  { name: 'Marcus Johnson', role: 'Lead Developer', quote: 'Finally, a tool where both designers and AI agents can work together seamlessly.', rating: 5 },
-  { name: 'Emma Wilson', role: 'Product Manager', quote: 'We shipped our marketing site in half the time. The component library is incredible.', rating: 4 },
-]
 
 function StarRating({ rating }: { rating: number }) {
   return (

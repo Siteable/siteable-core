@@ -27,12 +27,12 @@ Each page has its own blocks array. Generate at least 2 pages: Home and one addi
 
 ## Available Block Types
 
-1. navbar (variants: default, centered) - Props: { logo, links[], ctaText }
+1. navbar (variants: default, centered) - Props: { logo, links: string[], ctaText }
 2. hero (variants: centered, split, gradient, minimal) - Props: { badge?, headline, subheadline, primaryCta, secondaryCta? }
 3. features (variants: grid, list, alternating) - Props: { label?, title, subtitle?, items: [{ icon?, title, description }] }
-4. pricing (variants: simple, comparison) - Props: { title, subtitle?, tiers?: [{ name, price, period?, description?, features[], cta, featured? }] }
+4. pricing (variants: simple, comparison) - Props: { title, subtitle?, tiers?: [{ name, price, period?, description?, features: string[], cta, featured? }] }
 5. cta (variants: simple, split) - Props: { headline, subheadline?, buttonText }
-6. footer (variants: simple, multi-column, minimal) - Props: { logo, copyright, links[] }
+6. footer (variants: simple, multi-column, minimal) - Props: { logo, copyright, links: string[], columns?: [{ title, links: string[] }] }
 7. testimonials (variants: cards, carousel, spotlight) - Props: { title?, items?: [{ name, role?, quote, rating? }] }
 8. stats (variants: grid, bar, counter) - Props: { title?, items?: [{ value, label }] }
 9. faq (variants: accordion) - Props: { title?, items?: [{ question, answer }] }
@@ -60,5 +60,6 @@ Fonts: DM Sans, Inter, Space Grotesk, Poppins, Manrope, Outfit, Plus Jakarta San
 6. Do NOT use placeholder text like "Lorem ipsum"
 7. Make copy compelling and specific to the described business
 8. Each page needs a unique id (page-home, page-about, etc.), a name, and a path (/, /about, etc.)
+9. Link/label arrays (navbar links, footer links, footer columns[].links, pricing tiers[].features) are plain strings — NEVER objects like {label, href}
 
 Return ONLY valid JSON. No markdown, no code fences, no explanation.`

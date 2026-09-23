@@ -1,4 +1,5 @@
 import type { BlockConfig } from '../types'
+import { defaultTeamMembers } from '@/lib/block-default-content'
 
 interface TeamMember {
   name: string
@@ -12,12 +13,9 @@ interface TeamProps {
   members?: TeamMember[]
 }
 
-const defaultMembers: TeamMember[] = [
-  { name: 'Alex Rivera', role: 'CEO & Founder' },
-  { name: 'Jordan Lee', role: 'CTO' },
-  { name: 'Sam Patel', role: 'Head of Design' },
-  { name: 'Casey Morgan', role: 'Lead Engineer' },
-]
+// ISS-005: fallback members are the block-default-content contract, shared with
+// the prop normalizer (was an inline literal, value-identical).
+const defaultMembers = defaultTeamMembers as TeamMember[]
 
 export function TeamBlock({ block }: { block: BlockConfig }) {
   const props = block.props as unknown as TeamProps

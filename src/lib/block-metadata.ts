@@ -1,4 +1,15 @@
 import type { BlockType } from '@/blocks/types'
+import {
+  defaultFooterColumns,
+  defaultLogos,
+  defaultPricingTiers,
+  defaultStatItems,
+  defaultFaqItems,
+  defaultTeamMembers,
+  defaultTestimonials,
+  defaultGalleryImages,
+  defaultImageGridItems,
+} from '@/lib/block-default-content'
 
 export interface BlockMeta {
   type: BlockType
@@ -8,6 +19,10 @@ export interface BlockMeta {
   variants: string[]
   defaultProps: Record<string, unknown>
 }
+
+// ISS-005 (class fix): defaultProps below ARE the prop contracts the generation
+// normalizer (src/lib/prop-normalization.ts) coerces AI output against.
+// Content defaults live in src/lib/block-default-content.ts.
 
 export const blockMetadata: BlockMeta[] = [
   {
@@ -24,7 +39,9 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Full-width hero section with headline and CTAs',
     category: 'Hero',
     variants: ['centered', 'split', 'gradient', 'minimal'],
-    defaultProps: { headline: 'Your Headline Here', subheadline: 'A compelling subheadline that explains your value proposition.', primaryCta: 'Get Started', secondaryCta: 'Learn More' },
+    // badge:'' gives the normalizer a string contract for badge (renders only
+    // when truthy → byte-identical output vs the key being absent) — ISS-005 review item 1.
+    defaultProps: { badge: '', headline: 'Your Headline Here', subheadline: 'A compelling subheadline that explains your value proposition.', primaryCta: 'Get Started', secondaryCta: 'Learn More' },
   },
   {
     type: 'features',
@@ -40,7 +57,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Pricing tiers with feature comparison',
     category: 'Commerce',
     variants: ['simple', 'comparison'],
-    defaultProps: { title: 'Pricing', subtitle: 'Choose the plan that fits your needs' },
+    defaultProps: { title: 'Pricing', subtitle: 'Choose the plan that fits your needs', tiers: defaultPricingTiers },
   },
   {
     type: 'cta',
@@ -56,7 +73,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Page footer with links and copyright',
     category: 'Navigation',
     variants: ['simple', 'multi-column', 'minimal'],
-    defaultProps: { logo: 'Brand', copyright: '2026 Brand. All rights reserved.', links: ['Privacy', 'Terms'] },
+    defaultProps: { logo: 'Brand', copyright: '2026 Brand. All rights reserved.', links: ['Privacy', 'Terms'], columns: defaultFooterColumns },
   },
   {
     type: 'testimonials',
@@ -64,7 +81,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Customer testimonials with quotes and ratings',
     category: 'Social Proof',
     variants: ['cards', 'carousel', 'spotlight'],
-    defaultProps: { title: 'What our customers say' },
+    defaultProps: { title: 'What our customers say', items: defaultTestimonials },
   },
   {
     type: 'stats',
@@ -72,7 +89,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Key metrics and statistics display',
     category: 'Social Proof',
     variants: ['grid', 'bar', 'counter'],
-    defaultProps: { title: 'By the numbers' },
+    defaultProps: { title: 'By the numbers', items: defaultStatItems },
   },
   {
     type: 'faq',
@@ -80,7 +97,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Frequently asked questions accordion',
     category: 'Content',
     variants: ['accordion'],
-    defaultProps: { title: 'Frequently Asked Questions' },
+    defaultProps: { title: 'Frequently Asked Questions', items: defaultFaqItems },
   },
   {
     type: 'team',
@@ -88,7 +105,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Team member grid with photos and roles',
     category: 'Content',
     variants: ['grid'],
-    defaultProps: { title: 'Meet the Team' },
+    defaultProps: { title: 'Meet the Team', members: defaultTeamMembers },
   },
   {
     type: 'contact',
@@ -112,7 +129,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Company logos with hover effects',
     category: 'Social Proof',
     variants: ['default'],
-    defaultProps: { title: 'Trusted by leading companies' },
+    defaultProps: { title: 'Trusted by leading companies', logos: defaultLogos },
   },
   {
     type: 'content',
@@ -128,7 +145,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Image with text overlay or side-by-side layout',
     category: 'Media',
     variants: ['hero-image', 'side-by-side', 'grid'],
-    defaultProps: { title: 'Visual Storytelling', subtitle: 'A picture is worth a thousand words.', imageSide: 'left' },
+    defaultProps: { title: 'Visual Storytelling', subtitle: 'A picture is worth a thousand words.', imageSide: 'left', images: defaultImageGridItems },
   },
   {
     type: 'video',
@@ -144,7 +161,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Image gallery in grid or masonry layout',
     category: 'Media',
     variants: ['grid', 'masonry'],
-    defaultProps: { title: 'Gallery' },
+    defaultProps: { title: 'Gallery', images: defaultGalleryImages },
   },
   {
     type: 'divider',
@@ -160,7 +177,7 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Announcement bar or ribbon',
     category: 'Content',
     variants: ['ribbon', 'bar'],
-    defaultProps: { text: 'New: We just launched v2.0!', linkText: 'Learn more' },
+    defaultProps: { text: 'New: We just launched v2.0!', linkText: 'Learn more', linkUrl: '#' },
   },
 ]
 
