@@ -4,6 +4,10 @@ A visual website builder engine: 19 typed block components, a drag-edit canvas, 
 presets, AI generation, and a one-click HTML export. JSON is the source of truth — every
 edit produces clean, diffable JSON that humans and AI agents can both read and write.
 
+**Live demo:** try the engine running as a bare third-party consumer at
+[siteable-demo.pages.dev](https://siteable-demo.pages.dev) — source in
+[Siteable/siteable-demo](https://github.com/Siteable/siteable-demo) (BYOK, no account needed).
+
 ## Install
 
 ```bash
