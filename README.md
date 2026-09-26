@@ -71,6 +71,15 @@ Modern evergreen browsers (last 2 Chrome / Firefox / Safari / Edge versions). No
 
 Issues and PRs welcome via [GitHub](https://github.com/Siteable/siteable-core/issues).
 
+Workflow (GitHub Flow, single `main`):
+
+- All changes land via PR — `main` is protected, direct pushes are rejected.
+- Required status checks on every PR: `verify` and `secret-scan`.
+- **Squash-merge only** — merge commits and rebase-merge are disabled; the
+  squash commit message is the PR title. Use a Conventional Commit-style PR
+  title (`feat:`, `fix:`, `docs:`, …) — it becomes the permanent `main`
+  history entry.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
