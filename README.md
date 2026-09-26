@@ -74,11 +74,13 @@ Issues and PRs welcome via [GitHub](https://github.com/Siteable/siteable-core/is
 Workflow (GitHub Flow, single `main`):
 
 - All changes land via PR — `main` is protected, direct pushes are rejected.
-- Required status checks on every PR: `verify` and `secret-scan`.
+- Required status checks on every PR: `typecheck`, `test`, `build`,
+  `secret-scan` (all four must pass; admins are not exempt).
 - **Squash-merge only** — merge commits and rebase-merge are disabled; the
-  squash commit message is the PR title. Use a Conventional Commit-style PR
-  title (`feat:`, `fix:`, `docs:`, …) — it becomes the permanent `main`
-  history entry.
+  squash commit message is the PR title (PR description and co-author
+  trailers are intentionally not carried into `main` history). Use a
+  Conventional Commit-style PR title (`feat:`, `fix:`, `docs:`, …) — it
+  becomes the permanent `main` history entry.
 
 ## License
 
