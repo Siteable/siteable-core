@@ -121,7 +121,11 @@ function logoPlaceholderSvg(name: string): string {
 function renderNavbar(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
-  const logoImageOk = isAllowedUrl(logoImage, { image: true })
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const links = prop<string[]>(block.props, 'links', [])
   const ctaText = escapeHtml(prop(block.props, 'ctaText', 'Get Started'))
 
@@ -215,7 +219,9 @@ function renderHeroSplit(block: BlockConfig): string {
     ? `          ${renderLink(secondaryCta, secondaryCtaUrl, 'px-6 py-3 rounded-lg bg-bg-3 text-text-0 text-sm font-medium border border-border-default hover:bg-bg-4 transition-all inline-block')}`
     : ''
 
-  const heroImageOk = isAllowedUrl(heroImage, { image: true })
+  // Pre-existing `<img src>` emitter: general URL policy (FC1) — relative/http
+  // hero images must survive, matching the legacy baseline.
+  const heroImageOk = isAllowedUrl(heroImage)
 
   const imageHtml = heroImage && heroImageOk
     ? `          <img src="${escapeHtml(heroImage)}" alt="" class="absolute inset-0 w-full h-full object-cover" />`
@@ -638,7 +644,11 @@ function renderCta(block: BlockConfig): string {
 function renderFooterSimple(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
-  const logoImageOk = isAllowedUrl(logoImage, { image: true })
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
 
@@ -670,7 +680,11 @@ ${linksHtml}
 function renderFooterMultiColumn(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
-  const logoImageOk = isAllowedUrl(logoImage, { image: true })
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
   const columns = prop<{ title: string; links: string[] }[]>(
@@ -820,7 +834,7 @@ function renderTestimonials(block: BlockConfig): string {
           <p class="text-[13px] text-text-1 leading-relaxed mb-4 italic">"${escapeHtml(item.quote)}"</p>
 ${ratingHtml}
           <div class="flex items-center gap-3 mt-4 pt-4 border-t border-border-subtle">
-            ${item.avatar && isAllowedUrl(item.avatar, { image: true }) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
+            ${item.avatar && isAllowedUrl(item.avatar) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
             <div>
               <div class="text-[12.5px] font-semibold">${escapeHtml(item.name)}</div>
               <div class="text-[11px] text-text-3">${escapeHtml(item.role)}</div>
@@ -1007,7 +1021,7 @@ function renderTeam(block: BlockConfig): string {
   const cards = members
     .map(
       (m) => `        <div class="text-center group">
-          ${m.avatar && isAllowedUrl(m.avatar, { image: true }) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
+          ${m.avatar && isAllowedUrl(m.avatar) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
           <h3 class="text-sm font-semibold">${escapeHtml(m.name)}</h3>
           <p class="text-[11px] text-text-3 mt-0.5">${escapeHtml(m.role)}</p>
         </div>`

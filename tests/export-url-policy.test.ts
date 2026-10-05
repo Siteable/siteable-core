@@ -131,31 +131,34 @@ describe('SC-001 deny coverage — every renderLink caller', () => {
 })
 
 /**
- * FR-001 image-attribute scope — every pre-existing `<img src>` emitter was
- * gated through `isAllowedUrl(x, { image: true })`. One minimal single-block
- * config per emitter; the same slot is fed a passing https URL and a rejected
- * value, in both directions.
+ * FR-001 general URL-policy scope — the six PRE-EXISTING `<img src>` emitters
+ * are gated through the GENERAL policy `isAllowedUrl(x)` (no `{ image: true }`),
+ * per the FC1 correction. An `<img src>` cannot execute `javascript:` or `data:`,
+ * and the https-only image rule bought ~zero security while dropping legacy
+ * relative/http image values — so these emitters must accept `https:`, `http:`
+ * and relative paths, and still deny script-bearing and blank values.
  *
- * NF-004 boundary (intentional — do NOT "fix" this into scope): policy-PASSING
- * (`https:`) images stay byte-identical (frozen by
- * `tests/export-legacy-snapshot.test.ts`); non-`https:` legacy image props
- * degrade to the existing fallback by design (FR-004 image rule, operated under
- * the autopilot scope override). This is an intentional backward-compat
- * narrowing for `http:`/relative/whitespace image props, not a silent
- * regression.
+ * The `{ image: true }` https-only rule remains for the NEW `image`/`gallery`
+ * renderers and for `faviconUrl`/`ogImageUrl` (spec FR-004 image rule) — covered
+ * by the SC-004 settings tests above and the XSS corpus, not here.
+ *
+ * One minimal single-block config per emitter, so a single `<img src=` in the
+ * document can only come from the emitter under test.
  */
-const PASS_IMAGE = 'https://cdn.example.com/x.png'
+const GENERAL_PASS_IMAGES: { label: string; value: string }[] = [
+  { label: 'https', value: 'https://cdn.example.com/x.png' },
+  { label: 'http', value: 'http://cdn.example.com/x.png' },
+  { label: 'relative', value: '/img/logo.png' },
+  { label: 'dot-relative', value: './x.jpg' },
+]
 /**
- * Rejected values: the two hostile schemes (so the `<img src="data:` ban is
- * exercised, not vacuous) plus the three legacy non-`https:` shapes whose output
- * intentionally narrows — a `http:` URL, a relative path, and a whitespace-only
- * blank.
+ * Denied values under the general policy: the script-bearing schemes that must
+ * never reach a `src` (`javascript:`, `data:`) plus a whitespace-only blank.
+ * `http:`/relative are intentionally NOT here — they are now allowed.
  */
-const REJECTED_IMAGES: { label: string; value: string }[] = [
+const GENERAL_REJECTED_IMAGES: { label: string; value: string }[] = [
   { label: 'javascript:', value: 'javascript:alert(1)' },
   { label: 'data:', value: 'data:image/png;base64,AAAA' },
-  { label: 'http', value: 'http://cdn.example.com/logo.png' },
-  { label: 'relative', value: '/img/logo.png' },
   { label: 'whitespace', value: '   ' },
 ]
 
@@ -226,17 +229,19 @@ const gatedEmitters: { name: string; config: (image: string) => SiteConfig }[] =
   },
 ]
 
-describe('FR-001 — every gated <img src> emitter honours the { image: true } policy', () => {
+describe('FR-001 — every pre-existing <img src> emitter uses the general URL policy', () => {
   for (const emitter of gatedEmitters) {
-    it(`${emitter.name}: emits an <img> for a policy-passing https URL`, () => {
-      const html = exportSiteToHTML(emitter.config(PASS_IMAGE))
+    for (const pass of GENERAL_PASS_IMAGES) {
+      it(`${emitter.name}: emits an <img> for a ${pass.label} value`, () => {
+        const html = exportSiteToHTML(emitter.config(pass.value))
 
-      expect(html).toContain(`<img src="${PASS_IMAGE}"`)
-    })
+        expect(html).toContain(`<img src="${pass.value}"`)
+      })
+    }
   }
 
   for (const emitter of gatedEmitters) {
-    for (const rejected of REJECTED_IMAGES) {
+    for (const rejected of GENERAL_REJECTED_IMAGES) {
       it(`${emitter.name}: rejects a ${rejected.label} value and renders the non-image fallback`, () => {
         const html = exportSiteToHTML(emitter.config(rejected.value))
 
@@ -254,6 +259,40 @@ describe('FR-001 — every gated <img src> emitter honours the { image: true } p
         if (rejected.value.trim() !== '') {
           expect(html).not.toContain(rejected.value)
         }
+      })
+    }
+  }
+})
+
+/**
+ * Documented boundary — the general policy's breadth on these six emitters.
+ *
+ * FC1 mandates the GENERAL `isAllowedUrl(x)` for these six pre-existing emitters,
+ * so the full link allow-list reaches the `src`: `mailto:`, `tel:` and a bare
+ * `#fragment` are admitted and render an inert, broken `<img>` rather than the
+ * initials/logo fallback. That is a deliberate consequence of the mandate, not a
+ * security hole — neither scheme executes, and `escapeHtml` still neutralizes the
+ * value. Recorded here so the widened surface is provably intentional: only the
+ * script-bearing schemes, control characters, and authority-escape forms are denied
+ * (asserted above). Tightening to `http:`/`https:` + relative is a deliberate
+ * non-goal of FC1 — it would re-break the operator's general-policy mandate.
+ */
+const GENERAL_INERT_IMAGES: { label: string; value: string }[] = [
+  { label: 'mailto:', value: 'mailto:a@b.com' },
+  { label: 'tel:', value: 'tel:+15551234' },
+  { label: 'fragment', value: '#anchor' },
+]
+
+describe('FR-001 — general-policy breadth on the six emitters (documented inert boundary)', () => {
+  for (const emitter of gatedEmitters) {
+    for (const inert of GENERAL_INERT_IMAGES) {
+      it(`${emitter.name}: admits a ${inert.label} value (inert in <img>, general-policy breadth)`, () => {
+        const html = exportSiteToHTML(emitter.config(inert.value))
+
+        // The value is admitted verbatim into the src — proving the general
+        // policy's breadth reaches these emitters. It renders an inert, broken
+        // <img> (these schemes never resolve to image bytes); no script runs.
+        expect(html).toContain(`<img src="${inert.value}"`)
       })
     }
   }
