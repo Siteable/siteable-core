@@ -52,9 +52,10 @@ function App() {
 }
 ```
 
-`validateSiteConfig`, `generateSiteConfig`, `exportSiteToHTML`, `themePresets`, and the
-two zustand stores (`useConfigStore`, `useEditorStore`) are all available from the package
-entry.
+`validateSiteConfig`, `generateSiteConfig`, `exportSiteToHTML`, `themePresets`,
+`isAllowedUrl` (the shared `href`/`src` allow-list, plus its `UrlPolicyOptions` type), and
+the two zustand stores (`useConfigStore`, `useEditorStore`) are all available from the
+package entry.
 
 ## Single-store invariant
 
