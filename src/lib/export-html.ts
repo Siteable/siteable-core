@@ -1,6 +1,15 @@
 import type { SiteConfig, BlockConfig } from '@/blocks/types'
 import { resolveTheme } from '@/lib/theme-presets'
 import { isAllowedUrl } from '@/lib/url-policy'
+import { escapeHtml } from './html-escape'
+import { prop } from './render-prop'
+import { renderLink } from './render-link'
+import { renderContent } from './export-blocks/render-content'
+import { renderImage } from './export-blocks/render-image'
+import { renderVideo } from './export-blocks/render-video'
+import { renderGallery } from './export-blocks/render-gallery'
+import { renderDivider } from './export-blocks/render-divider'
+import { renderBanner } from './export-blocks/render-banner'
 
 export interface ExportSiteSettings {
   siteName?: string
@@ -22,26 +31,6 @@ export interface ExportSiteOptions {
 // Helpers
 // ---------------------------------------------------------------------------
 
-// AI-generated props can deviate from the schema (objects where strings
-// are expected, numbers, nulls). Coerce instead of crashing the export.
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderLink(text: string, url?: string, className?: string): string {
-  const cls = className ? ` class="${escapeHtml(className)}"` : ''
-  const escaped = escapeHtml(text)
-  if (url && isAllowedUrl(url)) {
-    return `<a href="${escapeHtml(url)}"${cls}>${escaped}</a>`
-  }
-  return `<span${cls}>${escaped}</span>`
-}
-
 function googleFontUrl(fonts: string[]): string {
   const unique = [...new Set(fonts.filter(Boolean))]
   const families = unique.map(
@@ -57,12 +46,6 @@ function initials(name: string): string {
       .map((n) => n[0])
       .join('')
   )
-}
-
-function prop<T>(props: Record<string, unknown>, key: string, fallback: T): T {
-  const val = props[key]
-  if (val === undefined || val === null) return fallback
-  return val as T
 }
 
 function normalizeLanguage(value?: string): string {
@@ -138,6 +121,7 @@ function logoPlaceholderSvg(name: string): string {
 function renderNavbar(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  const logoImageOk = isAllowedUrl(logoImage, { image: true })
   const links = prop<string[]>(block.props, 'links', [])
   const ctaText = escapeHtml(prop(block.props, 'ctaText', 'Get Started'))
 
@@ -154,7 +138,7 @@ function renderNavbar(block: BlockConfig): string {
     )
     .join('\n')
 
-  const logoHtml = logoImage
+  const logoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-8 w-auto object-contain" />`
     : `<div class="w-8 h-8 rounded-lg bg-green/10 flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-green"></div></div>`
 
@@ -231,7 +215,9 @@ function renderHeroSplit(block: BlockConfig): string {
     ? `          ${renderLink(secondaryCta, secondaryCtaUrl, 'px-6 py-3 rounded-lg bg-bg-3 text-text-0 text-sm font-medium border border-border-default hover:bg-bg-4 transition-all inline-block')}`
     : ''
 
-  const imageHtml = heroImage
+  const heroImageOk = isAllowedUrl(heroImage, { image: true })
+
+  const imageHtml = heroImage && heroImageOk
     ? `          <img src="${escapeHtml(heroImage)}" alt="" class="absolute inset-0 w-full h-full object-cover" />`
     : `          <div class="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent"></div>
           <div class="absolute inset-6 border border-dashed border-border-default rounded-lg flex items-center justify-center text-text-3 text-sm">Preview</div>`
@@ -652,6 +638,7 @@ function renderCta(block: BlockConfig): string {
 function renderFooterSimple(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  const logoImageOk = isAllowedUrl(logoImage, { image: true })
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
 
@@ -662,7 +649,7 @@ function renderFooterSimple(block: BlockConfig): string {
     )
     .join('\n')
 
-  const footerLogoHtml = logoImage
+  const footerLogoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-6 w-auto object-contain" />`
     : `<div class="w-6 h-6 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3 h-3 rounded-full bg-green"></div></div>`
 
@@ -683,6 +670,7 @@ ${linksHtml}
 function renderFooterMultiColumn(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  const logoImageOk = isAllowedUrl(logoImage, { image: true })
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
   const columns = prop<{ title: string; links: string[] }[]>(
@@ -723,7 +711,7 @@ ${colLinks}
     )
     .join('\n')
 
-  const mcLogoHtml = logoImage
+  const mcLogoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-7 w-auto object-contain" />`
     : `<div class="w-7 h-7 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3.5 h-3.5 rounded-full bg-green"></div></div>`
 
@@ -832,7 +820,7 @@ function renderTestimonials(block: BlockConfig): string {
           <p class="text-[13px] text-text-1 leading-relaxed mb-4 italic">"${escapeHtml(item.quote)}"</p>
 ${ratingHtml}
           <div class="flex items-center gap-3 mt-4 pt-4 border-t border-border-subtle">
-            ${item.avatar ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
+            ${item.avatar && isAllowedUrl(item.avatar, { image: true }) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
             <div>
               <div class="text-[12.5px] font-semibold">${escapeHtml(item.name)}</div>
               <div class="text-[11px] text-text-3">${escapeHtml(item.role)}</div>
@@ -1019,7 +1007,7 @@ function renderTeam(block: BlockConfig): string {
   const cards = members
     .map(
       (m) => `        <div class="text-center group">
-          ${m.avatar ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
+          ${m.avatar && isAllowedUrl(m.avatar, { image: true }) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
           <h3 class="text-sm font-semibold">${escapeHtml(m.name)}</h3>
           <p class="text-[11px] text-text-3 mt-0.5">${escapeHtml(m.role)}</p>
         </div>`
@@ -1187,6 +1175,18 @@ function renderBlock(block: BlockConfig): string {
       return renderNewsletter(block)
     case 'logocloud':
       return renderLogoCloud(block)
+    case 'content':
+      return renderContent(block)
+    case 'image':
+      return renderImage(block)
+    case 'video':
+      return renderVideo(block)
+    case 'gallery':
+      return renderGallery(block)
+    case 'divider':
+      return renderDivider(block)
+    case 'banner':
+      return renderBanner(block)
     default:
       return `  <!-- Unknown block type: ${escapeHtml(block.type)} -->`
   }

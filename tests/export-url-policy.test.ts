@@ -129,3 +129,132 @@ describe('SC-001 deny coverage — every renderLink caller', () => {
     )
   })
 })
+
+/**
+ * FR-001 image-attribute scope — every pre-existing `<img src>` emitter was
+ * gated through `isAllowedUrl(x, { image: true })`. One minimal single-block
+ * config per emitter; the same slot is fed a passing https URL and a rejected
+ * value, in both directions.
+ *
+ * NF-004 boundary (intentional — do NOT "fix" this into scope): policy-PASSING
+ * (`https:`) images stay byte-identical (frozen by
+ * `tests/export-legacy-snapshot.test.ts`); non-`https:` legacy image props
+ * degrade to the existing fallback by design (FR-004 image rule, operated under
+ * the autopilot scope override). This is an intentional backward-compat
+ * narrowing for `http:`/relative/whitespace image props, not a silent
+ * regression.
+ */
+const PASS_IMAGE = 'https://cdn.example.com/x.png'
+/**
+ * Rejected values: the two hostile schemes (so the `<img src="data:` ban is
+ * exercised, not vacuous) plus the three legacy non-`https:` shapes whose output
+ * intentionally narrows — a `http:` URL, a relative path, and a whitespace-only
+ * blank.
+ */
+const REJECTED_IMAGES: { label: string; value: string }[] = [
+  { label: 'javascript:', value: 'javascript:alert(1)' },
+  { label: 'data:', value: 'data:image/png;base64,AAAA' },
+  { label: 'http', value: 'http://cdn.example.com/logo.png' },
+  { label: 'relative', value: '/img/logo.png' },
+  { label: 'whitespace', value: '   ' },
+]
+
+const gatedEmitters: { name: string; config: (image: string) => SiteConfig }[] = [
+  {
+    name: 'navbar logoImage',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        { id: 'navbar-1', type: 'navbar', variant: 'default', props: { links: ['A'], logoImage: image } },
+      ],
+    }),
+  },
+  {
+    name: 'footer-simple logoImage',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        { id: 'footer-1', type: 'footer', variant: 'default', props: { links: ['A'], logoImage: image } },
+      ],
+    }),
+  },
+  {
+    name: 'footer multi-column logoImage',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        { id: 'footer-2', type: 'footer', variant: 'multi-column', props: { links: ['A'], logoImage: image } },
+      ],
+    }),
+  },
+  {
+    name: 'hero-split heroImage',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        { id: 'hero-2', type: 'hero', variant: 'split', props: { headline: 'Hi', heroImage: image } },
+      ],
+    }),
+  },
+  {
+    name: 'testimonials item avatar',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        {
+          id: 'testimonials-1',
+          type: 'testimonials',
+          variant: 'grid',
+          props: { items: [{ quote: 'Great', name: 'Ada', role: 'Engineer', avatar: image }] },
+        },
+      ],
+    }),
+  },
+  {
+    name: 'team member avatar',
+    config: (image) => ({
+      name: 'Test Site',
+      blocks: [
+        {
+          id: 'team-1',
+          type: 'team',
+          variant: 'grid',
+          props: { members: [{ name: 'Ada', role: 'Engineer', avatar: image }] },
+        },
+      ],
+    }),
+  },
+]
+
+describe('FR-001 — every gated <img src> emitter honours the { image: true } policy', () => {
+  for (const emitter of gatedEmitters) {
+    it(`${emitter.name}: emits an <img> for a policy-passing https URL`, () => {
+      const html = exportSiteToHTML(emitter.config(PASS_IMAGE))
+
+      expect(html).toContain(`<img src="${PASS_IMAGE}"`)
+    })
+  }
+
+  for (const emitter of gatedEmitters) {
+    for (const rejected of REJECTED_IMAGES) {
+      it(`${emitter.name}: rejects a ${rejected.label} value and renders the non-image fallback`, () => {
+        const html = exportSiteToHTML(emitter.config(rejected.value))
+
+        // The config holds exactly one block, so this is the only `<img>`
+        // emitter in the document: the absence of ANY `<img src=` proves the
+        // legacy value degraded to the block's non-image fallback and never
+        // reached a `src` attribute.
+        expect(html).not.toContain('<img src=')
+        // Attribute context: the value never survives into an `="..."` slot.
+        expect(html).not.toContain(`="${rejected.value}"`)
+        // Plain-substring absence. Skipped for the whitespace-only probe: three
+        // spaces trivially occur in the template's own indentation, so the bare
+        // substring check proves nothing there — the `<img src=` ban above is
+        // the load-bearing assertion for that case.
+        if (rejected.value.trim() !== '') {
+          expect(html).not.toContain(rejected.value)
+        }
+      })
+    }
+  }
+})
