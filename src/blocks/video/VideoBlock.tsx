@@ -1,15 +1,6 @@
 import { Play } from 'lucide-react'
 import type { BlockConfig } from '../types'
-
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([a-zA-Z0-9_-]{11})/)
-  return match?.[1] || null
-}
-
-function extractVimeoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(\d+)/)
-  return match?.[1] || null
-}
+import { extractYouTubeId, extractVimeoId } from '@/lib/video-embed'
 
 function Placeholder() {
   return (

@@ -17,12 +17,12 @@ function firstBlockProps(config: SiteConfig): Record<string, unknown> {
 }
 
 describe('validateSiteConfig — ISS-005 prop normalization', () => {
-  it('THE regression core: object navbar links coerce to label strings', () => {
+  it('THE regression core: object navbar links preserve {label,href}', () => {
     const config = validateSiteConfig(
       docWithNavbarProps({ links: [{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }] }),
       'acme saas site',
     )
-    expect(firstBlockProps(config).links).toEqual(['Home', 'Pricing'])
+    expect(firstBlockProps(config).links).toEqual([{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }])
   })
 
   it('ISS-005 exact Gemini shape via full pages doc', () => {
@@ -41,7 +41,12 @@ describe('validateSiteConfig — ISS-005 prop normalization', () => {
       }],
     }
     const props = firstBlockProps(validateSiteConfig(raw))
-    expect(props).toEqual({ logo: 'Acme', links: ['Home', 'Pricing', 'Plain'], ctaText: '42' })
+    expect(props).toEqual({
+      logo: 'Acme',
+      links: [{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }, 'Plain'],
+      ctaText: '42',
+      ctaUrl: '',
+    })
   })
 
   it('mixed valid+garbage links drop garbage; all-garbage falls back to defaults', () => {
@@ -73,10 +78,10 @@ describe('validateSiteConfig — ISS-005 prop normalization', () => {
       }],
     })
     const props = firstBlockProps(config)
-    expect(props.links).toEqual(['Privacy'])
-    // nested string[] rule: garbage dropped; empty links falls back to the default entry's links
+    expect(props.links).toEqual([{ label: 'Privacy' }])
+    // nested link array: items preserved shape-preserving; empty links falls back to the default entry's links
     expect(props.columns).toEqual([
-      { title: 'Product', links: ['Features', 'Changelog'] },
+      { title: 'Product', links: [{ label: 'Features', href: '/f' }, 'Changelog'] },
       { title: 'Company', links: ['Features', 'Pricing', 'Changelog', 'Roadmap'] },
     ])
   })
@@ -136,7 +141,7 @@ describe('generateSiteConfig — tier-2 onServerFallback validation (ISS-005 hol
     }
     const result = await generateSiteConfig('acme site', undefined, async () => raw)
     expect(result.source).toBe('ai')
-    expect(firstBlockProps(result.config).links).toEqual(['Home', 'Pricing'])
+    expect(firstBlockProps(result.config).links).toEqual([{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }])
   })
 
   // ISS-005 review item 4 — private repo E2E-01-002 depends on this contract

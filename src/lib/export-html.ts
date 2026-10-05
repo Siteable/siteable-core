@@ -1,5 +1,18 @@
 import type { SiteConfig, BlockConfig } from '@/blocks/types'
 import { resolveTheme } from '@/lib/theme-presets'
+import { isAllowedUrl } from '@/lib/url-policy'
+import { escapeHtml } from './html-escape'
+import { scriptLiteral } from './script-literal'
+import { prop } from './render-prop'
+import { renderLink } from './render-link'
+import { toLinkItem } from './link-item'
+import { defaultPricingTiers } from './block-default-content'
+import { renderContent } from './export-blocks/render-content'
+import { renderImage } from './export-blocks/render-image'
+import { renderVideo } from './export-blocks/render-video'
+import { renderGallery } from './export-blocks/render-gallery'
+import { renderDivider } from './export-blocks/render-divider'
+import { renderBanner } from './export-blocks/render-banner'
 
 export interface ExportSiteSettings {
   siteName?: string
@@ -21,26 +34,6 @@ export interface ExportSiteOptions {
 // Helpers
 // ---------------------------------------------------------------------------
 
-// AI-generated props can deviate from the schema (objects where strings
-// are expected, numbers, nulls). Coerce instead of crashing the export.
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderLink(text: string, url?: string, className?: string): string {
-  const cls = className ? ` class="${escapeHtml(className)}"` : ''
-  const escaped = escapeHtml(text)
-  if (url && url.trim()) {
-    return `<a href="${escapeHtml(url)}"${cls}>${escaped}</a>`
-  }
-  return `<span${cls}>${escaped}</span>`
-}
-
 function googleFontUrl(fonts: string[]): string {
   const unique = [...new Set(fonts.filter(Boolean))]
   const families = unique.map(
@@ -58,10 +51,21 @@ function initials(name: string): string {
   )
 }
 
-function prop<T>(props: Record<string, unknown>, key: string, fallback: T): T {
-  const val = props[key]
-  if (val === undefined || val === null) return fallback
-  return val as T
+const ANCHOR_ID_RE = /^[a-z][a-z0-9-]{0,63}$/
+
+/**
+ * Attach `id="{block.id}"` to the block's existing root element. Returns `html`
+ * unchanged when the id is invalid, already emitted on this page, or when no
+ * leading root open tag is present (an unknown-block comment, for example).
+ * Never introduces a wrapper element.
+ */
+function withBlockId(html: string, id: string, seen: Set<string>): string {
+  if (typeof id !== 'string' || !ANCHOR_ID_RE.test(id) || seen.has(id)) return html
+  const match = /^(\s*)<([a-z][a-z0-9-]*)(\s|>)/.exec(html)
+  if (!match) return html
+  seen.add(id)
+  const [matched, leading, tagName, delim] = match
+  return `${leading}<${tagName} id="${escapeHtml(id)}"${delim}${html.slice(matched.length)}`
 }
 
 function normalizeLanguage(value?: string): string {
@@ -131,29 +135,56 @@ function logoPlaceholderSvg(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Link classes
+//
+// Shared by the anchor and non-anchor branches of every link renderer. Each
+// value is byte-identical to the class literal the pre-anchor markup inlined,
+// so a legacy string-only config stays byte-identical (FR-003, NF-004).
+// ---------------------------------------------------------------------------
+
+const NAV_LINK_CLASS =
+  'text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer'
+const NAV_CTA_CLASS =
+  'px-4 py-2 rounded-lg bg-green text-black text-[13px] font-semibold hover:bg-green-dim transition-colors'
+const FOOTER_SIMPLE_LINK_CLASS =
+  'text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_COLUMN_LINK_CLASS =
+  'text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_BOTTOM_LINK_CLASS =
+  'text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_MINIMAL_LINK_CLASS = 'hover:text-text-1 transition-colors cursor-pointer'
+
+// ---------------------------------------------------------------------------
 // Block renderers
 // ---------------------------------------------------------------------------
 
 function renderNavbar(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const links = prop<string[]>(block.props, 'links', [])
   const ctaText = escapeHtml(prop(block.props, 'ctaText', 'Get Started'))
+  const ctaUrl = prop<string>(block.props, 'ctaUrl', '')
 
+  // A link item carrying a policy-passing href publishes as an anchor; a bare
+  // string (or a rejected/empty href) keeps today's <span>. Empty labels are
+  // dropped, exactly as before.
   const navLinks = links
-    .map((l) => {
-      // Gemini sometimes returns link objects ({label|text, url}) instead of plain strings
-      const label = typeof l === 'string' ? l : ((l as { label?: string; text?: string })?.label ?? (l as { text?: string })?.text ?? '')
-      return label
-    })
-    .filter(Boolean)
-    .map(
-      (l) =>
-        `          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
-    )
+    .map((l) => toLinkItem(l))
+    .filter((item) => Boolean(item.label))
+    .map((item) => `          ${renderLink(item.label, item.href, NAV_LINK_CLASS)}`)
     .join('\n')
 
-  const logoHtml = logoImage
+  const ctaHtml =
+    ctaUrl && isAllowedUrl(ctaUrl)
+      ? `<a href="${escapeHtml(ctaUrl)}" class="${NAV_CTA_CLASS}">${ctaText}</a>`
+      : `<button class="${NAV_CTA_CLASS}">${ctaText}</button>`
+
+  const logoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-8 w-auto object-contain" />`
     : `<div class="w-8 h-8 rounded-lg bg-green/10 flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-green"></div></div>`
 
@@ -166,7 +197,7 @@ function renderNavbar(block: BlockConfig): string {
 ${navLinks}
     </div>
     <div class="flex items-center gap-3">
-      <button class="px-4 py-2 rounded-lg bg-green text-black text-[13px] font-semibold hover:bg-green-dim transition-colors">${ctaText}</button>
+      ${ctaHtml}
       <button class="lg:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
         ${SVG_MENU}
       </button>
@@ -230,7 +261,11 @@ function renderHeroSplit(block: BlockConfig): string {
     ? `          ${renderLink(secondaryCta, secondaryCtaUrl, 'px-6 py-3 rounded-lg bg-bg-3 text-text-0 text-sm font-medium border border-border-default hover:bg-bg-4 transition-all inline-block')}`
     : ''
 
-  const imageHtml = heroImage
+  // Pre-existing `<img src>` emitter: general URL policy (FC1) — relative/http
+  // hero images must survive, matching the legacy baseline.
+  const heroImageOk = isAllowedUrl(heroImage)
+
+  const imageHtml = heroImage && heroImageOk
     ? `          <img src="${escapeHtml(heroImage)}" alt="" class="absolute inset-0 w-full h-full object-cover" />`
     : `          <div class="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent"></div>
           <div class="absolute inset-6 border border-dashed border-border-default rounded-lg flex items-center justify-center text-text-3 text-sm">Preview</div>`
@@ -400,61 +435,16 @@ function renderFeatures(block: BlockConfig): string {
 // Pricing
 // ---------------------------------------------------------------------------
 
-interface PricingTier {
-  name: string
-  price: string
-  period?: string
-  description?: string
-  features: string[]
-  cta: string
-  featured?: boolean
-}
-
-const defaultTiers: PricingTier[] = [
-  {
-    name: 'Starter',
-    price: '$0',
-    period: '/month',
-    description: 'For personal projects',
-    features: ['1 website', '5 blocks', 'Basic export', 'Community support'],
-    cta: 'Get Started',
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    period: '/month',
-    description: 'For professionals',
-    features: [
-      'Unlimited websites',
-      'All blocks',
-      'Custom domains',
-      'Priority support',
-      'Agent API access',
-      'Version history',
-    ],
-    cta: 'Upgrade to Pro',
-    featured: true,
-  },
-  {
-    name: 'Team',
-    price: '$49',
-    period: '/month',
-    description: 'For teams and agencies',
-    features: [
-      'Everything in Pro',
-      'Team collaboration',
-      'Custom components',
-      'SSO',
-      'Dedicated support',
-    ],
-    cta: 'Contact Sales',
-  },
-]
+// Tier shape is the shared default constant's element type — one source of
+// truth (`block-default-content`), so the exporter fallback can never drift
+// from the prop normalizer's contract. `ctaUrl` is optional; an absent or
+// policy-failing value keeps rendering the CTA as a button (FR-003).
+type PricingTier = (typeof defaultPricingTiers)[number]
 
 function renderPricingSimple(block: BlockConfig): string {
   const title = escapeHtml(prop(block.props, 'title', ''))
   const subtitle = prop<string>(block.props, 'subtitle', '')
-  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultTiers)
+  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultPricingTiers)
 
   const subtitleHtml = subtitle
     ? `        <p class="text-text-2 text-sm max-w-lg mx-auto">${escapeHtml(subtitle)}</p>`
@@ -474,6 +464,13 @@ function renderPricingSimple(block: BlockConfig): string {
       const btnClass = tier.featured
         ? 'w-full py-2.5 rounded-lg text-sm font-semibold transition-all bg-green text-black hover:bg-green-dim'
         : 'w-full py-2.5 rounded-lg text-sm font-semibold transition-all bg-bg-3 text-text-0 border border-border-default hover:bg-bg-4 hover:border-border-hover'
+
+      // A policy-passing ctaUrl turns the CTA into an anchor carrying the same
+      // button classes; absent/failing keeps the button (FR-003, SC-016).
+      const ctaHtml =
+        tier.ctaUrl && isAllowedUrl(tier.ctaUrl)
+          ? `<a href="${escapeHtml(tier.ctaUrl)}" class="${btnClass}">${escapeHtml(tier.cta)}</a>`
+          : `<button class="${btnClass}">${escapeHtml(tier.cta)}</button>`
 
       const features = tier.features
         .map(
@@ -505,7 +502,7 @@ ${descHtml}
           <ul class="space-y-2 mb-6 flex-1">
 ${features}
           </ul>
-          <button class="${btnClass}">${escapeHtml(tier.cta)}</button>
+          ${ctaHtml}
         </div>`
     })
     .join('\n')
@@ -524,7 +521,7 @@ ${cards}
 function renderPricingComparison(block: BlockConfig): string {
   const title = escapeHtml(prop(block.props, 'title', ''))
   const subtitle = prop<string>(block.props, 'subtitle', '')
-  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultTiers)
+  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultPricingTiers)
 
   const allFeatures = [...new Set(tiers.flatMap((t) => t.features))]
 
@@ -651,17 +648,22 @@ function renderCta(block: BlockConfig): string {
 function renderFooterSimple(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
 
   const linksHtml = links
-    .map(
-      (l) =>
-        `        <span class="text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
-    )
+    .map((l) => {
+      const item = toLinkItem(l)
+      return `        ${renderLink(item.label, item.href, FOOTER_SIMPLE_LINK_CLASS)}`
+    })
     .join('\n')
 
-  const footerLogoHtml = logoImage
+  const footerLogoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-6 w-auto object-contain" />`
     : `<div class="w-6 h-6 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3 h-3 rounded-full bg-green"></div></div>`
 
@@ -682,6 +684,11 @@ ${linksHtml}
 function renderFooterMultiColumn(block: BlockConfig): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
+  // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
+  // image rule. `javascript:`/`data:` cannot execute in an `<img src>`, and
+  // https-only bought ~zero security while dropping legacy relative/http images
+  // (FC1 correction). The general policy still gate-checks every emitted src.
+  const logoImageOk = isAllowedUrl(logoImage)
   const copyright = escapeHtml(prop(block.props, 'copyright', ''))
   const links = prop<string[]>(block.props, 'links', [])
   const columns = prop<{ title: string; links: string[] }[]>(
@@ -701,10 +708,10 @@ function renderFooterMultiColumn(block: BlockConfig): string {
   const colsHtml = columns
     .map((col) => {
       const colLinks = col.links
-        .map(
-          (l) =>
-            `            <li><span class="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span></li>`
-        )
+        .map((l) => {
+          const item = toLinkItem(l)
+          return `            <li>${renderLink(item.label, item.href, FOOTER_COLUMN_LINK_CLASS)}</li>`
+        })
         .join('\n')
       return `        <div>
           <h4 class="text-[11px] font-semibold uppercase tracking-wider text-text-2 mb-3">${escapeHtml(col.title)}</h4>
@@ -716,13 +723,13 @@ ${colLinks}
     .join('\n')
 
   const bottomLinks = links
-    .map(
-      (l) =>
-        `          <span class="text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
-    )
+    .map((l) => {
+      const item = toLinkItem(l)
+      return `          ${renderLink(item.label, item.href, FOOTER_BOTTOM_LINK_CLASS)}`
+    })
     .join('\n')
 
-  const mcLogoHtml = logoImage
+  const mcLogoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-7 w-auto object-contain" />`
     : `<div class="w-7 h-7 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3.5 h-3.5 rounded-full bg-green"></div></div>`
 
@@ -753,7 +760,8 @@ function renderFooterMinimal(block: BlockConfig): string {
   const linksHtml = links
     .map((l, i) => {
       const sep = i < links.length - 1 ? '<span class="mx-1">|</span>' : ''
-      return `<span class="hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>${sep}`
+      const item = toLinkItem(l)
+      return `${renderLink(item.label, item.href, FOOTER_MINIMAL_LINK_CLASS)}${sep}`
     })
     .join('')
 
@@ -831,7 +839,7 @@ function renderTestimonials(block: BlockConfig): string {
           <p class="text-[13px] text-text-1 leading-relaxed mb-4 italic">"${escapeHtml(item.quote)}"</p>
 ${ratingHtml}
           <div class="flex items-center gap-3 mt-4 pt-4 border-t border-border-subtle">
-            ${item.avatar ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
+            ${item.avatar && isAllowedUrl(item.avatar) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
             <div>
               <div class="text-[12.5px] font-semibold">${escapeHtml(item.name)}</div>
               <div class="text-[11px] text-text-3">${escapeHtml(item.role)}</div>
@@ -1018,7 +1026,7 @@ function renderTeam(block: BlockConfig): string {
   const cards = members
     .map(
       (m) => `        <div class="text-center group">
-          ${m.avatar ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
+          ${m.avatar && isAllowedUrl(m.avatar) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
           <h3 class="text-sm font-semibold">${escapeHtml(m.name)}</h3>
           <p class="text-[11px] text-text-3 mt-0.5">${escapeHtml(m.role)}</p>
         </div>`
@@ -1158,7 +1166,11 @@ ${logosHtml}
 // Block dispatcher
 // ---------------------------------------------------------------------------
 
-function renderBlock(block: BlockConfig): string {
+function renderBlock(block: BlockConfig, seen: Set<string>): string {
+  return withBlockId(renderBlockMarkup(block), block.id, seen)
+}
+
+function renderBlockMarkup(block: BlockConfig): string {
   switch (block.type) {
     case 'navbar':
       return renderNavbar(block)
@@ -1186,6 +1198,18 @@ function renderBlock(block: BlockConfig): string {
       return renderNewsletter(block)
     case 'logocloud':
       return renderLogoCloud(block)
+    case 'content':
+      return renderContent(block)
+    case 'image':
+      return renderImage(block)
+    case 'video':
+      return renderVideo(block)
+    case 'gallery':
+      return renderGallery(block)
+    case 'divider':
+      return renderDivider(block)
+    case 'banner':
+      return renderBanner(block)
     default:
       return `  <!-- Unknown block type: ${escapeHtml(block.type)} -->`
   }
@@ -1203,14 +1227,25 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
 
   const hasFaq = config.blocks.some((b) => b.type === 'faq')
 
-  const blocksHtml = config.blocks.map((b) => renderBlock(b)).join('\n\n')
+  const seenIds = new Set<string>()
+  const blocksHtml = config.blocks.map((b) => renderBlock(b, seenIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
   const ogTitle = (settings?.seoTitle || settings?.siteName || pageTitle).trim()
   const ogDescription = (settings?.seoDescription || settings?.siteDescription || pageDescription).trim()
-  const ogImage = (settings?.ogImageUrl || '').trim()
-  const faviconUrl = (settings?.faviconUrl || '').trim()
+  // Favicon/og-image use the GENERAL policy, not the https-only image rule.
+  // These are pre-existing settings on already-published sites, and the image
+  // rule would silently drop a relative (`/favicon.ico`) or `http:` value from
+  // every such site on republish — a content regression the frozen legacy
+  // fixture cannot detect, because it happens to use absolute https URLs. The
+  // general policy still rejects `javascript:`/`data:`/`vbscript:`/`//`, which
+  // is the security property that matters here. Same reasoning as the
+  // `logoImage`/`heroImage`/`avatar` gates below.
+  const ogImageRaw = (settings?.ogImageUrl || '').trim()
+  const ogImage = isAllowedUrl(ogImageRaw) ? ogImageRaw : ''
+  const faviconUrlRaw = (settings?.faviconUrl || '').trim()
+  const faviconUrl = isAllowedUrl(faviconUrlRaw) ? faviconUrlRaw : ''
   const gaId = (settings?.gaId || '').trim()
   const posthogKey = (settings?.posthogKey || '').trim()
   const lang = normalizeLanguage(settings?.language)
@@ -1235,7 +1270,7 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', ${JSON.stringify(gaId)});
+    gtag('config', ${scriptLiteral(gaId)});
   </script>`
     : ''
 
@@ -1249,7 +1284,7 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
     u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},
     u.people.toString=function(){return u.toString(1)+".people"},o="init capture register register_once alias unregister identify set_config reset opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing".split(" "),
     n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-    posthog.init(${JSON.stringify(posthogKey)}, { api_host: 'https://us.i.posthog.com' });
+    posthog.init(${scriptLiteral(posthogKey)}, { api_host: 'https://us.i.posthog.com' });
   </script>`
     : ''
 

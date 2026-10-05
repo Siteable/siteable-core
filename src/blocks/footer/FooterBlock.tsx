@@ -1,12 +1,25 @@
 import type { BlockConfig } from '../types'
+import type { LinkItem } from '@/lib/block-metadata'
+import { toLinkItem } from '@/lib/link-item'
+import { isAllowedUrl } from '@/lib/url-policy'
 import { defaultFooterColumns } from '@/lib/block-default-content'
 
 interface FooterProps {
   logo: string
   logoImage?: string
   copyright: string
-  links: string[]
-  columns?: { title: string; links: string[] }[]
+  links: (string | LinkItem)[]
+  columns?: { title: string; links: (string | LinkItem)[] }[]
+}
+
+// Renders a link entry as an anchor when it carries a policy-passing href, and
+// as the same non-anchor element otherwise — one rule for every footer variant.
+function FooterLink({ link, className }: { link: string | LinkItem; className: string }) {
+  const item = toLinkItem(link)
+  if (item.href && isAllowedUrl(item.href)) {
+    return <a href={item.href} className={className}>{item.label}</a>
+  }
+  return <span className={className}>{item.label}</span>
 }
 
 function FooterSimple({ props }: { props: FooterProps }) {
@@ -26,12 +39,11 @@ function FooterSimple({ props }: { props: FooterProps }) {
 
         <div className="flex items-center gap-4">
           {props.links.map((link, i) => (
-            <span
+            <FooterLink
               key={i}
+              link={link}
               className="text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer"
-            >
-              {link}
-            </span>
+            />
           ))}
         </div>
 
@@ -75,9 +87,10 @@ function FooterMultiColumn({ props }: { props: FooterProps }) {
             <ul className="space-y-2">
               {col.links.map((link, j) => (
                 <li key={j}>
-                  <span className="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">
-                    {link}
-                  </span>
+                  <FooterLink
+                    link={link}
+                    className="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer"
+                  />
                 </li>
               ))}
             </ul>
@@ -90,12 +103,11 @@ function FooterMultiColumn({ props }: { props: FooterProps }) {
         <span className="text-[11px] text-text-3">{props.copyright}</span>
         <div className="flex gap-4">
           {props.links.map((link, i) => (
-            <span
+            <FooterLink
               key={i}
+              link={link}
               className="text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer"
-            >
-              {link}
-            </span>
+            />
           ))}
         </div>
       </div>
@@ -111,7 +123,7 @@ function FooterMinimal({ props }: { props: FooterProps }) {
         {props.links.length > 0 && <span className="mx-1">|</span>}
         {props.links.map((link, i) => (
           <span key={i}>
-            <span className="hover:text-text-1 transition-colors cursor-pointer">{link}</span>
+            <FooterLink link={link} className="hover:text-text-1 transition-colors cursor-pointer" />
             {i < props.links.length - 1 && <span className="mx-1">|</span>}
           </span>
         ))}

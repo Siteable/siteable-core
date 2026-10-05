@@ -13,3 +13,7 @@ specs/
 issues/
 features/
 **/autopilot-state.json
+# vk manual-test harness artifacts — tests/ is otherwise real tracked vitest
+# code, so scope these narrowly rather than ignoring tests/ wholesale.
+tests/index.md
+tests/manual/

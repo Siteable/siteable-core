@@ -269,9 +269,85 @@ export const themePresets: ThemePreset[] = [
   },
 ]
 
+/**
+ * Characters that cannot appear in a theme value in ANY context the exporter
+ * emits it into. A theme value lands in three places:
+ *
+ *   1. a single-quoted JS string literal inside the inline Tailwind config
+ *      (`'bg-0': '${theme.bg0}'`) — a `'` closes the literal and everything
+ *      after it is parsed as JavaScript;
+ *   2. the `<style>` custom-property and `font-family` declarations — a `;` or
+ *      `}` closes the declaration and lets arbitrary CSS follow;
+ *   3. the `href` of the Google Fonts `<link>`, which is built from the font
+ *      fields — a `"` closes the attribute.
+ *
+ * `<` and `>` break out of the `<script>` / `<style>` elements themselves
+ * (`</script>`, `</style>`), and control characters are dropped or re-parsed by
+ * both the HTML and CSS tokenizers. Rejecting this set closes every one of those
+ * contexts at once. A value that passes is emitted exactly as configured, so
+ * existing themes are unaffected.
+ */
+const UNSAFE_THEME_VALUE = /['"<>{};\\\u0000-\u001f\u007f]/
+
+/**
+ * Built from char codes rather than written as a regex literal containing the
+ * escape sequence, so this file cannot be corrupted into holding the literal
+ * separator characters it is meant to match.
+ */
+const LINE_SEPARATOR = new RegExp(`[${String.fromCharCode(0x2028, 0x2029)}]`)
+
+function safeThemeString(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback
+  if (UNSAFE_THEME_VALUE.test(value)) return fallback
+  // `/*` opens a CSS comment and swallows the rest of the `<style>` block —
+  // a styling DoS if not an injection. Banning `*` makes the pair unformable,
+  // while leaving `/` legal because modern color syntax needs it
+  // (`rgb(255 0 0 / 50%)`).
+  if (value.includes('*')) return fallback
+  // U+2028/U+2029 are inert in a string literal on engines from ES2019 on, but
+  // rejecting them keeps this denylist uniform with `scriptLiteral`'s.
+  if (LINE_SEPARATOR.test(value)) return fallback
+  return value
+}
+
+function safeThemeNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+/**
+ * Merge a partial theme over the default, rejecting any value unsafe to emit.
+ *
+ * Sanitizing here — rather than at each of the ~45 emission sites in the
+ * exporter — is what makes every context safe at once, and it protects the
+ * editor's `themeToCSS` path on the same terms.
+ *
+ * The loop iterates `defaultTheme`'s own keys and takes each value's expected
+ * kind from its default, so a field present in both is always checked. The real
+ * completeness guard is the `defaultTheme: ThemeConfig` annotation: a field
+ * added to `ThemeConfig` without a matching default fails typecheck, so the two
+ * key sets cannot silently drift apart. Note the loop also *drops* any key not
+ * in `defaultTheme` — it does not pass unknown keys through.
+ *
+ * A fully valid theme merges byte-identically to the plain spread this replaced,
+ * so the published HTML of existing sites does not move.
+ */
 export function resolveTheme(partial?: Partial<ThemeConfig>): ThemeConfig {
   if (!partial) return defaultTheme
-  return { ...defaultTheme, ...partial }
+
+  const defaults = defaultTheme as unknown as Record<string, unknown>
+  const merged = { ...defaults, ...partial } as Record<string, unknown>
+  const safe: Record<string, unknown> = { ...defaults }
+
+  for (const key of Object.keys(defaults)) {
+    const fallback = defaults[key]
+    safe[key] =
+      typeof fallback === 'number'
+        ? safeThemeNumber(merged[key], fallback)
+        : // every non-number default in ThemeConfig is a string
+          safeThemeString(merged[key], fallback as string)
+  }
+
+  return safe as unknown as ThemeConfig
 }
 
 export function hexToRgb(hex: string): string {

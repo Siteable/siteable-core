@@ -1,4 +1,5 @@
 import type { BlockConfig } from '../types'
+import { isAllowedUrl } from '@/lib/url-policy'
 import { Check, Star } from 'lucide-react'
 import { defaultPricingTiers } from '@/lib/block-default-content'
 
@@ -9,6 +10,7 @@ interface PricingTier {
   description?: string
   features: string[]
   cta: string
+  ctaUrl?: string
   featured?: boolean
 }
 
@@ -74,15 +76,18 @@ function PricingSimple({ props }: { props: PricingProps }) {
               ))}
             </ul>
 
-            <button
-              className={`w-full py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            {(() => {
+              const btnClass = `w-full py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 tier.featured
                   ? 'bg-green text-black hover:bg-green-dim hover:accent-glow-lg'
                   : 'bg-bg-3 text-text-0 border border-border-default hover:bg-bg-4 hover:border-border-hover'
-              }`}
-            >
-              {tier.cta}
-            </button>
+              }`
+              return tier.ctaUrl && isAllowedUrl(tier.ctaUrl) ? (
+                <a href={tier.ctaUrl} className={btnClass}>{tier.cta}</a>
+              ) : (
+                <button className={btnClass}>{tier.cta}</button>
+              )
+            })()}
           </div>
         ))}
       </div>

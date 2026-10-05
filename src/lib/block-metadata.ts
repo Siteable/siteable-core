@@ -17,7 +17,15 @@ export interface BlockMeta {
   description: string
   category: string
   variants: string[]
+  /** Prop PATHS whose values are link arrays. Grammar: `key` | `key[]` | `key[].sub`. */
+  linkArrays?: string[]
   defaultProps: Record<string, unknown>
+}
+
+/** A single link entry once its shape is known; `href` is optional. */
+export interface LinkItem {
+  label: string
+  href?: string
 }
 
 // ISS-005 (class fix): defaultProps below ARE the prop contracts the generation
@@ -31,7 +39,8 @@ export const blockMetadata: BlockMeta[] = [
     description: 'Navigation bar with logo, links, and CTA',
     category: 'Navigation',
     variants: ['default', 'centered'],
-    defaultProps: { logo: 'Brand', links: ['Features', 'Pricing', 'About'], ctaText: 'Get Started' },
+    defaultProps: { logo: 'Brand', links: ['Features', 'Pricing', 'About'], ctaText: 'Get Started', ctaUrl: '' },
+    linkArrays: ['links'],
   },
   {
     type: 'hero',
@@ -74,6 +83,7 @@ export const blockMetadata: BlockMeta[] = [
     category: 'Navigation',
     variants: ['simple', 'multi-column', 'minimal'],
     defaultProps: { logo: 'Brand', copyright: '2026 Brand. All rights reserved.', links: ['Privacy', 'Terms'], columns: defaultFooterColumns },
+    linkArrays: ['links', 'columns[].links'],
   },
   {
     type: 'testimonials',

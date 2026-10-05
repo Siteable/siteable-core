@@ -80,6 +80,7 @@ export {
 // ── Lib — block metadata ────────────────────────────────────────────────────
 export {
   type BlockMeta,
+  type LinkItem,
   blockMetadata,
   categories,
 } from './lib/block-metadata'
@@ -106,6 +107,9 @@ export { GENERATION_PROMPT } from './lib/generation-prompt'
 
 // ── Lib — markdown ──────────────────────────────────────────────────────────
 export { renderMarkdown } from './lib/markdown'
+
+// ── Lib — url policy (shared href/src allow-list, FR-004) ───────────────────
+export { isAllowedUrl, type UrlPolicyOptions } from './lib/url-policy'
 
 // ── Lib — templates (smart-fallback site templates) ─────────────────────────
 export {
