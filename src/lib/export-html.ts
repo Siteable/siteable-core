@@ -2,6 +2,7 @@ import type { SiteConfig, BlockConfig } from '@/blocks/types'
 import { resolveTheme } from '@/lib/theme-presets'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { escapeHtml } from './html-escape'
+import { scriptLiteral } from './script-literal'
 import { prop } from './render-prop'
 import { renderLink } from './render-link'
 import { toLinkItem } from './link-item'
@@ -1261,7 +1262,7 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', ${JSON.stringify(gaId)});
+    gtag('config', ${scriptLiteral(gaId)});
   </script>`
     : ''
 
@@ -1275,7 +1276,7 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
     u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},
     u.people.toString=function(){return u.toString(1)+".people"},o="init capture register register_once alias unregister identify set_config reset opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing".split(" "),
     n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-    posthog.init(${JSON.stringify(posthogKey)}, { api_host: 'https://us.i.posthog.com' });
+    posthog.init(${scriptLiteral(posthogKey)}, { api_host: 'https://us.i.posthog.com' });
   </script>`
     : ''
 
