@@ -31,6 +31,12 @@
  *
  * DO NOT hand-edit the fixture, and DO NOT regenerate it to make this test pass.
  * Phase 07 re-derives it from git history if a reviewer asks.
+ *
+ * SC-022 (FR-005 / NF-004): the fresh export is compared to this frozen baseline
+ * byte-for-byte MODULO the added `id` attributes — strip every ` id="…"` from the
+ * fresh export and it must equal the baseline exactly. The fixture deliberately
+ * stays frozen: it is the pre-id reference, so the ONLY permitted difference
+ * between the two outputs is the injected ids.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -338,10 +344,25 @@ const baselineSettings = {
 const FIXTURE_PATH = resolve(import.meta.dirname, 'fixtures/export-legacy-baseline.html')
 
 describe('legacy export byte-identity (NF-004)', () => {
-  it('reproduces the pre-change export byte-for-byte', () => {
+  it('SC-022 — fresh export differs from the frozen baseline ONLY by added id attributes', () => {
     const baseline = readFileSync(FIXTURE_PATH, 'utf8')
     const actual = exportSiteToHTML(baselineConfig, { settings: baselineSettings })
-    expect(actual).toBe(baseline)
+    // The frozen baseline predates block ids and contains no ` id="…"` substring.
+    // Removing every injected id from the fresh export must reproduce it byte-for-byte,
+    // so the ONLY difference between the two outputs is added ` id="…"` attributes.
+    const skeleton = actual.replace(/ id="[^"]*"/g, '')
+    expect(skeleton).toBe(baseline)
+    // ...and ids were actually added (guards against a no-op):
+    expect(actual).not.toBe(baseline)
+    const insertedIds = actual.match(/ id="[^"]*"/g) || []
+    expect(insertedIds).toHaveLength(24) // 24 blocks, all ids valid + unique
+    // The id must sit on the block's ROOT open tag (not merely appear somewhere
+    // in the output) — asserted per root element type: navbar -> <nav>,
+    // hero -> <section>, footer -> <footer>, stats -> <section>.
+    expect(actual).toContain('<nav id="nav-1"')
+    expect(actual).toContain('<section id="hero-1"')
+    expect(actual).toContain('<footer id="foot-3"')
+    expect(actual).toContain('<section id="stat-2"')
   })
 
   it('renders no unknown-block comments for the 13 legacy types', () => {

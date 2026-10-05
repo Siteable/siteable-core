@@ -50,6 +50,23 @@ function initials(name: string): string {
   )
 }
 
+const ANCHOR_ID_RE = /^[a-z][a-z0-9-]{0,63}$/
+
+/**
+ * Attach `id="{block.id}"` to the block's existing root element. Returns `html`
+ * unchanged when the id is invalid, already emitted on this page, or when no
+ * leading root open tag is present (an unknown-block comment, for example).
+ * Never introduces a wrapper element.
+ */
+function withBlockId(html: string, id: string, seen: Set<string>): string {
+  if (typeof id !== 'string' || !ANCHOR_ID_RE.test(id) || seen.has(id)) return html
+  const match = /^(\s*)<([a-z][a-z0-9-]*)(\s|>)/.exec(html)
+  if (!match) return html
+  seen.add(id)
+  const [matched, leading, tagName, delim] = match
+  return `${leading}<${tagName} id="${escapeHtml(id)}"${delim}${html.slice(matched.length)}`
+}
+
 function normalizeLanguage(value?: string): string {
   const normalized = (value || '').toLowerCase().trim()
   if (!normalized) return 'en'
@@ -1148,7 +1165,11 @@ ${logosHtml}
 // Block dispatcher
 // ---------------------------------------------------------------------------
 
-function renderBlock(block: BlockConfig): string {
+function renderBlock(block: BlockConfig, seen: Set<string>): string {
+  return withBlockId(renderBlockMarkup(block), block.id, seen)
+}
+
+function renderBlockMarkup(block: BlockConfig): string {
   switch (block.type) {
     case 'navbar':
       return renderNavbar(block)
@@ -1205,7 +1226,8 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
 
   const hasFaq = config.blocks.some((b) => b.type === 'faq')
 
-  const blocksHtml = config.blocks.map((b) => renderBlock(b)).join('\n\n')
+  const seenIds = new Set<string>()
+  const blocksHtml = config.blocks.map((b) => renderBlock(b, seenIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
