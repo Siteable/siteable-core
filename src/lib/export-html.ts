@@ -4,7 +4,8 @@ import { isAllowedUrl } from '@/lib/url-policy'
 import { escapeHtml } from './html-escape'
 import { prop } from './render-prop'
 import { renderLink } from './render-link'
-import { linkLabel } from './link-item'
+import { toLinkItem } from './link-item'
+import { defaultPricingTiers } from './block-default-content'
 import { renderContent } from './export-blocks/render-content'
 import { renderImage } from './export-blocks/render-image'
 import { renderVideo } from './export-blocks/render-video'
@@ -116,6 +117,26 @@ function logoPlaceholderSvg(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Link classes
+//
+// Shared by the anchor and non-anchor branches of every link renderer. Each
+// value is byte-identical to the class literal the pre-anchor markup inlined,
+// so a legacy string-only config stays byte-identical (FR-003, NF-004).
+// ---------------------------------------------------------------------------
+
+const NAV_LINK_CLASS =
+  'text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer'
+const NAV_CTA_CLASS =
+  'px-4 py-2 rounded-lg bg-green text-black text-[13px] font-semibold hover:bg-green-dim transition-colors'
+const FOOTER_SIMPLE_LINK_CLASS =
+  'text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_COLUMN_LINK_CLASS =
+  'text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_BOTTOM_LINK_CLASS =
+  'text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer'
+const FOOTER_MINIMAL_LINK_CLASS = 'hover:text-text-1 transition-colors cursor-pointer'
+
+// ---------------------------------------------------------------------------
 // Block renderers
 // ---------------------------------------------------------------------------
 
@@ -129,19 +150,21 @@ function renderNavbar(block: BlockConfig): string {
   const logoImageOk = isAllowedUrl(logoImage)
   const links = prop<string[]>(block.props, 'links', [])
   const ctaText = escapeHtml(prop(block.props, 'ctaText', 'Get Started'))
+  const ctaUrl = prop<string>(block.props, 'ctaUrl', '')
 
+  // A link item carrying a policy-passing href publishes as an anchor; a bare
+  // string (or a rejected/empty href) keeps today's <span>. Empty labels are
+  // dropped, exactly as before.
   const navLinks = links
-    .map((l) => {
-      // Gemini sometimes returns link objects ({label|text, url}) instead of plain strings
-      const label = typeof l === 'string' ? l : ((l as { label?: string; text?: string })?.label ?? (l as { text?: string })?.text ?? '')
-      return label
-    })
-    .filter(Boolean)
-    .map(
-      (l) =>
-        `          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
-    )
+    .map((l) => toLinkItem(l))
+    .filter((item) => Boolean(item.label))
+    .map((item) => `          ${renderLink(item.label, item.href, NAV_LINK_CLASS)}`)
     .join('\n')
+
+  const ctaHtml =
+    ctaUrl && isAllowedUrl(ctaUrl)
+      ? `<a href="${escapeHtml(ctaUrl)}" class="${NAV_CTA_CLASS}">${ctaText}</a>`
+      : `<button class="${NAV_CTA_CLASS}">${ctaText}</button>`
 
   const logoHtml = logoImage && logoImageOk
     ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-8 w-auto object-contain" />`
@@ -156,7 +179,7 @@ function renderNavbar(block: BlockConfig): string {
 ${navLinks}
     </div>
     <div class="flex items-center gap-3">
-      <button class="px-4 py-2 rounded-lg bg-green text-black text-[13px] font-semibold hover:bg-green-dim transition-colors">${ctaText}</button>
+      ${ctaHtml}
       <button class="lg:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
         ${SVG_MENU}
       </button>
@@ -394,61 +417,16 @@ function renderFeatures(block: BlockConfig): string {
 // Pricing
 // ---------------------------------------------------------------------------
 
-interface PricingTier {
-  name: string
-  price: string
-  period?: string
-  description?: string
-  features: string[]
-  cta: string
-  featured?: boolean
-}
-
-const defaultTiers: PricingTier[] = [
-  {
-    name: 'Starter',
-    price: '$0',
-    period: '/month',
-    description: 'For personal projects',
-    features: ['1 website', '5 blocks', 'Basic export', 'Community support'],
-    cta: 'Get Started',
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    period: '/month',
-    description: 'For professionals',
-    features: [
-      'Unlimited websites',
-      'All blocks',
-      'Custom domains',
-      'Priority support',
-      'Agent API access',
-      'Version history',
-    ],
-    cta: 'Upgrade to Pro',
-    featured: true,
-  },
-  {
-    name: 'Team',
-    price: '$49',
-    period: '/month',
-    description: 'For teams and agencies',
-    features: [
-      'Everything in Pro',
-      'Team collaboration',
-      'Custom components',
-      'SSO',
-      'Dedicated support',
-    ],
-    cta: 'Contact Sales',
-  },
-]
+// Tier shape is the shared default constant's element type — one source of
+// truth (`block-default-content`), so the exporter fallback can never drift
+// from the prop normalizer's contract. `ctaUrl` is optional; an absent or
+// policy-failing value keeps rendering the CTA as a button (FR-003).
+type PricingTier = (typeof defaultPricingTiers)[number]
 
 function renderPricingSimple(block: BlockConfig): string {
   const title = escapeHtml(prop(block.props, 'title', ''))
   const subtitle = prop<string>(block.props, 'subtitle', '')
-  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultTiers)
+  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultPricingTiers)
 
   const subtitleHtml = subtitle
     ? `        <p class="text-text-2 text-sm max-w-lg mx-auto">${escapeHtml(subtitle)}</p>`
@@ -468,6 +446,13 @@ function renderPricingSimple(block: BlockConfig): string {
       const btnClass = tier.featured
         ? 'w-full py-2.5 rounded-lg text-sm font-semibold transition-all bg-green text-black hover:bg-green-dim'
         : 'w-full py-2.5 rounded-lg text-sm font-semibold transition-all bg-bg-3 text-text-0 border border-border-default hover:bg-bg-4 hover:border-border-hover'
+
+      // A policy-passing ctaUrl turns the CTA into an anchor carrying the same
+      // button classes; absent/failing keeps the button (FR-003, SC-016).
+      const ctaHtml =
+        tier.ctaUrl && isAllowedUrl(tier.ctaUrl)
+          ? `<a href="${escapeHtml(tier.ctaUrl)}" class="${btnClass}">${escapeHtml(tier.cta)}</a>`
+          : `<button class="${btnClass}">${escapeHtml(tier.cta)}</button>`
 
       const features = tier.features
         .map(
@@ -499,7 +484,7 @@ ${descHtml}
           <ul class="space-y-2 mb-6 flex-1">
 ${features}
           </ul>
-          <button class="${btnClass}">${escapeHtml(tier.cta)}</button>
+          ${ctaHtml}
         </div>`
     })
     .join('\n')
@@ -518,7 +503,7 @@ ${cards}
 function renderPricingComparison(block: BlockConfig): string {
   const title = escapeHtml(prop(block.props, 'title', ''))
   const subtitle = prop<string>(block.props, 'subtitle', '')
-  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultTiers)
+  const tiers = prop<PricingTier[]>(block.props, 'tiers', defaultPricingTiers)
 
   const allFeatures = [...new Set(tiers.flatMap((t) => t.features))]
 
@@ -654,10 +639,10 @@ function renderFooterSimple(block: BlockConfig): string {
   const links = prop<string[]>(block.props, 'links', [])
 
   const linksHtml = links
-    .map(
-      (l) =>
-        `        <span class="text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>`
-    )
+    .map((l) => {
+      const item = toLinkItem(l)
+      return `        ${renderLink(item.label, item.href, FOOTER_SIMPLE_LINK_CLASS)}`
+    })
     .join('\n')
 
   const footerLogoHtml = logoImage && logoImageOk
@@ -705,10 +690,10 @@ function renderFooterMultiColumn(block: BlockConfig): string {
   const colsHtml = columns
     .map((col) => {
       const colLinks = col.links
-        .map(
-          (l) =>
-            `            <li><span class="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span></li>`
-        )
+        .map((l) => {
+          const item = toLinkItem(l)
+          return `            <li>${renderLink(item.label, item.href, FOOTER_COLUMN_LINK_CLASS)}</li>`
+        })
         .join('\n')
       return `        <div>
           <h4 class="text-[11px] font-semibold uppercase tracking-wider text-text-2 mb-3">${escapeHtml(col.title)}</h4>
@@ -720,10 +705,10 @@ ${colLinks}
     .join('\n')
 
   const bottomLinks = links
-    .map(
-      (l) =>
-        `          <span class="text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>`
-    )
+    .map((l) => {
+      const item = toLinkItem(l)
+      return `          ${renderLink(item.label, item.href, FOOTER_BOTTOM_LINK_CLASS)}`
+    })
     .join('\n')
 
   const mcLogoHtml = logoImage && logoImageOk
@@ -757,7 +742,8 @@ function renderFooterMinimal(block: BlockConfig): string {
   const linksHtml = links
     .map((l, i) => {
       const sep = i < links.length - 1 ? '<span class="mx-1">|</span>' : ''
-      return `<span class="hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>${sep}`
+      const item = toLinkItem(l)
+      return `${renderLink(item.label, item.href, FOOTER_MINIMAL_LINK_CLASS)}${sep}`
     })
     .join('')
 
