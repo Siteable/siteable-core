@@ -1,11 +1,17 @@
 import { ArrowRight } from 'lucide-react'
 import type { BlockConfig } from '../types'
+import { isAllowedUrl } from '@/lib/url-policy'
 
 export function BannerBlock({ block }: { block: BlockConfig }) {
   const { variant, props } = block
   const text = (props.text as string) || 'Announcement'
   const linkText = props.linkText as string | undefined
-  const linkUrl = (props.linkUrl as string) || '#'
+  // Policy-gate the href, as NavbarBlock / FooterBlock / PricingBlock do. A
+  // `javascript:` linkUrl here executes on click inside the EDITOR's own
+  // authenticated origin, which is a worse position than the exported site.
+  // A rejected URL degrades to the same inert `#` a missing one already gets.
+  const rawLinkUrl = (props.linkUrl as string) || '#'
+  const linkUrl = isAllowedUrl(rawLinkUrl) ? rawLinkUrl : '#'
 
   if (variant === 'bar') {
     return (
