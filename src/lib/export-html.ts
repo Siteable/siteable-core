@@ -4,6 +4,7 @@ import { isAllowedUrl } from '@/lib/url-policy'
 import { escapeHtml } from './html-escape'
 import { prop } from './render-prop'
 import { renderLink } from './render-link'
+import { linkLabel } from './link-item'
 import { renderContent } from './export-blocks/render-content'
 import { renderImage } from './export-blocks/render-image'
 import { renderVideo } from './export-blocks/render-video'
@@ -655,7 +656,7 @@ function renderFooterSimple(block: BlockConfig): string {
   const linksHtml = links
     .map(
       (l) =>
-        `        <span class="text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
+        `        <span class="text-[12px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>`
     )
     .join('\n')
 
@@ -706,7 +707,7 @@ function renderFooterMultiColumn(block: BlockConfig): string {
       const colLinks = col.links
         .map(
           (l) =>
-            `            <li><span class="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span></li>`
+            `            <li><span class="text-[12.5px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span></li>`
         )
         .join('\n')
       return `        <div>
@@ -721,7 +722,7 @@ ${colLinks}
   const bottomLinks = links
     .map(
       (l) =>
-        `          <span class="text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>`
+        `          <span class="text-[11px] text-text-3 hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>`
     )
     .join('\n')
 
@@ -756,7 +757,7 @@ function renderFooterMinimal(block: BlockConfig): string {
   const linksHtml = links
     .map((l, i) => {
       const sep = i < links.length - 1 ? '<span class="mx-1">|</span>' : ''
-      return `<span class="hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(l)}</span>${sep}`
+      return `<span class="hover:text-text-1 transition-colors cursor-pointer">${escapeHtml(linkLabel(l))}</span>${sep}`
     })
     .join('')
 

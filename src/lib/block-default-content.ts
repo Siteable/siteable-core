@@ -22,6 +22,9 @@ export const defaultFooterColumns: { title: string; links: string[] }[] = [
   { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'Cookie Policy'] },
 ]
 
+// ctaUrl:'' added per tier (falsy → the CTA still renders as a button, so the
+// output is byte-identical) to give the normalizer a string contract for the
+// tier's CTA URL and the properties panel an inferable field.
 export const defaultPricingTiers: {
   name: string
   price: string
@@ -29,6 +32,7 @@ export const defaultPricingTiers: {
   description?: string
   features: string[]
   cta: string
+  ctaUrl?: string
   featured?: boolean
 }[] = [
   {
@@ -38,6 +42,7 @@ export const defaultPricingTiers: {
     description: 'For personal projects',
     features: ['1 website', '5 blocks', 'Basic export', 'Community support'],
     cta: 'Get Started',
+    ctaUrl: '',
   },
   {
     name: 'Pro',
@@ -46,6 +51,7 @@ export const defaultPricingTiers: {
     description: 'For professionals',
     features: ['Unlimited websites', 'All blocks', 'Custom domains', 'Priority support', 'Agent API access', 'Version history'],
     cta: 'Upgrade to Pro',
+    ctaUrl: '',
     featured: true,
   },
   {
@@ -55,6 +61,7 @@ export const defaultPricingTiers: {
     description: 'For teams and agencies',
     features: ['Everything in Pro', 'Team collaboration', 'Custom components', 'SSO', 'Dedicated support'],
     cta: 'Contact Sales',
+    ctaUrl: '',
   },
 ]
 

@@ -7,6 +7,7 @@ import { getTemplateForPrompt } from '@/lib/templates'
 const VALID_BLOCK_TYPES = new Set<string>(blockMetadata.map((b) => b.type))
 const VARIANT_MAP = Object.fromEntries(blockMetadata.map((b) => [b.type, new Set(b.variants)]))
 const DEFAULT_PROPS_MAP = Object.fromEntries(blockMetadata.map((b) => [b.type, b.defaultProps]))
+const LINK_ARRAYS_MAP = Object.fromEntries(blockMetadata.map((b) => [b.type, b.linkArrays ?? []]))
 
 const GEMINI_MODEL = 'gemini-3-flash-preview'
 const STORAGE_KEY = 'openpage-gemini-key'
@@ -134,8 +135,10 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   const defaultProps = DEFAULT_PROPS_MAP[type] || {}
   // ISS-005 root fix: raw prop VALUES are normalized against the defaultProps
   // shape (generic, no per-block guards) before merging over the defaults.
+  // Phase 04: the block's declared link-array paths keep {label,href} intact.
+  const linkArrays = LINK_ARRAYS_MAP[type] || []
   const props = typeof raw.props === 'object' && raw.props
-    ? { ...defaultProps, ...normalizeBlockProps(raw.props, defaultProps) }
+    ? { ...defaultProps, ...normalizeBlockProps(raw.props, defaultProps, linkArrays) }
     : defaultProps
 
   return {

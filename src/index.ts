@@ -80,6 +80,7 @@ export {
 // ── Lib — block metadata ────────────────────────────────────────────────────
 export {
   type BlockMeta,
+  type LinkItem,
   blockMetadata,
   categories,
 } from './lib/block-metadata'

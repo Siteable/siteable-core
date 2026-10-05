@@ -141,3 +141,16 @@ describe('normalizeBlockProps — other primitives and pass-through', () => {
     expect(normalizeBlockProps([1, 2], navbarDefaults)).toEqual({})
   })
 })
+
+describe('normalizeBlockProps — declared linkArrays (phase 04)', () => {
+  it('a declared link path preserves {label,href} objects', () => {
+    expect(normalizeBlockProps({ links: [{ label: 'Home', href: '#' }] }, navbarDefaults, ['links']).links)
+      .toEqual([{ label: 'Home', href: '#' }])
+  })
+
+  it('a NON-declared string[] prop still collapses object entries to labels', () => {
+    // logocloud.logos is not a declared link array — the 2-arg call must keep
+    // the existing string[] collapse behavior.
+    expect(normalizeBlockProps({ logos: [{ name: 'X' }] }, { logos: ['A'] }).logos).toEqual(['X'])
+  })
+})

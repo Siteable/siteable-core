@@ -1,13 +1,37 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Code } from 'lucide-react'
 import type { BlockConfig, BlockType } from '@/blocks/types'
+import type { LinkItem } from '@/lib/block-metadata'
+import { toLinkItem } from '@/lib/link-item'
 import { useConfigStore } from '@/store/configStore'
 
 interface FieldDef {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items'
+  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links'
   options?: string[]
+}
+
+// Friendly sub-field labels for the generic `array-items` renderer (otherwise it
+// shows the raw prop key). Unknown keys fall back to the key itself.
+const ITEM_KEY_LABELS: Record<string, string> = {
+  name: 'Name',
+  price: 'Price',
+  description: 'Description',
+  features: 'Features',
+  cta: 'CTA Text',
+  ctaUrl: 'CTA URL',
+  featured: 'Featured',
+  value: 'Value',
+  label: 'Label',
+  role: 'Role',
+  quote: 'Quote',
+  question: 'Question',
+  answer: 'Answer',
+  title: 'Title',
+  src: 'Source',
+  alt: 'Alt Text',
+  caption: 'Caption',
 }
 
 const blockFields: Partial<Record<BlockType, { sections: { title: string; fields: FieldDef[] }[] }>> = {
@@ -19,7 +43,8 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
           { key: 'logo', label: 'Logo Text', type: 'text' },
           { key: 'logoImage', label: 'Logo Image URL', type: 'text' },
           { key: 'ctaText', label: 'CTA Button', type: 'text' },
-          { key: 'links', label: 'Nav Links', type: 'array-strings' },
+          { key: 'ctaUrl', label: 'CTA URL', type: 'text' },
+          { key: 'links', label: 'Nav Links', type: 'array-links' },
         ],
       },
       {
@@ -84,6 +109,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         fields: [
           { key: 'title', label: 'Title', type: 'text' },
           { key: 'subtitle', label: 'Subtitle', type: 'text' },
+          { key: 'tiers', label: 'Tiers', type: 'array-items' },
         ],
       },
       {
@@ -121,7 +147,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
           { key: 'logo', label: 'Logo Text', type: 'text' },
           { key: 'logoImage', label: 'Logo Image URL', type: 'text' },
           { key: 'copyright', label: 'Copyright', type: 'text' },
-          { key: 'links', label: 'Links', type: 'array-strings' },
+          { key: 'links', label: 'Links', type: 'array-links' },
         ],
       },
       {
@@ -430,18 +456,88 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
       )
     }
 
+    case 'array-links': {
+      const items = (Array.isArray(value) ? value : []) as Array<string | LinkItem>
+      return (
+        <div className="mb-2.5">
+          <label className="block text-[11.5px] text-text-2 mb-1 font-medium">{field.label}</label>
+          {items.map((item, i) => {
+            const current = toLinkItem(item)
+            return (
+              <div key={i} className="bg-bg-2 border border-border-default rounded p-2 mb-1.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-text-3 font-medium">Item {i + 1}</span>
+                  <button
+                    onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                    className="text-[10px] text-text-3 hover:text-status-red transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="mb-1">
+                  <label className="block text-[10px] text-text-3 mb-0.5">Label</label>
+                  <input
+                    type="text"
+                    value={current.label}
+                    onChange={(e) => {
+                      const updated = [...items]
+                      // Shape preservation: a string item stays a string until its URL
+                      // field is touched; an object item keeps its other keys.
+                      updated[i] = typeof item === 'string'
+                        ? e.target.value
+                        : { ...item, label: e.target.value }
+                      onChange(updated)
+                    }}
+                    className="w-full px-1.5 py-1 rounded border border-border-subtle bg-bg-3 text-text-0 text-[11px] outline-none focus:border-green"
+                  />
+                </div>
+                <div className="mb-1">
+                  <label className="block text-[10px] text-text-3 mb-0.5">URL</label>
+                  <input
+                    type="text"
+                    value={current.href ?? ''}
+                    onChange={(e) => {
+                      const updated = [...items]
+                      // Touching the URL always promotes the item to an object so the
+                      // href has a home; the label is carried over from the old shape.
+                      updated[i] = { ...toLinkItem(item), href: e.target.value }
+                      onChange(updated)
+                    }}
+                    className="w-full px-1.5 py-1 rounded border border-border-subtle bg-bg-3 text-text-0 text-[11px] outline-none focus:border-green"
+                  />
+                </div>
+              </div>
+            )
+          })}
+          <button
+            onClick={() => onChange([...items, { label: '', href: '' }])}
+            className="text-[10px] text-green hover:text-green-dim transition-colors"
+          >
+            + Add item
+          </button>
+        </div>
+      )
+    }
+
     case 'array-items': {
-      const items = (Array.isArray(value) ? value : []) as Array<Record<string, string>>
+      const items = (Array.isArray(value) ? value : []) as Array<Record<string, unknown>>
 
       // Infer new item shape from existing items, or use sensible defaults per field key
-      function createEmptyItem(): Record<string, string> {
+      function createEmptyItem(): Record<string, unknown> {
         if (items.length > 0) {
-          const template: Record<string, string> = {}
-          for (const key of Object.keys(items[0])) template[key] = ''
+          const template: Record<string, unknown> = {}
+          for (const [key, val] of Object.entries(items[0])) {
+            // Preserve the field's TYPE: a string becomes '', but an array stays
+            // an array (a '' would break `.map` at render) and a boolean/number
+            // keeps its value so the new item is shape-consistent.
+            template[key] = Array.isArray(val) ? [] : typeof val === 'string' ? '' : val
+          }
           return template
         }
-        // Fallback templates by block type + field key
-        const blockTemplates: Partial<Record<string, Record<string, Record<string, string>>>> = {
+        // Fallback templates by block type + field key (used when the list is
+        // empty, i.e. after deleting every item). Values carry the right TYPE —
+        // `features` is an array so the new tier does not break `tier.features.map`.
+        const blockTemplates: Partial<Record<string, Record<string, Record<string, unknown>>>> = {
           testimonials: { items: { name: '', role: '', quote: '' } },
           stats: { items: { value: '', label: '' } },
           faq: { items: { question: '', answer: '' } },
@@ -449,6 +545,7 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
           features: { items: { title: '', description: '' } },
           image: { images: { src: '', alt: '' } },
           gallery: { images: { src: '', alt: '', caption: '' } },
+          pricing: { tiers: { name: '', price: '', features: [], cta: '', ctaUrl: '' } },
         }
         return blockTemplates[block.type]?.[field.key] || { title: '', description: '' }
       }
@@ -467,21 +564,32 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
                   Remove
                 </button>
               </div>
-              {Object.entries(item).map(([key, val]) => (
-                <div key={key} className="mb-1">
-                  <label className="block text-[10px] text-text-3 mb-0.5">{key}</label>
-                  <input
-                    type="text"
-                    value={String(val)}
-                    onChange={(e) => {
-                      const updated = [...items]
-                      updated[i] = { ...updated[i], [key]: e.target.value }
-                      onChange(updated)
-                    }}
-                    className="w-full px-1.5 py-1 rounded border border-border-subtle bg-bg-3 text-text-0 text-[11px] outline-none focus:border-green"
-                  />
-                </div>
-              ))}
+              {Object.entries(item).map(([key, val]) => {
+                // Only string sub-values are editable as text. An array (e.g. a
+                // pricing tier's `features`) or a boolean must NOT be rewritten by
+                // a text input — `String(['a'])` → 'a,b' and writing that back
+                // breaks the block's `.map`. Non-strings render read-only.
+                const editable = typeof val === 'string'
+                return (
+                  <div key={key} className="mb-1">
+                    <label className="block text-[10px] text-text-3 mb-0.5">{ITEM_KEY_LABELS[key] ?? key}</label>
+                    <input
+                      type="text"
+                      value={Array.isArray(val) ? val.join(', ') : String(val ?? '')}
+                      onChange={(e) => {
+                        if (!editable) return
+                        const updated = [...items]
+                        updated[i] = { ...updated[i], [key]: e.target.value }
+                        onChange(updated)
+                      }}
+                      readOnly={!editable}
+                      disabled={!editable}
+                      title={editable ? undefined : 'Complex value — edit in the JSON panel'}
+                      className="w-full px-1.5 py-1 rounded border border-border-subtle bg-bg-3 text-text-0 text-[11px] outline-none focus:border-green disabled:opacity-60"
+                    />
+                  </div>
+                )
+              })}
             </div>
           ))}
           <button
