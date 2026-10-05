@@ -13,7 +13,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
-import type { SiteConfig, BlockConfig } from '../src/blocks/types'
+import type { SiteConfig, BlockConfig, BlockType } from '../src/blocks/types'
 
 const hero = (id: string, headline: string): BlockConfig => ({
   id,
@@ -156,6 +156,68 @@ describe('FR-005 — id injection through exportSiteToHTML for the six new block
     for (const id of ['content-1', 'image-1', 'video-1', 'gallery-1', 'divider-1', 'banner-1']) {
       expect((html.match(new RegExp(`id="${id}"`, 'g')) || []).length).toBe(1)
     }
+  })
+})
+
+describe('FR-005 — id length boundary (`^[a-z][a-z0-9-]{0,63}$`)', () => {
+  // The regex allows one leading letter plus up to 63 more chars — 64 total.
+  // Phase 06 handed this boundary to phase 07: off-by-one in the `{0,63}`
+  // quantifier is invisible to SC-021's short invalid ids (`A_B`, `1abc`).
+  it('accepts a 64-character id (1 + 63) and rejects a 65-character id', () => {
+    const atLimit = 'a' + 'a'.repeat(63) // 64 chars
+    const overLimit = 'a' + 'a'.repeat(64) // 65 chars
+    expect(atLimit.length).toBe(64)
+    expect(overLimit.length).toBe(65)
+
+    const html = exportSiteToHTML({
+      name: 'x',
+      blocks: [hero(atLimit, 'AT_LIMIT'), hero(overLimit, 'OVER_LIMIT')],
+    })
+
+    expect(html).toContain(`<section id="${atLimit}"`)
+    expect(html).not.toContain(`id="${overLimit}"`)
+    // Exactly one id was emitted — the at-limit block's.
+    expect((html.match(/<section id="/g) || []).length).toBe(1)
+  })
+
+  it('requires a lowercase leading letter', () => {
+    const leading = exportSiteToHTML({
+      name: 'x',
+      blocks: [hero('Abc', 'A'), hero('-abc', 'B'), hero('9abc', 'C'), hero('abc', 'D')],
+    })
+    expect(leading).not.toContain('id="Abc"')
+    expect(leading).not.toContain('id="-abc"')
+    expect(leading).not.toContain('id="9abc"')
+    expect(leading).toContain('<section id="abc"')
+  })
+})
+
+describe('FR-005 — `withBlockId` skips output with no leading root open tag', () => {
+  // The `!match` branch: a valid id on markup that does not begin with a
+  // `<tagname` (the unknown-block comment is the only reachable case) must be
+  // left untouched — the helper never fabricates a wrapper to host the id.
+  it('an unknown block type carries no id even when its id is valid', () => {
+    const html = exportSiteToHTML({
+      name: 'x',
+      blocks: [
+        // Not a declared BlockType → renderBlockMarkup returns the comment.
+        { id: 'valid-id', type: 'mystery' as BlockType, variant: 'default', props: {} },
+      ],
+    })
+    expect(html).toContain('Unknown block type')
+    expect(html).not.toContain('id="valid-id"')
+  })
+
+  it('a valid sibling block still gets its id alongside an unknown-block comment', () => {
+    const html = exportSiteToHTML({
+      name: 'x',
+      blocks: [
+        { id: 'skipped', type: 'mystery' as BlockType, variant: 'default', props: {} },
+        hero('kept', 'KEPT'),
+      ],
+    })
+    expect(html).not.toContain('id="skipped"')
+    expect(html).toContain('<section id="kept"')
   })
 })
 

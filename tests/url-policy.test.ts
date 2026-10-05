@@ -172,4 +172,67 @@ describe('isAllowedUrl — NF-001 linearity', () => {
 
     expect(perCall).toBeLessThan(5)
   })
+
+  // ── Phase-07 strengthening ────────────────────────────────────────────────
+  // Phase 01 proved NF-001 with a fixed absolute threshold on a 2 KB call. That
+  // distinguishes "fast on this box" from "slow on this box" — it does NOT
+  // distinguish O(n) from O(n²): a quadratic policy on a 2 KB input still
+  // returns in well under 5 ms. (The accepted phase-01 gap U1 recorded exactly
+  // this: linearity was shown by wall-clock timing, not an observable work
+  // count.) A production walk-counter would close it only by adding an API that
+  // exists solely for test observability — rejected as worse than the gap. The
+  // tests below instead pin the COMPLEXITY CLASS directly, by measuring how the
+  // cost grows with input length. That needs no production surface and is
+  // machine-speed-independent.
+
+  /** Best (min) per-call cost over `rounds` batches of `iterations` calls. */
+  function bestPerCall(value: string, iterations: number, rounds: number): number {
+    let best = Infinity
+    for (let r = 0; r < rounds; r += 1) {
+      const start = performance.now()
+      for (let i = 0; i < iterations; i += 1) isAllowedUrl(value)
+      best = Math.min(best, (performance.now() - start) / iterations)
+    }
+    return best
+  }
+
+  it('scales linearly (not quadratically) with input length', () => {
+    // Both inputs force a FULL scan: no `:` so `readScheme` walks every char,
+    // then the segment guard walks them again (the two longest walks in the
+    // implementation). Growing 2 KB → 200 KB is a 100x size increase; a linear
+    // policy grows ~100x, a quadratic one (or a backtracking regex) grows
+    // ~10,000x. min-of-5 rounds removes scheduler-noise spikes from both sides.
+    const small = 'a'.repeat(2_000)
+    const large = 'a'.repeat(200_000)
+    expect(isAllowedUrl(small)).toBe(true)
+    expect(isAllowedUrl(large)).toBe(true)
+
+    const perSmall = bestPerCall(small, 2_000, 5)
+    const perLarge = bestPerCall(large, 40, 5)
+    const ratio = perLarge / perSmall
+
+    // 400x sits far above the ~100x a linear policy produces and far below the
+    // ~10,000x a quadratic/backtracking one produces, so it cannot false-pass a
+    // quadratic/backtracking regression nor false-fail on ordinary timing noise.
+    // It does NOT discriminate mild super-linear growth (e.g. n log n ≈ 130x) —
+    // that slack is deliberate; NF-001 targets catastrophic backtracking only.
+    expect(
+      ratio,
+      `2 KB → ${perSmall.toFixed(5)} ms/call, 200 KB → ${perLarge.toFixed(5)} ms/call ` +
+        `(ratio ${ratio.toFixed(1)}x for a 100x size increase). A linear policy grows ` +
+        '~100x; failing this means super-linear (backtracking/quadratic) behavior.'
+    ).toBeLessThan(400)
+  })
+
+  it('returns correct verdicts on multi-megabyte inputs (full-scan correctness)', () => {
+    // The observable half of the complexity claim: a genuine O(n) policy walks a
+    // multi-MB input end-to-end and still classifies correctly. A regressed one
+    // either hangs or early-exits to the wrong verdict.
+    expect(isAllowedUrl('a'.repeat(1_000_000))).toBe(true)
+    expect(isAllowedUrl('/' + 'path/'.repeat(250_000))).toBe(true)
+    // A denied scheme is rejected at the `:` regardless of how much tail follows.
+    expect(isAllowedUrl('javascript:' + 'a'.repeat(1_000_000))).toBe(false)
+    // A control character anywhere poisons the value, even 1 MB in.
+    expect(isAllowedUrl('/p/' + 'a'.repeat(1_000_000) + '\u0007')).toBe(false)
+  })
 })

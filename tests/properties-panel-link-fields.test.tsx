@@ -78,6 +78,25 @@ describe('SC-019 — properties panel link/URL fields', () => {
     expect(storedBlockProps().links[0]).toEqual({ label: 'Features', href: 'https://x/a' })
   })
 
+  it('footer exposes a Label/URL input per link and saves a URL edit', () => {
+    // SC-019 names "navbar/footer/pricing"; the footer's top-level `links` uses
+    // the same `array-links` field as the navbar. (Nested `columns[].links` has
+    // no panel field — a deliberate phase-04 boundary, not a spec gap.)
+    const footerBlock: BlockConfig = {
+      id: 'b-footer', type: 'footer', variant: 'simple',
+      props: { logo: 'A', copyright: 'C', links: ['Privacy', 'Terms'] },
+    }
+    seed(footerBlock)
+    const container = renderPanel(footerBlock)
+
+    expect(countLabels(container, 'Label')).toBe(2)
+    expect(countLabels(container, 'URL')).toBe(2)
+
+    const urlInput = findInput(container, 'URL')!
+    setInputValue(urlInput, 'https://x/privacy')
+    expect(storedBlockProps().links[0]).toEqual({ label: 'Privacy', href: 'https://x/privacy' })
+  })
+
   it('pricing exposes a ctaUrl input per tier and saves edits', () => {
     const pricingBlock: BlockConfig = {
       id: 'b-price', type: 'pricing', variant: 'simple',
