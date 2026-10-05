@@ -1,5 +1,6 @@
 import type { SiteConfig, BlockConfig } from '@/blocks/types'
 import { resolveTheme } from '@/lib/theme-presets'
+import { isAllowedUrl } from '@/lib/url-policy'
 
 export interface ExportSiteSettings {
   siteName?: string
@@ -35,7 +36,7 @@ function escapeHtml(value: unknown): string {
 function renderLink(text: string, url?: string, className?: string): string {
   const cls = className ? ` class="${escapeHtml(className)}"` : ''
   const escaped = escapeHtml(text)
-  if (url && url.trim()) {
+  if (url && isAllowedUrl(url)) {
     return `<a href="${escapeHtml(url)}"${cls}>${escaped}</a>`
   }
   return `<span${cls}>${escaped}</span>`
@@ -1209,8 +1210,10 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
   const ogTitle = (settings?.seoTitle || settings?.siteName || pageTitle).trim()
   const ogDescription = (settings?.seoDescription || settings?.siteDescription || pageDescription).trim()
-  const ogImage = (settings?.ogImageUrl || '').trim()
-  const faviconUrl = (settings?.faviconUrl || '').trim()
+  const ogImageRaw = (settings?.ogImageUrl || '').trim()
+  const ogImage = isAllowedUrl(ogImageRaw, { image: true }) ? ogImageRaw : ''
+  const faviconUrlRaw = (settings?.faviconUrl || '').trim()
+  const faviconUrl = isAllowedUrl(faviconUrlRaw, { image: true }) ? faviconUrlRaw : ''
   const gaId = (settings?.gaId || '').trim()
   const posthogKey = (settings?.posthogKey || '').trim()
   const lang = normalizeLanguage(settings?.language)
