@@ -5,3 +5,11 @@ coverage/
 .cache/
 *.log
 .DS_Store
+
+# Local agent working artifacts — never committed, this repo ships as a pure
+# engine. Tracked planning for this repo lives in the siteable/ umbrella.
+plans/
+specs/
+issues/
+features/
+**/autopilot-state.json
