@@ -1,6 +1,6 @@
 {
   "name": "@siteable/core",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Siteable core engine — blocks, visual editor, config store, theme presets, HTML export. JSON-first website builder engine.",
   "license": "MIT",
   "type": "module",
