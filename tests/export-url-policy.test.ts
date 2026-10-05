@@ -69,7 +69,7 @@ describe('SC-003 — hero primary CTA with a policy-passing URL', () => {
   })
 })
 
-describe('SC-004 — settings image URLs use the { image: true } rule', () => {
+describe('SC-004 — settings image URLs are policy-gated', () => {
   it('omits both elements when the sources fail the policy', () => {
     const html = exportSiteToHTML(heroConfig({}), {
       settings: {
@@ -92,6 +92,41 @@ describe('SC-004 — settings image URLs use the { image: true } rule', () => {
 
     expect(html).toContain('rel="icon"')
     expect(html).toContain('property="og:image"')
+  })
+
+  // These two cases are the reason favicon/og use the GENERAL policy rather than
+  // the https-only image rule: both are pre-existing settings on published
+  // sites, and the strict rule silently dropped them on republish. The frozen
+  // legacy fixture cannot catch this — it uses absolute https URLs throughout.
+  it('keeps a relative favicon and og-image (a published site must not lose them)', () => {
+    const html = exportSiteToHTML(heroConfig({}), {
+      settings: { faviconUrl: '/favicon.ico', ogImageUrl: '/og.png' },
+    })
+
+    expect(html).toContain('href="/favicon.ico"')
+    expect(html).toContain('content="/og.png"')
+  })
+
+  it('keeps an http: favicon and og-image', () => {
+    const html = exportSiteToHTML(heroConfig({}), {
+      settings: {
+        faviconUrl: 'http://cdn.example.com/favicon.ico',
+        ogImageUrl: 'http://cdn.example.com/og.png',
+      },
+    })
+
+    expect(html).toContain('href="http://cdn.example.com/favicon.ico"')
+    expect(html).toContain('content="http://cdn.example.com/og.png"')
+  })
+
+  it('still rejects the dangerous schemes the general policy denies', () => {
+    for (const bad of ['vbscript:x', '//evil.example/f.ico', 'java\tscript:x']) {
+      const html = exportSiteToHTML(heroConfig({}), {
+        settings: { faviconUrl: bad, ogImageUrl: bad },
+      })
+      expect(html).not.toContain('rel="icon"')
+      expect(html).not.toContain('property="og:image"')
+    }
   })
 })
 

@@ -140,6 +140,19 @@ const CASES: GoldenCase[] = [
 const FIXTURE_DIR = resolve(import.meta.dirname, 'fixtures/export-blocks-golden')
 const UPDATE = Boolean(process.env.UPDATE_GOLDEN)
 
+// UPDATE_GOLDEN is a deliberate local escape hatch for regenerating fixtures
+// after an intended markup change (see the file header). In CI it would turn
+// this suite into a silent no-op — every case would rewrite its fixture and
+// assert `true`, so SC-006 would pass without comparing anything. Fail closed
+// instead: if the variable is set alongside CI, refuse to run rather than
+// report a green suite that proved nothing.
+if (UPDATE && process.env.CI) {
+  throw new Error(
+    'UPDATE_GOLDEN is set while CI is set — the golden suite would rewrite its ' +
+      'fixtures and assert nothing. Unset UPDATE_GOLDEN to run the real comparison.',
+  )
+}
+
 describe('SC-006 — golden markup for the six new renderers', () => {
   for (const c of CASES) {
     it(`${c.type}-${c.variant}`, () => {

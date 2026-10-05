@@ -1234,10 +1234,18 @@ export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
   const ogTitle = (settings?.seoTitle || settings?.siteName || pageTitle).trim()
   const ogDescription = (settings?.seoDescription || settings?.siteDescription || pageDescription).trim()
+  // Favicon/og-image use the GENERAL policy, not the https-only image rule.
+  // These are pre-existing settings on already-published sites, and the image
+  // rule would silently drop a relative (`/favicon.ico`) or `http:` value from
+  // every such site on republish — a content regression the frozen legacy
+  // fixture cannot detect, because it happens to use absolute https URLs. The
+  // general policy still rejects `javascript:`/`data:`/`vbscript:`/`//`, which
+  // is the security property that matters here. Same reasoning as the
+  // `logoImage`/`heroImage`/`avatar` gates below.
   const ogImageRaw = (settings?.ogImageUrl || '').trim()
-  const ogImage = isAllowedUrl(ogImageRaw, { image: true }) ? ogImageRaw : ''
+  const ogImage = isAllowedUrl(ogImageRaw) ? ogImageRaw : ''
   const faviconUrlRaw = (settings?.faviconUrl || '').trim()
-  const faviconUrl = isAllowedUrl(faviconUrlRaw, { image: true }) ? faviconUrlRaw : ''
+  const faviconUrl = isAllowedUrl(faviconUrlRaw) ? faviconUrlRaw : ''
   const gaId = (settings?.gaId || '').trim()
   const posthogKey = (settings?.posthogKey || '').trim()
   const lang = normalizeLanguage(settings?.language)
