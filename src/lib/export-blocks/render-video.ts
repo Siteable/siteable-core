@@ -1,6 +1,6 @@
 import type { BlockConfig } from '@/blocks/types'
 import { escapeHtml } from '@/lib/html-escape'
-import { extractVimeoId, extractYouTubeId } from '@/lib/video-embed'
+import { videoEmbedUrl } from '@/lib/video-embed'
 
 /**
  * `video` block (variants: youtube default, vimeo).
@@ -16,16 +16,7 @@ const PLAY_ICON =
 export function renderVideo(block: BlockConfig): string {
   const url = typeof block.props.url === 'string' ? block.props.url : ''
   const title = typeof block.props.title === 'string' ? block.props.title : ''
-  const isVimeo = block.variant === 'vimeo'
-
-  const id = isVimeo ? extractVimeoId(url) : extractYouTubeId(url)
-  const embedUrl = isVimeo
-    ? id
-      ? `https://player.vimeo.com/video/${id}`
-      : null
-    : id
-      ? `https://www.youtube-nocookie.com/embed/${id}`
-      : null
+  const embedUrl = videoEmbedUrl(url, block.variant)
 
   const titleHtml = title
     ? `      <h2 class="text-xl font-semibold mb-4 text-center">${escapeHtml(title)}</h2>`
