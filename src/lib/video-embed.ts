@@ -16,3 +16,19 @@ export function extractVimeoId(url: string): string | null {
   const match = url.match(/vimeo\.com\/(\d+)/)
   return match?.[1] || null
 }
+
+/**
+ * The iframe `src` the engine embeds for a `video` block, or `null` when the
+ * url yields no id (the renderer then shows a placeholder). The single
+ * variant decision point for the React `VideoBlock`, the export renderer, and
+ * any consumer asking "will this url actually embed?" — `vimeo` selects the
+ * Vimeo extractor, every other variant (including none) is YouTube.
+ */
+export function videoEmbedUrl(url: string, variant: string | undefined): string | null {
+  if (variant === 'vimeo') {
+    const id = extractVimeoId(url)
+    return id ? `https://player.vimeo.com/video/${id}` : null
+  }
+  const id = extractYouTubeId(url)
+  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null
+}

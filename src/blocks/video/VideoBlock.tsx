@@ -1,6 +1,6 @@
 import { Play } from 'lucide-react'
 import type { BlockConfig } from '../types'
-import { extractYouTubeId, extractVimeoId } from '@/lib/video-embed'
+import { videoEmbedUrl } from '@/lib/video-embed'
 
 function Placeholder() {
   return (
@@ -17,16 +17,7 @@ export function VideoBlock({ block }: { block: BlockConfig }) {
   const url = (props.url as string) || ''
   const title = props.title as string | undefined
 
-  let embedUrl: string | null = null
-
-  if (variant === 'vimeo') {
-    const id = extractVimeoId(url)
-    if (id) embedUrl = `https://player.vimeo.com/video/${id}`
-  } else {
-    // youtube (default)
-    const id = extractYouTubeId(url)
-    if (id) embedUrl = `https://www.youtube-nocookie.com/embed/${id}`
-  }
+  const embedUrl = videoEmbedUrl(url, variant)
 
   return (
     <div className="px-6 py-12 @lg:px-16 @lg:py-16">
