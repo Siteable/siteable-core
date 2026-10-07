@@ -2,10 +2,12 @@
  * @siteable/core — public barrel
  *
  * Surface every public named export from each module that ships with the package.
- * Consumers MUST import through this entry (NF-002: no `exports` field, but
- * convention-enforced — deep imports like `@siteable/core/src/store/configStore`
- * would instantiate a second zustand singleton inside one app, breaking the
- * single-store invariant when both private app + package copy coexist).
+ * Consumers MUST import through this entry (or `@siteable/core/worker` for
+ * server/edge code). `package.json` has an `exports` map that exposes only `.`,
+ * `./worker`, `./src/styles.css` and `./package.json`, so a deep import like
+ * `@siteable/core/src/store/configStore` is rejected by the resolver — it would
+ * instantiate a second zustand singleton inside one app, breaking the
+ * single-store invariant when both private app + package copy coexist.
  *
  * SC-001: enumerate every named export, with `validateSiteConfig` explicit.
  */
@@ -95,6 +97,9 @@ export {
   previewHTML,
 } from './lib/export-html'
 
+// ── Lib — export-site-pages (multi-page export) ────────────────────────────
+export { type PageDocument, exportSitePages } from './lib/export-site-pages'
+
 // ── Lib — generate-site (Gemini + injectable server fallback) ───────────────
 export {
   type GenerationResult,
@@ -107,6 +112,11 @@ export { GENERATION_PROMPT } from './lib/generation-prompt'
 
 // ── Lib — markdown ──────────────────────────────────────────────────────────
 export { renderMarkdown } from './lib/markdown'
+
+// ── Lib — page-path (published URL per page + raw-path shape predicate) ─────
+// Framework-free on purpose (NF-005): a server or edge runtime and a consuming
+// app's import check can consume these two without pulling any UI module along.
+export { normalizePagePaths, isValidPagePath } from './lib/page-path'
 
 // ── Lib — url policy (shared href/src allow-list, FR-004) ───────────────────
 export { isAllowedUrl, type UrlPolicyOptions } from './lib/url-policy'

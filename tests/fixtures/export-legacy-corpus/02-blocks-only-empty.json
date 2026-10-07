@@ -1,0 +1,6 @@
+{
+  "slug": "02-blocks-only-empty",
+  "note": "No `pages`, empty top-level `blocks`. Freezes the document shell with no body content (no faq script, empty block markup).",
+  "config": { "name": "Corpus Two", "blocks": [] },
+  "options": null
+}

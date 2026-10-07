@@ -1,0 +1,13 @@
+{
+  "slug": "03-pages-empty-list",
+  "note": "`pages: []` — present but empty. FR-001 routes this to a single `/` document rendered from top-level blocks, so the legacy output must still be the blocks-only document.",
+  "config": {
+    "name": "Corpus Three",
+    "pages": [],
+    "blocks": [
+      { "id": "h-1", "type": "hero", "variant": "gradient", "props": { "headline": "Empty page list", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+      { "id": "ft-1", "type": "footer", "variant": "minimal", "props": { "copyright": "(c) 2026 Acme" } }
+    ]
+  },
+  "options": null
+}

@@ -1219,16 +1219,93 @@ function renderBlockMarkup(block: BlockConfig): string {
 // Main export
 // ---------------------------------------------------------------------------
 
-export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions): string {
+/**
+ * FR-001 — the blocks behind the `/` page.
+ *
+ * Page 1 is ALWAYS `/` after normalization (`page-path.ts` discards page 1's
+ * authored path and promotes it), so "the `/` page" is simply "page 1" — no
+ * search for a page whose path is `/`, which could find none. An absent or empty
+ * page list means the config predates `pages[]`: the top-level blocks ARE the
+ * one document, exactly as in earlier releases.
+ *
+ * CROSS-MODULE INVARIANT: `out[0] = '/'` is assigned unconditionally in
+ * `page-path.ts` before any demotion runs. If a future change to rules 2–4 ever
+ * lets `/` land on a later page, this function silently starts returning a
+ * non-`/` document — `tests/export-site-pages.test.ts` pins the coupling from
+ * both sides (path list AND block pairing), so that refactor fails there.
+ *
+ * FR-C2: every step is guarded. `pages` is `unknown` in practice — this is a
+ * published entry point fed configs parsed from JSON, where `pages` can be a
+ * string, a number, `null`, or an array of holes — and `pages[0]` can itself be
+ * `null` with `blocks` absent or `null`. `renderDocument` calls `blocks.some(...)`
+ * immediately, so an unguarded read turns any of those into a `TypeError` on a
+ * config `main` exported fine (it read `config.blocks` and never touched
+ * `pages`). Tolerant, not loud: a malformed page list degrades to an
+ * EMPTY body rather than throwing, matching what `exportSitePages` already did
+ * with its own `?? []` guards one line away.
+ *
+ * NOTE the data-loss consequence, which is why README states it: a NON-EMPTY
+ * `pages` array is authoritative, so a page 1 with no blocks publishes a BLANK
+ * home page. The alternative — falling back to `config.blocks` — would resurrect
+ * a stale mirror that `pages[]` exists to supersede, so the silent blank is the
+ * honest outcome and is documented instead.
+ */
+function homeBlocks(config: SiteConfig): BlockConfig[] {
+  const pages = config.pages
+  if (!Array.isArray(pages) || pages.length === 0) return asBlockList(config.blocks)
+  return asBlockList(pages[0]?.blocks)
+}
+
+/**
+ * FR-C2 — coerce a page's `blocks` to a list, or `[]` when it is not one.
+ *
+ * `?? []` alone is NOT enough, and an earlier review caught this: it covers `null` and
+ * `undefined` but passes a STRING, NUMBER or OBJECT straight through, and
+ * `renderDocument` calls `blocks.some(...)` immediately — so `pages:[{blocks:'x'}]`
+ * threw the identical `TypeError` the guard exists to remove. `Array.isArray`
+ * is the only check that closes the class rather than two instances of it; the
+ * same reasoning applies verbatim to a top-level `blocks`, which is why the
+ * legacy fallback path goes through here too.
+ */
+function asBlockList(value: unknown): BlockConfig[] {
+  return Array.isArray(value) ? (value as BlockConfig[]) : []
+}
+
+/**
+ * Render one complete document. Everything except the body is SITE-level
+ * (theme, fonts, settings, title, OG, analytics), so it is shared by every page
+ * of a multi-page export; only `blocks` varies, and only the body reads it
+ * (`hasFaq` + `blocksHtml` — now reads of `body`, the guarded local; they are
+ * the ONLY two body reads in this file; `renderDocument` itself never reads
+ * `config.blocks` - only `homeBlocks` does, to choose what to pass in). `seenIds` is per document, not per site, so two pages may reuse the
+ * same block ids without colliding.
+ *
+ * Module-exported for `export-site-pages.ts`; deliberately NOT on the barrel —
+ * it is an implementation seam between two lib modules, not a package API.
+ */
+export function renderDocument(
+  config: SiteConfig,
+  blocks: BlockConfig[],
+  options?: ExportSiteOptions,
+): string {
+  // FR-C2: `blocks` is guarded HERE rather than only at each call site, because
+  // this is the one function both public entry points pass it through. An earlier
+  // review found that guarding `homeBlocks` (in this file) and `export-site-pages.ts`
+  // with `?? []` still left `pages:[{blocks:'x'}]` throwing at the very next
+  // line — and fixing the second call site alone would have been a third
+  // instance of the same bug for the next caller. One guard at the seam is
+  // what makes it class-complete; `[]` costs that one page its body rather
+  // than aborting the whole render, which is the documented tolerant behaviour.
+  const body = asBlockList(blocks)
   const theme = resolveTheme(config.theme)
   const fonts = [theme.fontSans, theme.fontDisplay, theme.fontMono]
   const fontUrl = googleFontUrl(fonts)
   const settings = options?.settings
 
-  const hasFaq = config.blocks.some((b) => b.type === 'faq')
+  const hasFaq = body.some((b) => b.type === 'faq')
 
   const seenIds = new Set<string>()
-  const blocksHtml = config.blocks.map((b) => renderBlock(b, seenIds)).join('\n\n')
+  const blocksHtml = body.map((b) => renderBlock(b, seenIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
@@ -1427,6 +1504,15 @@ ${blocksHtml}
 ${faqScript}
 </body>
 </html>`
+}
+
+/**
+ * FR-001 — the single-document export. Under a non-empty page list this is the
+ * `/` page (page 1); it is never the last-edited page, which is the behaviour
+ * change the spec accepts. Callers that want every page use `exportSitePages`.
+ */
+export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions): string {
+  return renderDocument(config, homeBlocks(config), options)
 }
 
 export async function exportToHTML(
