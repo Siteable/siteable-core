@@ -1,0 +1,35 @@
+{
+  "slug": "05-single-page-home-with-settings",
+  "note": "Single `/` page + a full settings object. Freezes every site-level branch the document shell owns (seo title/description, og, favicon, language, ga, posthog) together with the faq script branch.",
+  "config": {
+    "name": "Corpus Five",
+    "pages": [
+      {
+        "id": "page-home",
+        "name": "Home",
+        "path": "/",
+        "blocks": [
+          { "id": "h-1", "type": "hero", "variant": "gradient", "props": { "headline": "With settings", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+          { "id": "q-1", "type": "faq", "variant": "accordion", "props": { "title": "FAQ", "items": [ { "question": "Why settings?", "answer": "Freezes the shell branches" } ] } }
+        ]
+      }
+    ],
+    "blocks": [
+      { "id": "h-1", "type": "hero", "variant": "gradient", "props": { "headline": "With settings", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+      { "id": "q-1", "type": "faq", "variant": "accordion", "props": { "title": "FAQ", "items": [ { "question": "Why settings?", "answer": "Freezes the shell branches" } ] } }
+    ]
+  },
+  "options": {
+    "settings": {
+      "siteName": "Acme",
+      "siteDescription": "A site description",
+      "seoTitle": "Acme — corpus five",
+      "seoDescription": "A frozen legacy export with settings",
+      "language": "English",
+      "faviconUrl": "https://cdn.example.com/favicon.ico",
+      "ogImageUrl": "https://cdn.example.com/og.png",
+      "gaId": "G-CORPUS05",
+      "posthogKey": "phc_corpus_five"
+    }
+  }
+}

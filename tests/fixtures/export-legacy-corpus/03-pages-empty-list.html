@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corpus Three</title>
+  <meta property="og:title" content="Corpus Three" />
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" />
+
+  <!-- Tailwind CSS (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-0': '#09090b',
+            'bg-1': '#0f0f12',
+            'bg-2': '#18181b',
+            'bg-3': '#1e1e23',
+            'bg-4': '#27272a',
+            'bg-5': '#303036',
+            'text-0': '#fafafa',
+            'text-1': '#a1a1aa',
+            'text-2': '#71717a',
+            'text-3': '#52525b',
+            'green': {
+              DEFAULT: '#22c55e',
+              dim: '#16a34a',
+            },
+            'border-default': '#2a2a2f',
+            'border-subtle': '#1f1f24',
+            'border-hover': '#3a3a3f',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', '-apple-system', 'system-ui', 'sans-serif'],
+            display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          borderRadius: {
+            DEFAULT: '8px',
+            lg: '12px',
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Theme CSS Custom Properties -->
+  <style>
+    :root {
+      --color-bg-0: #09090b;
+      --color-bg-1: #0f0f12;
+      --color-bg-2: #18181b;
+      --color-bg-3: #1e1e23;
+      --color-bg-4: #27272a;
+      --color-bg-5: #303036;
+      --color-text-0: #fafafa;
+      --color-text-1: #a1a1aa;
+      --color-text-2: #71717a;
+      --color-text-3: #52525b;
+      --color-green: #22c55e;
+      --color-green-dim: #16a34a;
+      --color-border-default: #2a2a2f;
+      --color-border-subtle: #1f1f24;
+      --color-border-hover: #3a3a3f;
+      --font-sans: "DM Sans", -apple-system, system-ui, sans-serif;
+      --font-display: "Space Grotesk", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+      --radius-default: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: "DM Sans", -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    .faq-content {
+      transition: max-height 0.2s ease, padding-bottom 0.2s ease;
+    }
+
+    .faq-chevron {
+      transition: transform 0.2s ease;
+    }
+  </style>
+
+
+</head>
+<body>
+
+  <section id="h-1" class="px-6 md:px-10 py-20 md:py-32 text-center relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-green/5 via-transparent to-transparent pointer-events-none"></div>
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-green/[0.08] rounded-full blur-[100px] pointer-events-none"></div>
+      <div class="relative z-10">
+
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 max-w-3xl mx-auto text-text-0">Empty page list</h1>
+        <p class="text-text-2 text-base md:text-lg leading-relaxed max-w-xl mx-auto mb-8"></p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a href="https://example.com/start" class="px-6 py-3 rounded-lg bg-green text-black text-sm font-semibold hover:bg-green-dim transition-all inline-flex items-center gap-2">Start</a>
+
+        </div>
+      </div>
+  </section>
+
+  <footer id="ft-1" class="px-6 md:px-10 py-6">
+      <div class="flex items-center justify-center gap-1.5 text-[11px] text-text-3">
+        <span>(c) 2026 Acme</span>
+        
+        
+      </div>
+  </footer>
+
+</body>
+</html>

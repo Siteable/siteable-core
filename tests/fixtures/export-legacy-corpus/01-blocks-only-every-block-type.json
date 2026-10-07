@@ -1,0 +1,31 @@
+{
+  "slug": "01-blocks-only-every-block-type",
+  "note": "No `pages`, no options. One instance of every block type the exporter renders, so any render-path drift between releases shows up as a byte diff.",
+  "config": {
+    "name": "Corpus One",
+    "blocks": [
+      { "id": "n-1", "type": "navbar", "variant": "default", "props": { "logo": "Acme", "logoImage": "https://cdn.example.com/logo.png", "links": ["Product", "Pricing"], "ctaText": "Start", "ctaUrl": "https://example.com/start" } },
+      { "id": "h-1", "type": "hero", "variant": "centered", "props": { "badge": "New", "headline": "Ship faster", "subheadline": "Corpus one", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start", "secondaryCta": "Docs", "secondaryCtaUrl": "https://example.com/docs" } },
+      { "id": "h-2", "type": "hero", "variant": "split", "props": { "headline": "Split hero", "heroImage": "https://cdn.example.com/hero.png", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+      { "id": "f-1", "type": "features", "variant": "grid", "props": { "label": "Features", "title": "Everything", "items": [ { "icon": "A", "title": "Alpha", "description": "First" }, { "icon": "B", "title": "Beta", "description": "Second" } ] } },
+      { "id": "p-1", "type": "pricing", "variant": "simple", "props": { "title": "Pricing", "tiers": [ { "name": "Free", "price": "$0", "features": ["One"], "ctaText": "Start" }, { "name": "Pro", "price": "$20", "features": ["One", "Two"], "ctaText": "Go", "featured": true } ] } },
+      { "id": "c-1", "type": "cta", "variant": "simple", "props": { "headline": "Ready?", "buttonText": "Sign up", "buttonUrl": "https://example.com/signup" } },
+      { "id": "t-1", "type": "testimonials", "variant": "cards", "props": { "title": "Loved", "items": [ { "quote": "Great", "name": "Ada", "role": "CTO", "rating": 5 } ] } },
+      { "id": "s-1", "type": "stats", "variant": "grid", "props": { "title": "Numbers", "items": [ { "value": "1k+", "label": "Users" } ] } },
+      { "id": "q-1", "type": "faq", "variant": "accordion", "props": { "title": "FAQ", "items": [ { "question": "What?", "answer": "A corpus fixture" } ] } },
+      { "id": "tm-1", "type": "team", "variant": "grid", "props": { "title": "Team", "members": [ { "name": "Ada", "role": "CTO" } ] } },
+      { "id": "ct-1", "type": "contact", "variant": "form", "props": { "title": "Contact" } },
+      { "id": "nl-1", "type": "newsletter", "variant": "simple", "props": { "title": "Newsletter", "buttonText": "Subscribe" } },
+      { "id": "lc-1", "type": "logocloud", "variant": "default", "props": { "title": "Trusted by", "logos": ["Vercel", "Stripe"] } },
+      { "id": "cn-1", "type": "content", "variant": "prose", "props": { "title": "Content", "body": "Some **markdown** body text." } },
+      { "id": "im-1", "type": "image", "variant": "default", "props": { "src": "https://cdn.example.com/a.png", "alt": "An image" } },
+      { "id": "vd-1", "type": "video", "variant": "youtube", "props": { "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "title": "A video" } },
+      { "id": "vd-2", "type": "video", "variant": "vimeo", "props": { "url": "https://vimeo.com/76979871" } },
+      { "id": "g-1", "type": "gallery", "variant": "grid", "props": { "title": "Gallery", "images": [ { "src": "https://cdn.example.com/1.png", "alt": "One" }, { "src": "https://cdn.example.com/2.png", "alt": "Two" } ] } },
+      { "id": "d-1", "type": "divider", "variant": "default", "props": {} },
+      { "id": "b-1", "type": "banner", "variant": "default", "props": { "text": "A banner", "url": "https://example.com/banner" } },
+      { "id": "ft-1", "type": "footer", "variant": "simple", "props": { "logo": "Acme", "copyright": "(c) 2026 Acme", "links": ["Privacy", "Terms"] } }
+    ]
+  },
+  "options": null
+}

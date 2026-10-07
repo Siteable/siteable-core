@@ -1,0 +1,29 @@
+{
+  "slug": "06-single-page-home-with-theme",
+  "note": "Single `/` page with a partial theme override. The theme drives the whole `<style>` block and the google-fonts link, so it is the largest single source of bytes in the document.",
+  "config": {
+    "name": "Corpus Six",
+    "pages": [
+      {
+        "id": "page-home",
+        "name": "Home",
+        "path": "/",
+        "blocks": [
+          { "id": "h-1", "type": "hero", "variant": "split", "props": { "headline": "Themed", "heroImage": "https://cdn.example.com/hero.png" } }
+        ]
+      }
+    ],
+    "blocks": [
+      { "id": "h-1", "type": "hero", "variant": "split", "props": { "headline": "Themed", "heroImage": "https://cdn.example.com/hero.png" } }
+    ],
+    "theme": {
+      "fontSans": "Inter",
+      "fontDisplay": "Playfair Display",
+      "accent": "#0f766e",
+      "bg0": "#fdfdfc",
+      "text0": "#1c1917",
+      "radius": 6
+    }
+  },
+  "options": null
+}

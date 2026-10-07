@@ -1,0 +1,25 @@
+{
+  "slug": "04-single-page-home",
+  "note": "Single page at path `/` whose blocks are byte-equal to top-level `blocks`, no options. This is the worker wrapping path (`generate-site.ts`) and must render identically to the blocks-only case.",
+  "config": {
+    "name": "Corpus Four",
+    "pages": [
+      {
+        "id": "page-home",
+        "name": "Home",
+        "path": "/",
+        "blocks": [
+          { "id": "h-1", "type": "hero", "variant": "centered", "props": { "headline": "Home page", "subheadline": "Wrapped", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+          { "id": "f-1", "type": "features", "variant": "list", "props": { "title": "Listed", "items": [ { "icon": "A", "title": "Alpha", "description": "First" } ] } },
+          { "id": "ft-1", "type": "footer", "variant": "simple", "props": { "logo": "Acme", "copyright": "(c) 2026 Acme" } }
+        ]
+      }
+    ],
+    "blocks": [
+      { "id": "h-1", "type": "hero", "variant": "centered", "props": { "headline": "Home page", "subheadline": "Wrapped", "primaryCta": "Start", "primaryCtaUrl": "https://example.com/start" } },
+      { "id": "f-1", "type": "features", "variant": "list", "props": { "title": "Listed", "items": [ { "icon": "A", "title": "Alpha", "description": "First" } ] } },
+      { "id": "ft-1", "type": "footer", "variant": "simple", "props": { "logo": "Acme", "copyright": "(c) 2026 Acme" } }
+    ]
+  },
+  "options": null
+}

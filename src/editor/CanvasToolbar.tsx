@@ -18,6 +18,7 @@ import { useEditorStore, type Viewport } from '@/store/editorStore'
 import { useConfigStore } from '@/store/configStore'
 import type { PageConfig } from '@/blocks/types'
 import { exportToHTML, downloadHTML, type ExportSiteSettings } from '@/lib/export-html'
+import { isValidPagePath, slugifyPagePath } from '@/lib/page-path'
 
 const viewports: { value: Viewport; icon: typeof Monitor; label: string }[] = [
   { value: 'desktop', icon: Monitor, label: 'Desktop' },
@@ -25,9 +26,20 @@ const viewports: { value: Viewport; icon: typeof Monitor; label: string }[] = [
   { value: 'mobile', icon: Smartphone, label: 'Mobile' },
 ]
 
-function AddPagePopover({ onAdd, onClose }: { onAdd: (name: string, path: string) => void; onClose: () => void }) {
+function AddPagePopover({ onAdd, onClose, existingPaths }: {
+  onAdd: (name: string, path: string) => void
+  onClose: () => void
+  existingPaths: string[]
+}) {
   const [name, setName] = useState('')
   const [path, setPath] = useState('/')
+  // Whether the PATH is the auto-suggestion or something the user typed. This
+  // is tracked as state rather than sniffed from the path's VALUE: sniffing
+  // `path === '/'` meant the very first keystroke replaced `/` with `/c` and
+  // the suggestion then froze on that first character, so typing
+  // "Contact & Info" character by character suggested `/c`.
+  const [pathEdited, setPathEdited] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -35,7 +47,20 @@ function AddPagePopover({ onAdd, onClose }: { onAdd: (name: string, path: string
   function submit() {
     const trimmed = name.trim()
     if (!trimmed) return
-    const cleanPath = path.trim() || `/${trimmed.toLowerCase().replace(/\s+/g, '-')}`
+    // The suggested default comes from the SAME rule-1 slugifier the exporter
+    // applies, so the flow can never reject its own suggestion (SC-003).
+    const cleanPath = path.trim() || slugifyPagePath(trimmed)
+    // FR-003 — reject before the store, so a rejected path leaves the page list
+    // untouched. Duplicate check is EXACT raw equality against existing paths
+    // (spec-literal); the publish normalizer resolves anything looser.
+    if (!isValidPagePath(cleanPath)) {
+      setError('Use lowercase letters, numbers and dashes, up to 3 levels, e.g. /about')
+      return
+    }
+    if (existingPaths.includes(cleanPath)) {
+      setError(`A page already uses ${cleanPath}`)
+      return
+    }
     onAdd(trimmed, cleanPath)
     onClose()
   }
@@ -44,13 +69,15 @@ function AddPagePopover({ onAdd, onClose }: { onAdd: (name: string, path: string
     <div className="absolute top-full left-0 mt-1 bg-bg-2 border border-border-default rounded-lg p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20 w-52">
       <div className="space-y-2">
         <div>
-          <label className="block text-[10px] text-text-3 mb-0.5">Page name</label>
+          <label htmlFor="add-page-name" className="block text-[10px] text-text-3 mb-0.5">Page name</label>
           <input
+            id="add-page-name"
             ref={inputRef}
             value={name}
             onChange={(e) => {
               setName(e.target.value)
-              if (!path || path === '/') setPath(`/${e.target.value.toLowerCase().replace(/\s+/g, '-')}`)
+              setError(null)
+              if (!pathEdited) setPath(slugifyPagePath(e.target.value))
             }}
             onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
             placeholder="About"
@@ -58,14 +85,26 @@ function AddPagePopover({ onAdd, onClose }: { onAdd: (name: string, path: string
           />
         </div>
         <div>
-          <label className="block text-[10px] text-text-3 mb-0.5">Path</label>
+          {/* The error is only useful if it is attached to the field it is about,
+              so the input gets a real label + description rather than relying on
+              proximity. `role="alert"` already announces assertively; an explicit
+              `aria-live` here would contradict it. */}
+          <label htmlFor="add-page-path" className="block text-[10px] text-text-3 mb-0.5">Path</label>
           <input
+            id="add-page-path"
             value={path}
-            onChange={(e) => setPath(e.target.value)}
+            onChange={(e) => { setPath(e.target.value); setPathEdited(true); setError(null) }}
             onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') onClose() }}
             placeholder="/about"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'add-page-path-error' : undefined}
             className="w-full px-2 py-1.5 rounded border border-border-default bg-bg-3 text-text-0 text-[11.5px] outline-none focus:border-green font-mono"
           />
+          {error && (
+            <p id="add-page-path-error" role="alert" className="text-status-red text-[10px] mt-1 leading-tight">
+              {error}
+            </p>
+          )}
         </div>
         <button
           onClick={submit}
@@ -235,6 +274,7 @@ export function CanvasToolbar({ activeProject, onExit }: CanvasToolbarProps = {}
             <AddPagePopover
               onAdd={(name, path) => addPage(name, path)}
               onClose={() => setShowAddPage(false)}
+              existingPaths={pages.map((p) => p.path)}
             />
           )}
         </div>
