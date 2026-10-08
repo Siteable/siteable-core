@@ -119,6 +119,44 @@ function validateTheme(raw: Record<string, unknown>): Partial<ThemeConfig> {
   return theme
 }
 
+// Keys that describe the block itself rather than its content.
+const BLOCK_META_KEYS = new Set(['id', 'type', 'variant', 'props'])
+
+// Optional props the block components read but defaultProps omit (they are documented
+// in GENERATION_PROMPT). A flattened key is only treated as content when it is in
+// defaultProps or listed here, so stray block-level keys a generator may add
+// (locked, name, style, pageId, ...) are dropped instead of persisted into props.
+// Keep in sync with GENERATION_PROMPT. Nested `props` is NOT filtered by this list.
+const FLAT_EXTRA_PROPS: Record<string, readonly string[]> = {
+  navbar: ['logoImage'],
+  hero: ['primaryCtaUrl', 'secondaryCtaUrl', 'heroImage'],
+  features: ['label'],
+  cta: ['buttonUrl'],
+  footer: ['logoImage'],
+  testimonials: ['subtitle'],
+  faq: ['subtitle'],
+  newsletter: ['socialProof'],
+  image: ['src', 'alt'],
+}
+
+// Generators routinely emit props flattened onto the block object instead of
+// nesting them under `props` — the shape our own GENERATION_PROMPT used to illustrate.
+// Reading only `raw.props` silently replaced such content with defaults, losing
+// every word of real copy. Collect known inline keys so both shapes are accepted.
+function collectInlineProps(
+  raw: Record<string, unknown>,
+  type: string,
+  defaultProps: Record<string, unknown>,
+): Record<string, unknown> {
+  const extra = FLAT_EXTRA_PROPS[type] ?? []
+  const inline: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (BLOCK_META_KEYS.has(key)) continue
+    if (key in defaultProps || extra.includes(key)) inline[key] = value
+  }
+  return inline
+}
+
 function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig | null {
   // ISS-005 hardening: blocks arrays may contain null/primitives from hostile or
   // malformed AI output — validateSiteConfig must never throw by design.
@@ -137,8 +175,15 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   // shape (generic, no per-block guards) before merging over the defaults.
   // Phase 04: the block's declared link-array paths keep {label,href} intact.
   const linkArrays = LINK_ARRAYS_MAP[type] || []
-  const props = typeof raw.props === 'object' && raw.props
-    ? { ...defaultProps, ...normalizeBlockProps(raw.props, defaultProps, linkArrays) }
+  // Accept both prop shapes — nested under `props`, or flattened onto the block.
+  // Nested wins on conflict. An empty result still yields defaultProps, which is
+  // what a bare {id,type,variant} block has always produced.
+  const nestedProps = typeof raw.props === 'object' && raw.props && !Array.isArray(raw.props)
+    ? (raw.props as Record<string, unknown>)
+    : {}
+  const rawProps = { ...collectInlineProps(raw, type, defaultProps), ...nestedProps }
+  const props = Object.keys(rawProps).length > 0
+    ? { ...defaultProps, ...normalizeBlockProps(rawProps, defaultProps, linkArrays) }
     : defaultProps
 
   return {

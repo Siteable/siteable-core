@@ -163,3 +163,139 @@ describe('generateSiteConfig — tier-2 onServerFallback validation (ISS-005 hol
     expect(result.source).toBe('template')
   })
 })
+
+// Generators (including third-party ones driving Google AI Studio) emit props
+// flattened onto the block object — `{ type: "hero", headline: "..." }` — matching
+// the flat form our own GENERATION_PROMPT illustrates. validateBlock read only
+// `raw.props`, so every block fell back to defaultProps: the import "succeeded"
+// and produced an English demo site with zero of the authored copy.
+describe('validateSiteConfig — flattened (inline) block props', () => {
+  it('keeps authored copy when props are flattened onto the block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{
+        id: 'hero-1', type: 'hero', variant: 'centered',
+        badge: 'sample badge',
+        headline: 'authored headline',
+        subheadline: 'authored subheadline',
+        primaryCta: 'authored primary cta',
+        secondaryCta: 'authored secondary cta',
+      }],
+    })
+    expect(firstBlockProps(config)).toEqual({
+      badge: 'sample badge',
+      headline: 'authored headline',
+      subheadline: 'authored subheadline',
+      primaryCta: 'authored primary cta',
+      secondaryCta: 'authored secondary cta',
+    })
+  })
+
+  it('never leaks block meta keys (id/type/variant/props) into props', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ id: 'block-hero-1', type: 'hero', variant: 'gradient', headline: 'authored headline' }],
+    })
+    const props = firstBlockProps(config)
+    expect(props).not.toHaveProperty('id')
+    expect(props).not.toHaveProperty('type')
+    expect(props).not.toHaveProperty('variant')
+    expect(props).not.toHaveProperty('props')
+  })
+
+  it('nested props win over flattened ones when both are present', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'hero', headline: 'flattened', props: { headline: 'nested' } }],
+    })
+    expect(firstBlockProps(config).headline).toBe('nested')
+  })
+
+  it('a bare block with only meta keys still yields defaultProps', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ id: 'x', type: 'hero', variant: 'split' }] })
+    expect(firstBlockProps(config).headline).toBe('Your Headline Here')
+  })
+
+  it('inline nested shapes survive (features items, faq, footer columns)', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        {
+          id: 'f1', type: 'features', variant: 'list', label: 'sample label', title: 'authored title',
+          items: [{ icon: 'Layers', title: 'item title', description: 'item description' }],
+        },
+        {
+          id: 'q1', type: 'faq', variant: 'accordion', title: 'authored faq title',
+          items: [{ question: 'authored question', answer: 'authored answer' }],
+        },
+        {
+          id: 'ft1', type: 'footer', variant: 'multi-column', logo: 'Sample',
+          copyright: 'copyright text',
+          columns: [{ title: 'authored column', links: ['Link one', 'Link two'] }],
+        },
+      ],
+    })
+    const blocks = config.pages![0].blocks
+    expect(blocks[0].props.items).toEqual([
+      { icon: 'Layers', title: 'item title', description: 'item description' },
+    ])
+    expect(blocks[0].props.title).toBe('authored title')
+    expect(blocks[1].props.items).toEqual([
+      { question: 'authored question', answer: 'authored answer' },
+    ])
+    expect((blocks[2].props.columns as { title: string }[])[0].title).toBe('authored column')
+  })
+
+  it('inline props inside a multi-page doc keep their page assignment', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      pages: [
+        { id: 'page-home', name: 'Home', path: '/', blocks: [
+          { id: 'h', type: 'hero', variant: 'centered', headline: 'home headline' },
+        ] },
+        { id: 'page-two', name: 'Two', path: '/two', blocks: [
+          { id: 'c', type: 'contact', variant: 'form', title: 'two title' },
+        ] },
+      ],
+    })
+    expect(config.pages![0].blocks[0].props.headline).toBe('home headline')
+    expect(config.pages![1].blocks[0].props.title).toBe('two title')
+  })
+  it('flattened link objects survive on navbar and footer columns', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        { id: 'n', type: 'navbar', logo: 'Sample', links: [{ label: 'Pricing', href: '/pricing' }] },
+        { id: 'f', type: 'footer', variant: 'multi-column', columns: [{ title: 'Site', links: [{ label: 'About', href: '/about' }] }] },
+      ],
+    })
+    const blocks = config.pages![0].blocks
+    expect(blocks[0].props.links).toEqual([{ label: 'Pricing', href: '/pricing' }])
+    expect((blocks[1].props.columns as { links: unknown[] }[])[0].links).toEqual([{ label: 'About', href: '/about' }])
+  })
+
+  it('an array `props` is ignored rather than spread as index keys', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: [1, 2], headline: 'flat' }] })
+    const props = firstBlockProps(config)
+    expect(props).not.toHaveProperty('0')
+    expect(props.headline).toBe('flat')
+  })
+
+  it('documented optional flat props survive; unknown flat keys are dropped', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{
+        type: 'hero', headline: 'h', primaryCtaUrl: 'https://example.com',
+        locked: true, name: 'x', style: { a: 1 }, pageId: 'p',
+      }],
+    })
+    const props = firstBlockProps(config)
+    expect(props.primaryCtaUrl).toBe('https://example.com')
+    for (const stray of ['locked', 'name', 'style', 'pageId']) expect(props).not.toHaveProperty(stray)
+  })
+
+  it('unknown keys inside nested props are still kept (editor patches add keys)', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: { headline: 'h', customKey: 1 } }] })
+    expect(firstBlockProps(config).customKey).toBe(1)
+  })
+})
