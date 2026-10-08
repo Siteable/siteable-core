@@ -119,19 +119,40 @@ function validateTheme(raw: Record<string, unknown>): Partial<ThemeConfig> {
   return theme
 }
 
-// Keys that describe the block itself rather than its content. Every OTHER key on
-// a block object is treated as a flattened prop — including unknown ones, which
-// normalizeBlockProps keeps (never discard data); they are inert at render time.
+// Keys that describe the block itself rather than its content.
 const BLOCK_META_KEYS = new Set(['id', 'type', 'variant', 'props'])
 
+// Optional props the block components read but defaultProps omit (they are documented
+// in GENERATION_PROMPT). A flattened key is only treated as content when it is in
+// defaultProps or listed here, so stray block-level keys a generator may add
+// (locked, name, style, pageId, ...) are dropped instead of persisted into props.
+// Keep in sync with GENERATION_PROMPT. Nested `props` is NOT filtered by this list.
+const FLAT_EXTRA_PROPS: Record<string, readonly string[]> = {
+  navbar: ['logoImage'],
+  hero: ['primaryCtaUrl', 'secondaryCtaUrl', 'heroImage'],
+  features: ['label'],
+  cta: ['buttonUrl'],
+  footer: ['logoImage'],
+  testimonials: ['subtitle'],
+  faq: ['subtitle'],
+  newsletter: ['socialProof'],
+  image: ['src', 'alt'],
+}
+
 // Generators routinely emit props flattened onto the block object instead of
-// nesting them under `props` — the shape our own GENERATION_PROMPT illustrates.
+// nesting them under `props` — the shape our own GENERATION_PROMPT used to illustrate.
 // Reading only `raw.props` silently replaced such content with defaults, losing
-// every word of real copy. Collect inline keys so both shapes are accepted.
-function collectInlineProps(raw: Record<string, unknown>): Record<string, unknown> {
+// every word of real copy. Collect known inline keys so both shapes are accepted.
+function collectInlineProps(
+  raw: Record<string, unknown>,
+  type: string,
+  defaultProps: Record<string, unknown>,
+): Record<string, unknown> {
+  const extra = FLAT_EXTRA_PROPS[type] ?? []
   const inline: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(raw)) {
-    if (!BLOCK_META_KEYS.has(key)) inline[key] = value
+    if (BLOCK_META_KEYS.has(key)) continue
+    if (key in defaultProps || extra.includes(key)) inline[key] = value
   }
   return inline
 }
@@ -160,7 +181,7 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   const nestedProps = typeof raw.props === 'object' && raw.props && !Array.isArray(raw.props)
     ? (raw.props as Record<string, unknown>)
     : {}
-  const rawProps = { ...collectInlineProps(raw), ...nestedProps }
+  const rawProps = { ...collectInlineProps(raw, type, defaultProps), ...nestedProps }
   const props = Object.keys(rawProps).length > 0
     ? { ...defaultProps, ...normalizeBlockProps(rawProps, defaultProps, linkArrays) }
     : defaultProps

@@ -281,8 +281,21 @@ describe('validateSiteConfig — flattened (inline) block props', () => {
     expect(props.headline).toBe('flat')
   })
 
-  it('unknown flat keys are kept as props (documented, inert)', () => {
-    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', headline: 'h', primaryCtaUrl: 'https://example.com' }] })
-    expect(firstBlockProps(config).primaryCtaUrl).toBe('https://example.com')
+  it('documented optional flat props survive; unknown flat keys are dropped', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{
+        type: 'hero', headline: 'h', primaryCtaUrl: 'https://example.com',
+        locked: true, name: 'x', style: { a: 1 }, pageId: 'p',
+      }],
+    })
+    const props = firstBlockProps(config)
+    expect(props.primaryCtaUrl).toBe('https://example.com')
+    for (const stray of ['locked', 'name', 'style', 'pageId']) expect(props).not.toHaveProperty(stray)
+  })
+
+  it('unknown keys inside nested props are still kept (editor patches add keys)', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: { headline: 'h', customKey: 1 } }] })
+    expect(firstBlockProps(config).customKey).toBe(1)
   })
 })
