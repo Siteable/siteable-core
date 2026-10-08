@@ -120,7 +120,8 @@ function validateTheme(raw: Record<string, unknown>): Partial<ThemeConfig> {
 }
 
 // Keys that describe the block itself rather than its content. Every OTHER key on
-// a block object is treated as a flattened prop.
+// a block object is treated as a flattened prop — including unknown ones, which
+// normalizeBlockProps keeps (never discard data); they are inert at render time.
 const BLOCK_META_KEYS = new Set(['id', 'type', 'variant', 'props'])
 
 // Generators routinely emit props flattened onto the block object instead of
@@ -156,7 +157,9 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   // Accept both prop shapes — nested under `props`, or flattened onto the block.
   // Nested wins on conflict. An empty result still yields defaultProps, which is
   // what a bare {id,type,variant} block has always produced.
-  const nestedProps = typeof raw.props === 'object' && raw.props ? (raw.props as Record<string, unknown>) : {}
+  const nestedProps = typeof raw.props === 'object' && raw.props && !Array.isArray(raw.props)
+    ? (raw.props as Record<string, unknown>)
+    : {}
   const rawProps = { ...collectInlineProps(raw), ...nestedProps }
   const props = Object.keys(rawProps).length > 0
     ? { ...defaultProps, ...normalizeBlockProps(rawProps, defaultProps, linkArrays) }

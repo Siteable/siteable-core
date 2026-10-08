@@ -53,12 +53,12 @@ headline, title, body, items, links, or any other content beside "type".
 
 Every entry below lists the contents of that block's "props" object.
 
-1. navbar (variants: default, centered) - props: { logo, logoImage?, links: string[], ctaText, ctaUrl? }
+1. navbar (variants: default, centered) - props: { logo, logoImage?, links: (string | { label, href })[], ctaText, ctaUrl? }
 2. hero (variants: centered, split, gradient, minimal) - props: { badge?, headline, subheadline, primaryCta, secondaryCta?, primaryCtaUrl?, secondaryCtaUrl?, heroImage? }
 3. features (variants: grid, list, alternating) - props: { label?, title, subtitle?, items: [{ icon?, title, description }] }
 4. pricing (variants: simple, comparison) - props: { title, subtitle?, tiers?: [{ name, price, period?, description?, features: string[], cta, ctaUrl?, featured? }] }
 5. cta (variants: simple, split) - props: { headline, subheadline?, buttonText, buttonUrl? }
-6. footer (variants: simple, multi-column, minimal) - props: { logo, logoImage?, copyright, links: string[], columns?: [{ title, links: string[] }] }
+6. footer (variants: simple, multi-column, minimal) - props: { logo, logoImage?, copyright, links: (string | { label, href })[], columns?: [{ title, links: (string | { label, href })[] }] }
 7. testimonials (variants: cards, carousel, spotlight) - props: { title?, subtitle?, items?: [{ name, role?, quote, rating? }] }
 8. stats (variants: grid, bar, counter) - props: { title?, items?: [{ value, label }] }
 9. faq (variants: accordion) - props: { title?, subtitle?, items: [{ question, answer }] }

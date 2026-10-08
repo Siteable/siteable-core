@@ -261,4 +261,28 @@ describe('validateSiteConfig — flattened (inline) block props', () => {
     expect(config.pages![0].blocks[0].props.headline).toBe('home headline')
     expect(config.pages![1].blocks[0].props.title).toBe('two title')
   })
+  it('flattened link objects survive on navbar and footer columns', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        { id: 'n', type: 'navbar', logo: 'Sample', links: [{ label: 'Pricing', href: '/pricing' }] },
+        { id: 'f', type: 'footer', variant: 'multi-column', columns: [{ title: 'Site', links: [{ label: 'About', href: '/about' }] }] },
+      ],
+    })
+    const blocks = config.pages![0].blocks
+    expect(blocks[0].props.links).toEqual([{ label: 'Pricing', href: '/pricing' }])
+    expect((blocks[1].props.columns as { links: unknown[] }[])[0].links).toEqual([{ label: 'About', href: '/about' }])
+  })
+
+  it('an array `props` is ignored rather than spread as index keys', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: [1, 2], headline: 'flat' }] })
+    const props = firstBlockProps(config)
+    expect(props).not.toHaveProperty('0')
+    expect(props.headline).toBe('flat')
+  })
+
+  it('unknown flat keys are kept as props (documented, inert)', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', headline: 'h', primaryCtaUrl: 'https://example.com' }] })
+    expect(firstBlockProps(config).primaryCtaUrl).toBe('https://example.com')
+  })
 })
