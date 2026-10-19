@@ -16,7 +16,9 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     viewport: { width: 390, height: 844 },
-    trace: 'off',
+    // A failing run in CI keeps a trace for the retry so the failure is
+    // diagnosable without re-running the job; local runs stay lightweight.
+    trace: process.env.CI ? 'on-first-retry' : 'off',
     video: 'off',
     screenshot: 'off',
   },
