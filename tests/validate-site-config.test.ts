@@ -261,4 +261,41 @@ describe('validateSiteConfig — flattened (inline) block props', () => {
     expect(config.pages![0].blocks[0].props.headline).toBe('home headline')
     expect(config.pages![1].blocks[0].props.title).toBe('two title')
   })
+  it('flattened link objects survive on navbar and footer columns', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        { id: 'n', type: 'navbar', logo: 'Sample', links: [{ label: 'Pricing', href: '/pricing' }] },
+        { id: 'f', type: 'footer', variant: 'multi-column', columns: [{ title: 'Site', links: [{ label: 'About', href: '/about' }] }] },
+      ],
+    })
+    const blocks = config.pages![0].blocks
+    expect(blocks[0].props.links).toEqual([{ label: 'Pricing', href: '/pricing' }])
+    expect((blocks[1].props.columns as { links: unknown[] }[])[0].links).toEqual([{ label: 'About', href: '/about' }])
+  })
+
+  it('an array `props` is ignored rather than spread as index keys', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: [1, 2], headline: 'flat' }] })
+    const props = firstBlockProps(config)
+    expect(props).not.toHaveProperty('0')
+    expect(props.headline).toBe('flat')
+  })
+
+  it('documented optional flat props survive; unknown flat keys are dropped', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{
+        type: 'hero', headline: 'h', primaryCtaUrl: 'https://example.com',
+        locked: true, name: 'x', style: { a: 1 }, pageId: 'p',
+      }],
+    })
+    const props = firstBlockProps(config)
+    expect(props.primaryCtaUrl).toBe('https://example.com')
+    for (const stray of ['locked', 'name', 'style', 'pageId']) expect(props).not.toHaveProperty(stray)
+  })
+
+  it('unknown keys inside nested props are still kept (editor patches add keys)', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: { headline: 'h', customKey: 1 } }] })
+    expect(firstBlockProps(config).customKey).toBe(1)
+  })
 })
