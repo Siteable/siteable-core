@@ -53,7 +53,11 @@ test.describe('mobile menu on a phone-width viewport', () => {
       const link = links.nth(i)
       await expect(link).toBeVisible()
       const box = await link.boundingBox()
-      expect(box!.height, `link ${i} must be tall enough to tap`).toBeGreaterThanOrEqual(20)
+      // 32 is the floor this change is meant to guarantee (~40 measured). A lower
+      // bar would pass a partial regression: the pre-fix height was 19.5 px and a
+      // line-height-only fix lands at 24, which is still under WCAG 2.5.8's 24 px
+      // minimum once spacing is accounted for.
+      expect(box!.height, `link ${i} must be tall enough to tap`).toBeGreaterThanOrEqual(32)
       expect((await link.textContent())?.trim().length, `link ${i} must have a label`).toBeGreaterThan(0)
     }
 
@@ -104,7 +108,18 @@ test.describe('a visitor without scripting', () => {
       viewport: { width: 390, height: 844 },
     })
     const page = await context.newPage()
-    await page.setContent(exportedHtml('navbar-and-faq'), { waitUntil: 'load' })
+    const html = exportedHtml('navbar-and-faq')
+
+    // The rendered answers below are visible whether or not the faq rule exists:
+    // with scripting off the Tailwind CDN never runs, so the collapsed classes are
+    // inert. The rule still has to be emitted — it is what keeps answers open once
+    // styles are precompiled rather than generated at runtime — so assert the
+    // emitted byte directly instead of pretending the computed style proves it.
+    expect(html, 'the no-script stylesheet must force answers open').toContain(
+      '.faq-content{max-height:none!important'
+    )
+
+    await page.setContent(html, { waitUntil: 'load' })
 
     const toggle = page.locator(TOGGLE).first()
     await expect(toggle, 'the hamburger cannot work without script, so it must be hidden').toBeHidden()
