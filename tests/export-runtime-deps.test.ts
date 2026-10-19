@@ -54,7 +54,11 @@ const ATOM_MODULES = [
  * Modules this project has explicitly tasked the strong, zero-import guard with
  * (NF-005 bundle claim), not merely the "no external package" list above.
  */
-const GUARDED_MODULES = ['src/lib/url-policy.ts', 'src/lib/page-path.ts']
+const GUARDED_MODULES = [
+  'src/lib/url-policy.ts',
+  'src/lib/page-path.ts',
+  'src/lib/export-behavior-runtime.ts',
+]
 
 /** Repo root, anchored to this test file rather than `process.cwd()`. */
 const REPO_ROOT = resolve(import.meta.dirname, '..')
@@ -131,6 +135,13 @@ describe('NF-006 — the atom\'s modules stay package-internal', () => {
   // guard can be mutated out of existence together with the check.
   it('still guards the multi-page exporter (literal, not list-driven)', () => {
     expect(ATOM_MODULES).toContain('src/lib/export-site-pages.ts')
+  })
+
+  // The behavior runtime reaches a worker bundle through the exporter and must
+  // stay free of every import, so it joins the strong guard. Its name is a
+  // LITERAL here for the same reason as the assertions above.
+  it('still guards the behavior runtime (literal, not list-driven)', () => {
+    expect(GUARDED_MODULES).toContain('src/lib/export-behavior-runtime.ts')
   })
 })
 

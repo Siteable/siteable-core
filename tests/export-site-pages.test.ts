@@ -22,6 +22,10 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { exportSiteToHTML } from '../src/lib/export-html'
 import { exportSitePages } from '../src/lib/export-site-pages'
+import {
+  stripLegacyFaq,
+  stripRuntimeAdditions,
+} from './helpers/behavior-runtime-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
 const CORPUS_DIR = resolve(import.meta.dirname, 'fixtures/export-legacy-corpus')
@@ -156,14 +160,14 @@ describe('SC-001 — page isolation', () => {
     }
   })
 
-  // Review finding: the FAQ accordion SCRIPT is gated on `hasFaq`, which is one of
-  // the two reads of `blocks` inside the document body. It survives every other
-  // assertion in this suite if it is reverted to reading `config.blocks`:
-  // reversing the mutation left the full 1151-test suite green, because no
-  // legacy corpus entry has page-1 blocks differing from top-level blocks. So
+  // Review finding: the behavior runtime is gated on the page's own blocks,
+  // which is one of the two reads of `blocks` inside the document body. It
+  // survives every other assertion in this suite if it is reverted to reading
+  // `config.blocks`: reversing the mutation left the full suite green, because
+  // no legacy corpus entry has page-1 blocks differing from top-level blocks. So
   // this test deliberately points the faq at page 2 only AND leaves a top-level
   // faq that must NOT leak — both directions, so either read site fails it.
-  it('gates the FAQ accordion script on each page\'s OWN blocks, not top-level', () => {
+  it('gates the behavior runtime on each page\'s OWN blocks, not top-level', () => {
     const faqBlocks: BlockConfig[] = [
       { id: 'q', type: 'faq', variant: 'accordion', props: { title: 'FAQ', items: [{ question: 'Q', answer: 'A' }] } },
     ]
@@ -175,8 +179,11 @@ describe('SC-001 — page isolation', () => {
       ],
       blocks: faqBlocks, // stale top-level mirror — must be ignored entirely
     })
-    expect(docs[1].html).toContain('function toggleFaq(btn)')
-    expect(docs[0].html).not.toContain('function toggleFaq(btn)')
+    expect(docs[1].html).toContain('<script data-sb-runtime>')
+    expect(docs[1].html).toContain('<noscript><style>')
+    expect(docs[0].html).not.toContain('<script data-sb-runtime>')
+    expect(docs[0].html).not.toContain('toggleFaq')
+    expect(docs[1].html).not.toContain('toggleFaq')
   })
 
     // vk-tester (category 1) found the one surviving mutation: writing normalized
@@ -287,25 +294,71 @@ describe('SC-002 / NF-001 — legacy corpus byte-identity', () => {
   // file on each call, and it was being called from three `it.each` maps.
   const entries = corpus()
 
+  const pageBlocks = (entry: CorpusEntry): BlockConfig[] =>
+    // Mirror the single-document entry point: page 1, else top-level blocks.
+    Array.isArray(entry.config.pages) && entry.config.pages.length
+      ? entry.config.pages[0].blocks ?? []
+      : entry.config.blocks ?? []
+
+  const hasBehaviorBlock = (entry: CorpusEntry): boolean =>
+    pageBlocks(entry).some((b) => b?.type === 'navbar' || b?.type === 'faq')
+
+  /**
+   * An entry with a navbar or faq differs from its frozen snapshot ONLY by the
+   * permitted set — the runtime script, the no-script block, the menu button
+   * attributes, the menu panels, and the removed legacy FAQ additions. Counts
+   * are asserted so a no-op normalizer cannot pass.
+   */
+  const expectPermittedDiff = (actual: string, entry: CorpusEntry): void => {
+    const { html, counts } = stripRuntimeAdditions(actual)
+    expect(html, `${entry.slug}: diff outside the permitted set`).toBe(
+      stripLegacyFaq(snapshot(entry.slug)).html,
+    )
+    const navbars = pageBlocks(entry).filter((b) => b?.type === 'navbar').length
+    expect(counts).toEqual({
+      scripts: 1,
+      noscript: 1,
+      toggleAttrs: navbars,
+      panels: navbars,
+    })
+  }
+
   it('the corpus is non-trivial (guard against an empty fixture set)', () => {
     expect(entries.length).toBeGreaterThanOrEqual(6)
     for (const entry of entries) expect(snapshot(entry.slug).length).toBeGreaterThan(0)
   })
 
+  it('the corpus covers both branch classes', () => {
+    // A reshuffle that left every entry on one branch would silently empty the
+    // strict-vs-normalized claim.
+    const flags = entries.map(hasBehaviorBlock)
+    expect(flags).toContain(true)
+    expect(flags).toContain(false)
+  })
+
   it.each(entries.map((entry) => [entry.slug, entry] as const))(
-    'single-document export of %s is byte-identical to the frozen 0.2.0 snapshot',
+    'single-document export of %s matches the frozen 0.2.0 snapshot (strict or permitted diff)',
     (_slug, entry) => {
-      expect(exportSiteToHTML(entry.config, entry.options ?? undefined)).toBe(snapshot(entry.slug))
+      const actual = exportSiteToHTML(entry.config, entry.options ?? undefined)
+      if (!hasBehaviorBlock(entry)) {
+        expect(actual).toBe(snapshot(entry.slug))
+        return
+      }
+      expectPermittedDiff(actual, entry)
     },
   )
 
   it.each(entries.map((entry) => [entry.slug, entry] as const))(
-    'multi-page export of %s yields exactly one `/` entry equal to that snapshot',
+    'multi-page export of %s yields exactly one `/` entry matching that snapshot',
     (_slug, entry) => {
       const docs = exportSitePages(entry.config, entry.options ?? undefined)
       expect(docs).toHaveLength(1)
       expect(docs[0].path).toBe('/')
-      expect(docs[0].html).toBe(snapshot(entry.slug))
+      if (!hasBehaviorBlock(entry)) {
+        expect(docs[0].html).toBe(snapshot(entry.slug))
+        return
+      }
+      expectPermittedDiff(docs[0].html, entry)
     },
   )
 })

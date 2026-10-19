@@ -2,7 +2,7 @@
  * Shared URL policy for every URL the exporter emits into an `href` / `src`
  * attribute, and for every URL the editor stores on a link prop.
  *
- * Spec: `specs/publish-fidelity/spec.md` FR-004 (SC-002), NF-001, NF-006.
+ * Contract: deny-by-default classification for every emitted or stored URL.
  *
  * Design constraints:
  *  - Deny-by-default. Anything not positively classified below is rejected.

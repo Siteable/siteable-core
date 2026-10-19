@@ -41,6 +41,25 @@ jobs:
 
       - run: npm test
 
+  # Real-browser checks: layout, computed CSS, the accessibility tree, and
+  # script-disabled rendering. Additive — NOT in the required-status-check set,
+  # so a flaky runner cannot soft-lock merges, but a red run is a real signal.
+  browser:
+    name: browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run test:browser
+
   build:
     name: build
     runs-on: ubuntu-latest

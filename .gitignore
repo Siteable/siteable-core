@@ -17,3 +17,10 @@ features/
 # code, so scope these narrowly rather than ignoring tests/ wholesale.
 tests/index.md
 tests/manual/
+
+# Local agent scratch (agent-memory, local settings) — never part of the package.
+.claude/
+
+# Browser-lane output (npm run test:browser)
+test-results/
+playwright-report/
