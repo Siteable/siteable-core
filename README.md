@@ -150,6 +150,16 @@ Issues and PRs welcome via [GitHub](https://github.com/Siteable/siteable-core/is
 Workflow (GitHub Flow, single `main`):
 
 - All changes land via PR — `main` is protected, direct pushes are rejected.
+- Run the suites locally before opening a PR:
+  - `npm test` — unit and DOM tests (vitest + jsdom)
+  - `npm run test:e2e` — end-to-end visitor flows on the exported document
+  - `npm run test:browser` — real-browser checks: layout, tap-target size, the
+    accessibility tree, and rendering with JavaScript disabled (Playwright +
+    Chromium; run `npx playwright install chromium` once)
+  - `npm run typecheck` and `npm run build`
+- The `browser` job runs on every PR but is **not** a required check, so a
+  runner or CDN hiccup cannot block a merge. A red `browser` run is still a
+  real signal — treat it as one.
 - Required status checks on every PR: `typecheck`, `test`, `build`,
   `secret-scan` (all four must pass; admins are not exempt).
 - **Squash-merge only** — merge commits and rebase-merge are disabled; the
