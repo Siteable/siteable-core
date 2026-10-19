@@ -2,7 +2,8 @@ import type { BlockConfig } from '../types'
 import type { LinkItem } from '@/lib/block-metadata'
 import { toLinkItem } from '@/lib/link-item'
 import { isAllowedUrl } from '@/lib/url-policy'
-import { Menu } from 'lucide-react'
+import { useState } from 'react'
+import { Menu, X } from 'lucide-react'
 
 interface NavbarProps {
   logo: string
@@ -22,11 +23,38 @@ function NavLink({ link }: { link: string | LinkItem }) {
   return <span className={className}>{item.label}</span>
 }
 
+const MENU_BUTTON_CLASS = '@2xl:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors'
+
+/** Mobile toggle + stacked link panel, shared by both variants (below @2xl the inline links are hidden). */
+function MobileMenuButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" aria-expanded={open} aria-label="Toggle menu" onClick={onToggle} className={MENU_BUTTON_CLASS}>
+      {open ? <X size={16} /> : <Menu size={16} />}
+    </button>
+  )
+}
+
+function MobileMenuPanel({ links, ctaText, ctaUrl }: { links: (string | LinkItem)[]; ctaText: string; ctaUrl?: string }) {
+  return (
+    <div className="@2xl:hidden basis-full flex flex-col gap-3 pt-4">
+      {links.map((link, i) => (
+        <NavLink key={i} link={link} />
+      ))}
+      {ctaUrl && isAllowedUrl(ctaUrl) ? (
+        <a href={ctaUrl} className={`${CTA_BUTTON_CLASS} text-center`}>{ctaText}</a>
+      ) : (
+        <button className={CTA_BUTTON_CLASS}>{ctaText}</button>
+      )}
+    </div>
+  )
+}
+
 function NavbarDefault({ props }: { props: NavbarProps }) {
   const { logo, links = [], ctaText, ctaUrl } = props
+  const [open, setOpen] = useState(false)
 
   return (
-    <nav className="px-6 @md:px-10 py-4 flex items-center justify-between">
+    <nav className="px-6 @md:px-10 py-4 flex flex-wrap items-center justify-between">
       {/* Logo */}
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-green/10 flex items-center justify-center">
@@ -44,15 +72,17 @@ function NavbarDefault({ props }: { props: NavbarProps }) {
 
       {/* CTA + mobile menu */}
       <div className="flex items-center gap-3">
-        {ctaUrl && isAllowedUrl(ctaUrl) ? (
-          <a href={ctaUrl} className={CTA_BUTTON_CLASS}>{ctaText}</a>
-        ) : (
-          <button className={CTA_BUTTON_CLASS}>{ctaText}</button>
-        )}
-        <button className="@2xl:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
-          <Menu size={16} />
-        </button>
+        {/* Same breakpoint as the inline links and as the centered variant: below @2xl the CTA lives only in the mobile panel. */}
+        <div className="hidden @2xl:block">
+          {ctaUrl && isAllowedUrl(ctaUrl) ? (
+            <a href={ctaUrl} className={CTA_BUTTON_CLASS}>{ctaText}</a>
+          ) : (
+            <button className={CTA_BUTTON_CLASS}>{ctaText}</button>
+          )}
+        </div>
+        <MobileMenuButton open={open} onToggle={() => setOpen((v) => !v)} />
       </div>
+      {open && <MobileMenuPanel links={links} ctaText={ctaText} ctaUrl={ctaUrl} />}
     </nav>
   )
 }
@@ -62,9 +92,10 @@ function NavbarCentered({ props }: { props: NavbarProps }) {
   const mid = Math.ceil(links.length / 2)
   const leftLinks = links.slice(0, mid)
   const rightLinks = links.slice(mid)
+  const [open, setOpen] = useState(false)
 
   return (
-    <nav className="px-6 @md:px-10 py-4 flex items-center justify-between">
+    <nav className="px-6 @md:px-10 py-4 flex flex-wrap items-center justify-between">
       {/* Left links */}
       <div className="hidden @2xl:flex items-center gap-6 flex-1">
         {leftLinks.map((link, i) => (
@@ -93,9 +124,8 @@ function NavbarCentered({ props }: { props: NavbarProps }) {
       </div>
 
       {/* Mobile menu */}
-      <button className="@2xl:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
-        <Menu size={16} />
-      </button>
+      <MobileMenuButton open={open} onToggle={() => setOpen((v) => !v)} />
+      {open && <MobileMenuPanel links={links} ctaText={ctaText} ctaUrl={ctaUrl} />}
     </nav>
   )
 }
