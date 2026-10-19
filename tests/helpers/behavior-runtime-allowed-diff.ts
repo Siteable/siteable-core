@@ -38,7 +38,7 @@ export interface StripResult<Counts> {
 const TOGGLE_ATTR_SOURCE =
   ' type="button" data-sb-menu-toggle aria-label="Toggle menu" aria-expanded="false" aria-controls="sb_menu_\\d+"'
 const PANEL_SOURCE =
-  '\\n  <div id="sb_menu_\\d+" data-sb-menu-panel hidden class="[^"]*">\\n    <div class="flex flex-col gap-3">\\n[\\s\\S]*?\\n    </div>\\n  </div>'
+  '\\n  <div id="sb_menu_\\d+" data-sb-menu-panel hidden class="[^"]*">\\n    <div class="flex flex-col gap-3 [^"]*">\\n[\\s\\S]*?\\n    </div>\\n  </div>'
 
 /**
  * The legacy FAQ function exactly as the 0.2.0 exporter emitted it. FROZEN:

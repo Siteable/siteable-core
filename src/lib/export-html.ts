@@ -210,7 +210,7 @@ ${navLinks}
     </div>
   </nav>
   <div id="${panelId}" data-sb-menu-panel hidden class="lg:hidden px-6 md:px-10 pb-4">
-    <div class="flex flex-col gap-3">
+    <div class="flex flex-col gap-3 [&>a]:py-2 [&>a]:leading-6">
 ${navLinks}
     </div>
   </div>`

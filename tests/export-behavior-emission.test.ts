@@ -76,7 +76,7 @@ describe('menu markup', () => {
     // Structure + attributes: a sibling block, hidden by default, with the
     // panel hook and a shared link list. Exact class order is not pinned here.
     expect(html).toMatch(/<\/nav>\n  <div id="sb_menu_1" data-sb-menu-panel hidden [^>]*>/)
-    expect(html).toContain('<div class="flex flex-col gap-3">')
+    expect(html).toMatch(/<div class="flex flex-col gap-3 [^"]*">/)
     // The panel element must carry no unconditional display utility: Tailwind's
     // `[hidden]{display:none}` has the same specificity and loses to `.flex`.
     const openTag = /<div [^>]*data-sb-menu-panel[^>]*>/.exec(html)?.[0] ?? ''
