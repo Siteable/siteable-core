@@ -39,6 +39,7 @@
     "build": "vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "vitest run tests/e2e",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

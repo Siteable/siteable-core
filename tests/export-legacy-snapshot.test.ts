@@ -33,15 +33,21 @@
  * Phase 07 re-derives it from git history if a reviewer asks.
  *
  * SC-022 (FR-005 / NF-004): the fresh export is compared to this frozen baseline
- * byte-for-byte MODULO the added `id` attributes — strip every ` id="…"` from the
- * fresh export and it must equal the baseline exactly. The fixture deliberately
- * stays frozen: it is the pre-id reference, so the ONLY permitted difference
- * between the two outputs is the injected ids.
+ * byte-for-byte MODULO the permitted difference set — the added `id` attributes
+ * and the behavior-runtime additions (inline script, no-script block, menu
+ * button attributes, menu panel). The fixture deliberately stays frozen: it is
+ * the pre-id, pre-runtime reference, so those are the ONLY permitted differences
+ * between the two outputs. The normalizers live in
+ * `tests/helpers/behavior-runtime-allowed-diff.ts` and report strip counts.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { exportSiteToHTML } from '../src/lib/export-html'
+import {
+  stripLegacyFaq,
+  stripRuntimeAdditions,
+} from './helpers/behavior-runtime-allowed-diff'
 import type { SiteConfig } from '../src/blocks/types'
 
 const baselineConfig: SiteConfig = {
@@ -344,17 +350,31 @@ const baselineSettings = {
 const FIXTURE_PATH = resolve(import.meta.dirname, 'fixtures/export-legacy-baseline.html')
 
 describe('legacy export byte-identity (NF-004)', () => {
-  it('SC-022 — fresh export differs from the frozen baseline ONLY by added id attributes', () => {
+  it('fresh export differs from the frozen baseline ONLY by the permitted additions', () => {
     const baseline = readFileSync(FIXTURE_PATH, 'utf8')
     const actual = exportSiteToHTML(baselineConfig, { settings: baselineSettings })
-    // The frozen baseline predates block ids and contains no ` id="…"` substring.
-    // Removing every injected id from the fresh export must reproduce it byte-for-byte,
-    // so the ONLY difference between the two outputs is added ` id="…"` attributes.
-    const skeleton = actual.replace(/ id="[^"]*"/g, '')
-    expect(skeleton).toBe(baseline)
-    // ...and ids were actually added (guards against a no-op):
+    // The frozen baseline predates block ids and the behavior runtime. Removing
+    // the permitted runtime additions and then every injected id from the fresh
+    // export must reproduce the baseline once its legacy FAQ additions are
+    // removed, so the ONLY differences are the permitted sets.
+    const normalized = stripRuntimeAdditions(actual)
+    const runtime = normalized.counts
+    const normalizedActual = normalized.html.replace(/ id="[^"]*"/g, '')
+    const normalizedBaseline = stripLegacyFaq(baseline).html
+    expect(normalizedActual).toBe(normalizedBaseline)
+    // ...and the additions were actually present (guards against a no-op):
     expect(actual).not.toBe(baseline)
-    const insertedIds = actual.match(/ id="[^"]*"/g) || []
+    expect(runtime).toEqual({ scripts: 1, noscript: 1, toggleAttrs: 2, panels: 2 })
+    // Teeth: an unrelated settings change is a failure, not a near match.
+    const mutated = exportSiteToHTML(baselineConfig, {
+      settings: { ...baselineSettings, gaId: 'G-MUTATED' },
+    })
+    expect(
+      stripRuntimeAdditions(mutated).html.replace(/ id="[^"]*"/g, '')
+    ).not.toBe(normalizedBaseline)
+    const insertedIds = (actual.match(/ id="[^"]*"/g) || []).filter(
+      (id) => !id.includes('sb_menu_')
+    )
     expect(insertedIds).toHaveLength(24) // 24 blocks, all ids valid + unique
     // The id must sit on the block's ROOT open tag (not merely appear somewhere
     // in the output) — asserted per root element type: navbar -> <nav>,

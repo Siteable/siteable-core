@@ -18,6 +18,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
+import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
 import type { BlockConfig, BlockType, SiteConfig } from '../src/blocks/types'
 import { renderContent } from '../src/lib/export-blocks/render-content'
 import { renderImage } from '../src/lib/export-blocks/render-image'
@@ -248,20 +249,20 @@ describe('SC-011 — rejected URL sinks across the page export', () => {
 
 /**
  * Every `on<name>="<value>"` event-handler attribute sitting inside a real open
- * tag. The exporter legitimately emits exactly two of these — the form blocks'
- * `onsubmit="return false"` and the FAQ accordion's `onclick="toggleFaq(this)"`.
- * Those two are filtered out by their EXACT attribute text. Filtering by
- * attribute NAME (as an earlier draft did with a `(?!submit|click)` lookahead)
- * would silently ignore an injected `onclick=`/`onsubmit=` — precisely the kind
- * of payload a corpus-widening pass is expected to add, so the test would go
- * green on a real injection. The escaped `onerror=` text a payload degrades to
- * has no raw `<tagname` before it, so it cannot match. `[^>]*` cannot cross a
- * close bracket, so this only fires in tag position.
+ * tag. The exporter legitimately emits exactly ONE of these — the form blocks'
+ * `onsubmit="return false"`. It is filtered out by its EXACT attribute text.
+ * Filtering by attribute NAME (as an earlier draft did with a
+ * `(?!submit|click)` lookahead) would silently ignore an injected
+ * `onclick=`/`onsubmit=` — precisely the kind of payload a corpus-widening pass
+ * is expected to add, so the test would go green on a real injection. The
+ * escaped `onerror=` text a payload degrades to has no raw `<tagname` before it,
+ * so it cannot match. `[^>]*` cannot cross a close bracket, so this only fires
+ * in tag position.
  */
 // The value may be single-, double-quoted, OR unquoted (`onerror=alert(1)`),
 // so the detector is no narrower than the phase-03 raw-renderer check.
 const HANDLER_ATTR_RE = /<[a-zA-Z][^>]*[^\w](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
-const LEGIT_HANDLER_ATTRS = new Set(['onsubmit="return false"', 'onclick="toggleFaq(this)"'])
+const LEGIT_HANDLER_ATTRS = new Set(['onsubmit="return false"'])
 const injectedHandlers = (html: string): string[] =>
   [...html.matchAll(HANDLER_ATTR_RE)]
     .map((match) => `${match[1]}=${match[2]}`)
@@ -452,9 +453,24 @@ describe('injectedHandlers detector — self-test (guards the guard)', () => {
   // The matrix is only as strong as this filter. If it regressed to ignoring
   // `onclick=`/`onsubmit=` by NAME, an injected instance would slip through
   // every negative case while the suite stayed green (review finding M2).
-  it('ignores only the exporter\'s own two handler literals', () => {
-    expect(injectedHandlers('<a href="x" onclick="toggleFaq(this)">L</a>')).toEqual([])
+  it('ignores only the exporter\'s own form no-op handler literal', () => {
     expect(injectedHandlers('<form onsubmit="return false">')).toEqual([])
+  })
+
+  it('flags the retired FAQ onclick like any other injected handler', () => {
+    // The FAQ no longer emits an inline handler; the allowlist must not keep a
+    // slot for it, or this exact payload would pass unnoticed.
+    expect(injectedHandlers('<a href="x" onclick="toggleFaq(this)">L</a>')).toEqual([
+      'onclick="toggleFaq(this)"',
+    ])
+  })
+
+  it('finds no handler attributes in the emitted runtime source', () => {
+    // The whole-document scan sees the inline runtime on every navbar/faq page.
+    // This guard proves the runtime never contributes a match, so a future
+    // runtime edit that added one fails here (with a precise cause) rather than
+    // as a mysterious injected-handler failure elsewhere.
+    expect(injectedHandlers(BEHAVIOR_RUNTIME_SOURCE)).toEqual([])
   })
 
   it('flags an injected onclick/onsubmit with any other value', () => {
@@ -471,5 +487,34 @@ describe('injectedHandlers detector — self-test (guards the guard)', () => {
     // The value may be unquoted; a detector that only matched `="…"` would be
     // narrower than the phase-03 HANDLER_RE and blind to this class.
     expect(injectedHandlers('<img src=x onerror=alert(1)>')).toEqual(['onerror=alert(1)'])
+  })
+})
+
+// The menu panel renders a SECOND copy of every navbar link. The URL-sink matrix
+// above already sees that copy through its whole-document scans; what this block
+// uniquely proves is that the panel's LABEL is escaped (twice over), which a
+// regression unescaping only the panel copy would leave untested.
+describe('the menu panel copy is escaped like the desktop row', () => {
+  const exportNavbar = (props: Record<string, unknown>): string =>
+    exportSiteToHTML({
+      name: 'XSS',
+      blocks: [{ id: 'x', type: 'navbar', variant: 'default', props }],
+    })
+
+  it('renders an escaped label identically in the desktop row and the panel', () => {
+    const html = exportNavbar({ logo: 'A', links: [{ label: '<b>L</b>', href: '/x' }] })
+    expect((html.match(/&lt;b&gt;L&lt;\/b&gt;/g) ?? []).length).toBe(2)
+    expect(html).not.toContain('<b>L</b>')
+  })
+
+  it.each(CORPUS)('keeps both copies inert for payload %s', (payload) => {
+    const html = exportNavbar({
+      logo: 'A',
+      links: [{ label: payload, href: payload }],
+    })
+    expect(html).toContain('data-sb-menu-panel')
+    expect(injectedHandlers(html)).toEqual([])
+    // A payload containing markup never opens a real script tag.
+    if (payload.includes('<')) expect(html).not.toContain(payload)
   })
 })

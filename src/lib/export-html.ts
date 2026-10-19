@@ -13,6 +13,12 @@ import { renderVideo } from './export-blocks/render-video'
 import { renderGallery } from './export-blocks/render-gallery'
 import { renderDivider } from './export-blocks/render-divider'
 import { renderBanner } from './export-blocks/render-banner'
+import {
+  MENU_PANEL_ID_PREFIX,
+  needsBehaviorRuntime,
+  renderBehaviorNoscript,
+  renderBehaviorScript,
+} from './export-behavior-runtime'
 
 export interface ExportSiteSettings {
   siteName?: string
@@ -158,7 +164,7 @@ const FOOTER_MINIMAL_LINK_CLASS = 'hover:text-text-1 transition-colors cursor-po
 // Block renderers
 // ---------------------------------------------------------------------------
 
-function renderNavbar(block: BlockConfig): string {
+function renderNavbar(block: BlockConfig, panelId: string): string {
   const logo = escapeHtml(prop(block.props, 'logo', 'Brand'))
   const logoImage = prop<string>(block.props, 'logoImage', '')
   // Pre-existing `<img src>` emitter: general URL policy, NOT the https-only
@@ -198,11 +204,16 @@ ${navLinks}
     </div>
     <div class="flex items-center gap-3">
       ${ctaHtml}
-      <button class="lg:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
+      <button type="button" data-sb-menu-toggle aria-label="Toggle menu" aria-expanded="false" aria-controls="${panelId}" class="lg:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
         ${SVG_MENU}
       </button>
     </div>
-  </nav>`
+  </nav>
+  <div id="${panelId}" data-sb-menu-panel hidden class="lg:hidden px-6 md:px-10 pb-4">
+    <div class="flex flex-col gap-3">
+${navLinks}
+    </div>
+  </div>`
 }
 
 // ---------------------------------------------------------------------------
@@ -975,7 +986,7 @@ function renderFaq(block: BlockConfig): string {
   const accordionItems = items
     .map(
       (item, i) => `        <div class="border-b border-border-subtle">
-          <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between py-4 text-left group" aria-expanded="${i === 0 ? 'true' : 'false'}">
+          <button class="w-full flex items-center justify-between py-4 text-left group" aria-expanded="${i === 0 ? 'true' : 'false'}">
             <span class="text-[13.5px] font-medium text-text-0 group-hover:text-green transition-colors">${escapeHtml(item.question)}</span>
             <span class="faq-chevron text-text-3 shrink-0 ml-4 transition-transform duration-200${i === 0 ? ' rotate-180 text-green' : ''}">${SVG_CHEVRON_DOWN}</span>
           </button>
@@ -1166,14 +1177,21 @@ ${logosHtml}
 // Block dispatcher
 // ---------------------------------------------------------------------------
 
-function renderBlock(block: BlockConfig, seen: Set<string>): string {
-  return withBlockId(renderBlockMarkup(block), block.id, seen)
+function renderBlock(
+  block: BlockConfig,
+  seen: Set<string>,
+  menuSeq: { n: number }
+): string {
+  return withBlockId(renderBlockMarkup(block, menuSeq), block.id, seen)
 }
 
-function renderBlockMarkup(block: BlockConfig): string {
+function renderBlockMarkup(block: BlockConfig, menuSeq: { n: number }): string {
   switch (block.type) {
     case 'navbar':
-      return renderNavbar(block)
+      return renderNavbar(
+        block,
+        escapeHtml(`${MENU_PANEL_ID_PREFIX}${++menuSeq.n}`)
+      )
     case 'hero':
       return renderHero(block)
     case 'features':
@@ -1275,7 +1293,7 @@ function asBlockList(value: unknown): BlockConfig[] {
  * Render one complete document. Everything except the body is SITE-level
  * (theme, fonts, settings, title, OG, analytics), so it is shared by every page
  * of a multi-page export; only `blocks` varies, and only the body reads it
- * (`hasFaq` + `blocksHtml` — now reads of `body`, the guarded local; they are
+ * (`needs` + `blocksHtml` — now reads of `body`, the guarded local; they are
  * the ONLY two body reads in this file; `renderDocument` itself never reads
  * `config.blocks` - only `homeBlocks` does, to choose what to pass in). `seenIds` is per document, not per site, so two pages may reuse the
  * same block ids without colliding.
@@ -1302,10 +1320,11 @@ export function renderDocument(
   const fontUrl = googleFontUrl(fonts)
   const settings = options?.settings
 
-  const hasFaq = body.some((b) => b.type === 'faq')
+  const needs = needsBehaviorRuntime(body)
 
   const seenIds = new Set<string>()
-  const blocksHtml = body.map((b) => renderBlock(b, seenIds)).join('\n\n')
+  const menuSeq = { n: 0 }
+  const blocksHtml = body.map((b) => renderBlock(b, seenIds, menuSeq)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
@@ -1363,35 +1382,6 @@ export function renderDocument(
     n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
     posthog.init(${scriptLiteral(posthogKey)}, { api_host: 'https://us.i.posthog.com' });
   </script>`
-    : ''
-
-  const faqScript = hasFaq
-    ? `
-    <script>
-      function toggleFaq(btn) {
-        var content = btn.nextElementSibling;
-        var chevron = btn.querySelector('.faq-chevron');
-        var isOpen = btn.getAttribute('aria-expanded') === 'true';
-
-        // Close all
-        var items = btn.closest('section').querySelectorAll('[aria-expanded]');
-        items.forEach(function(b) {
-          b.setAttribute('aria-expanded', 'false');
-          b.nextElementSibling.style.maxHeight = '0';
-          b.nextElementSibling.style.paddingBottom = '0';
-          var c = b.querySelector('.faq-chevron');
-          if (c) { c.style.transform = ''; c.classList.remove('text-green'); c.classList.add('text-text-3'); }
-        });
-
-        // Toggle current
-        if (!isOpen) {
-          btn.setAttribute('aria-expanded', 'true');
-          content.style.maxHeight = '500px';
-          content.style.paddingBottom = '1rem';
-          if (chevron) { chevron.style.transform = 'rotate(180deg)'; chevron.classList.add('text-green'); chevron.classList.remove('text-text-3'); }
-        }
-      }
-    </script>`
     : ''
 
   return `<!DOCTYPE html>
@@ -1496,12 +1486,12 @@ ${ogDescriptionMeta}${ogImageMeta}${faviconLink}
     }
   </style>
 ${gaScript}
-${posthogScript}
+${posthogScript}${needs ? renderBehaviorNoscript() : ''}
 </head>
 <body>
 
 ${blocksHtml}
-${faqScript}
+${needs ? renderBehaviorScript() : ''}
 </body>
 </html>`
 }

@@ -57,21 +57,29 @@ describe('NavbarBlock mobile menu', () => {
     return host
   }
 
-  it.each(['default', 'centered'])('%s: toggle opens a panel with every link and the CTA, and closes again', (variant) => {
+  it.each(['default', 'centered'])('%s: toggle reveals a panel with every link and the CTA, and hides it again', (variant) => {
     const el = mount(variant)
     const button = el.querySelector('button[aria-label="Toggle menu"]') as HTMLButtonElement
+    const panel = document.getElementById(button.getAttribute('aria-controls') ?? '') as HTMLElement
     expect(button.getAttribute('aria-expanded')).toBe('false')
-    expect(el.querySelector('nav > div.flex-col')).toBeNull()
+    // The panel is always mounted so the button can reference it while closed.
+    expect(panel).not.toBeNull()
+    expect(panel.hidden).toBe(true)
+    // Inline fallback: the closed panel stays hidden even without preflight.
+    expect(panel.style.display).toBe('none')
+    expect(button.getAttribute('aria-controls')).toBe(panel.id)
 
     act(() => button.click())
-    const panel = el.querySelector('nav > div.flex-col') as HTMLElement
     expect(button.getAttribute('aria-expanded')).toBe('true')
+    expect(panel.hidden).toBe(false)
+    expect(panel.style.display).toBe('')
     expect(panel.textContent).toContain('About')
     expect(panel.textContent).toContain('Plain')
     expect(panel.querySelector('a[href="/about"]')).not.toBeNull()
     expect(panel.querySelector('a[href="https://x.example/go"]')?.textContent).toBe('Start')
 
     act(() => button.click())
-    expect(el.querySelector('nav > div.flex-col')).toBeNull()
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+    expect(panel.hidden).toBe(true)
   })
 })

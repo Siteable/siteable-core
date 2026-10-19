@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { BlockConfig } from '../types'
 import { defaultFaqItems } from '@/lib/block-default-content'
@@ -18,11 +18,21 @@ interface FaqProps {
 // the prop normalizer (was an inline literal, value-identical).
 const defaultFaqs = defaultFaqItems as FaqItem[]
 
+/**
+ * One accordion row. The button exposes its expanded state and references the
+ * answer it controls, so assistive technology can follow the relationship
+ * whether the row is open or closed. Reduced-motion visitors get no transition
+ * on either the answer or the chevron.
+ */
 function AccordionItem({ item, isOpen, onToggle }: { item: FaqItem; isOpen: boolean; onToggle: () => void }) {
+  const answerId = useId()
+
   return (
     <div className="border-b border-border-subtle">
       <button
         onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls={answerId}
         className="w-full flex items-center justify-between py-4 text-left group"
       >
         <span className="text-[13.5px] font-medium text-text-0 group-hover:text-green transition-colors">
@@ -30,13 +40,14 @@ function AccordionItem({ item, isOpen, onToggle }: { item: FaqItem; isOpen: bool
         </span>
         <ChevronDown
           size={16}
-          className={`text-text-3 shrink-0 ml-4 transition-transform duration-200 ${
+          className={`text-text-3 shrink-0 ml-4 transition-transform duration-200 motion-reduce:transition-none ${
             isOpen ? 'rotate-180 text-green' : ''
           }`}
         />
       </button>
       <div
-        className={`overflow-hidden transition-all duration-200 ${
+        id={answerId}
+        className={`overflow-hidden transition-all duration-200 motion-reduce:transition-none ${
           isOpen ? 'max-h-[500px] pb-4' : 'max-h-0'
         }`}
       >
