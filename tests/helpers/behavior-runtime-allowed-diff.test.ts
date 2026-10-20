@@ -15,6 +15,7 @@ import { exportSiteToHTML } from '../../src/lib/export-html'
 import {
   stripRuntimeAdditions,
   stripLegacyFaq,
+  stripRuntimeScriptText,
 } from './behavior-runtime-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../../src/blocks/types'
 
@@ -135,5 +136,80 @@ describe('stripLegacyFaq — exact legacy literal only', () => {
     expect(html).toContain('<nav')
     expect(html).toContain('<footer')
     expect(html).toContain('Get Started')
+  })
+})
+
+describe('stripRuntimeScriptText — the runtime script element text only', () => {
+  // The frozen 0.4.0 baseline holds the runtime source AS IT WAS THEN, so a
+  // normalizer that strips the CURRENT source cannot compare against it. This
+  // rule instead empties the text of the runtime script element on BOTH sides
+  // and leaves every other byte in the document compared.
+  const withScript = exportSiteToHTML(baselineConfig)
+  const otherText = withScript.replace(
+    '(function(d,w){',
+    '(function(d,w){/* a future runtime revision */',
+  )
+
+  it('ignores the script element text and reports one script', () => {
+    const a = stripRuntimeScriptText(withScript)
+    const b = stripRuntimeScriptText(otherText)
+
+    expect(a.html).toBe(b.html)
+    expect(a.counts.scripts).toBe(1)
+    expect(b.counts.scripts).toBe(1)
+    // The tag survives so its position in the document stays compared.
+    expect(a.html).toContain('<script data-sb-runtime></script>')
+    expect(a.html).not.toContain('(function(d,w){')
+  })
+
+  it('still fails on a single byte outside the script element', () => {
+    const mutated = withScript.replace('Get Started', 'Get Started!')
+    expect(stripRuntimeScriptText(withScript).html).not.toBe(
+      stripRuntimeScriptText(mutated).html,
+    )
+  })
+
+  it('still fails on a byte inside the noscript block', () => {
+    const mutated = withScript.replace('<noscript>', '<noscript> ')
+    expect(stripRuntimeScriptText(withScript).html).not.toBe(
+      stripRuntimeScriptText(mutated).html,
+    )
+  })
+
+  it('a page without the runtime script is unchanged and reports zero', () => {
+    const plain = exportSiteToHTML({
+      name: 'Plain',
+      blocks: [
+        {
+          id: 'f-1',
+          type: 'features',
+          variant: 'list',
+          props: { title: 'Plain', items: [{ title: 'One', description: 'No runtime' }] },
+        },
+      ] as BlockConfig[],
+    })
+    expect(stripRuntimeScriptText(plain)).toEqual({ html: plain, counts: { scripts: 0 } })
+  })
+
+  it('a missing close tag leaves the tail compared instead of swallowing it', () => {
+    // The one branch whose failure would HIDE content: if the rule truncated to
+    // end-of-document, every element after the broken marker would vanish from
+    // both sides and the difference would disappear. It must instead leave the
+    // tail intact, so a lost `</script>` fails the comparison loudly.
+    const broken = withScript.replace('</script>\n</body>', '<span>KEEP</span>')
+    expect(broken).not.toBe(withScript) // the mutation actually landed
+    expect(stripRuntimeScriptText(broken).html).toContain('<span>KEEP</span>')
+  })
+
+  it('a second, unterminated script still strips the first one and counts once', () => {
+    // Asymmetric by design: the complete script is stripped, the broken tail is
+    // left alone. The count reports 1, so a caller asserting 1 is told exactly
+    // how many complete elements were seen.
+    const O = '<script data-sb-runtime>'
+    const html = `<p>a</p>${O}one()${'</script>'}<p>b</p>${O}two() unterminated`
+
+    const result = stripRuntimeScriptText(html)
+    expect(result.counts.scripts).toBe(1)
+    expect(result.html).toBe(`<p>a</p>${O}${'</script>'}<p>b</p>${O}two() unterminated`)
   })
 })

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corpus Six</title>
+  <meta property="og:title" content="Corpus Six" />
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" />
+
+  <!-- Tailwind CSS (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-0': '#fdfdfc',
+            'bg-1': '#0f0f12',
+            'bg-2': '#18181b',
+            'bg-3': '#1e1e23',
+            'bg-4': '#27272a',
+            'bg-5': '#303036',
+            'text-0': '#1c1917',
+            'text-1': '#a1a1aa',
+            'text-2': '#71717a',
+            'text-3': '#52525b',
+            'green': {
+              DEFAULT: '#0f766e',
+              dim: '#16a34a',
+            },
+            'border-default': '#2a2a2f',
+            'border-subtle': '#1f1f24',
+            'border-hover': '#3a3a3f',
+          },
+          fontFamily: {
+            sans: ['"Inter"', '-apple-system', 'system-ui', 'sans-serif'],
+            display: ['"Playfair Display"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          borderRadius: {
+            DEFAULT: '6px',
+            lg: '12px',
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Theme CSS Custom Properties -->
+  <style>
+    :root {
+      --color-bg-0: #fdfdfc;
+      --color-bg-1: #0f0f12;
+      --color-bg-2: #18181b;
+      --color-bg-3: #1e1e23;
+      --color-bg-4: #27272a;
+      --color-bg-5: #303036;
+      --color-text-0: #1c1917;
+      --color-text-1: #a1a1aa;
+      --color-text-2: #71717a;
+      --color-text-3: #52525b;
+      --color-green: #0f766e;
+      --color-green-dim: #16a34a;
+      --color-border-default: #2a2a2f;
+      --color-border-subtle: #1f1f24;
+      --color-border-hover: #3a3a3f;
+      --font-sans: "Inter", -apple-system, system-ui, sans-serif;
+      --font-display: "Playfair Display", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+      --radius-default: 6px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: #fdfdfc;
+      color: #1c1917;
+      font-family: "Inter", -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Playfair Display", system-ui, sans-serif;
+    }
+
+    .faq-content {
+      transition: max-height 0.2s ease, padding-bottom 0.2s ease;
+    }
+
+    .faq-chevron {
+      transition: transform 0.2s ease;
+    }
+  </style>
+
+
+</head>
+<body>
+
+  <section id="h-1" class="px-6 md:px-10 py-16 md:py-24 flex flex-col lg:flex-row items-center gap-10">
+      <div class="flex-1">
+
+        <h1 class="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4">Themed</h1>
+        <p class="text-text-2 text-base leading-relaxed mb-6 max-w-lg"></p>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="px-6 py-3 rounded-lg bg-green text-black text-sm font-semibold hover:bg-green-dim transition-all inline-flex items-center gap-2"></span>
+
+        </div>
+      </div>
+      <div class="flex-1 w-full">
+        <div class="aspect-[4/3] rounded-xl bg-bg-2 border border-border-default overflow-hidden relative">
+          <img src="https://cdn.example.com/hero.png" alt="" class="absolute inset-0 w-full h-full object-cover" />
+        </div>
+      </div>
+  </section>
+
+</body>
+</html>
