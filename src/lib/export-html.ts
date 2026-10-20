@@ -13,7 +13,9 @@ import { renderVideo } from './export-blocks/render-video'
 import { renderGallery } from './export-blocks/render-gallery'
 import { renderDivider } from './export-blocks/render-divider'
 import { renderBanner } from './export-blocks/render-banner'
+import { renderFeaturesTabs, tabSetId } from './export-blocks/render-features-tabs'
 import {
+  isFeaturesTabSet,
   MENU_PANEL_ID_PREFIX,
   needsBehaviorRuntime,
   renderBehaviorNoscript,
@@ -1177,25 +1179,39 @@ ${logosHtml}
 // Block dispatcher
 // ---------------------------------------------------------------------------
 
+/**
+ * Per-document id counters. A navbar panel and a tab set each need a suffix that
+ * is unique on the PAGE, and a block id cannot supply one: it may be absent, and
+ * two blocks may share it. Separate counters keep the two id families disjoint.
+ */
+interface EmitIds {
+  menu: number
+  tabs: number
+}
+
 function renderBlock(
   block: BlockConfig,
   seen: Set<string>,
-  menuSeq: { n: number }
+  ids: EmitIds
 ): string {
-  return withBlockId(renderBlockMarkup(block, menuSeq), block.id, seen)
+  return withBlockId(renderBlockMarkup(block, ids), block.id, seen)
 }
 
-function renderBlockMarkup(block: BlockConfig, menuSeq: { n: number }): string {
+function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
   switch (block.type) {
     case 'navbar':
       return renderNavbar(
         block,
-        escapeHtml(`${MENU_PANEL_ID_PREFIX}${++menuSeq.n}`)
+        escapeHtml(`${MENU_PANEL_ID_PREFIX}${++ids.menu}`)
       )
     case 'hero':
       return renderHero(block)
     case 'features':
-      return renderFeatures(block)
+      // The opt-in tab layout diverges here and nowhere else, so a page without
+      // the option keeps the default renderer's bytes exactly.
+      return isFeaturesTabSet(block)
+        ? renderFeaturesTabs(block, tabSetId(++ids.tabs))
+        : renderFeatures(block)
     case 'pricing':
       return renderPricing(block)
     case 'cta':
@@ -1323,8 +1339,8 @@ export function renderDocument(
   const needs = needsBehaviorRuntime(body)
 
   const seenIds = new Set<string>()
-  const menuSeq = { n: 0 }
-  const blocksHtml = body.map((b) => renderBlock(b, seenIds, menuSeq)).join('\n\n')
+  const emitIds: EmitIds = { menu: 0, tabs: 0 }
+  const blocksHtml = body.map((b) => renderBlock(b, seenIds, emitIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
   const pageDescription = (settings?.seoDescription || settings?.siteDescription || '').trim()
@@ -1486,7 +1502,7 @@ ${ogDescriptionMeta}${ogImageMeta}${faviconLink}
     }
   </style>
 ${gaScript}
-${posthogScript}${needs ? renderBehaviorNoscript() : ''}
+${posthogScript}${needs ? renderBehaviorNoscript(body) : ''}
 </head>
 <body>
 

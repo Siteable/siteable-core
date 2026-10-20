@@ -17,7 +17,7 @@
  * would make every byte-identity assertion in this file pass vacuously, so each
  * file's digest is pinned and any regeneration turns this suite red.
  *
- * Two comparison rules, per page:
+ * Three comparison rules, per page:
  *   - STRICT — the fresh export equals the frozen file byte for byte. Used for
  *     every page that does not carry the behavior runtime.
  *   - SCRIPT-TEXT-TOLERANT — the runtime script element's TEXT is emptied on both
@@ -25,6 +25,12 @@
  *     source as it was emitted by 0.4.0; once that source changes there is no
  *     literal left to strip, so only the element's text is exempt. Every other
  *     byte, including the no-script block, stays compared.
+ *   - TAB-SET-TOLERANT — the tab-set sections are masked and the rules and
+ *     wrappers the page gained are removed, then compared. Used for the pages
+ *     that render an opted-in tab set: they gain a whole script element and a
+ *     no-script element that the frozen document does not have, so the
+ *     script-text rule above cannot close them (it strips nothing from the
+ *     frozen side). Every other byte stays compared.
  */
 import { describe, it, expect } from 'vitest'
 import { createHash } from 'node:crypto'
@@ -38,6 +44,7 @@ import {
   render,
 } from './helpers/export-baseline-0.4.0-inputs'
 import { stripRuntimeScriptText } from './helpers/behavior-runtime-allowed-diff'
+import { reduceForComparison } from './helpers/tab-set-allowed-diff'
 
 /** sha256 of every captured file. Any regeneration or hand-edit fails here. */
 const FROZEN_SHA256: Record<string, string> = {
@@ -81,12 +88,44 @@ const STRICT_SITES = [
   'features-no-display',
   'features-tabs-one-item',
   'features-hostile-display',
-  'features-tabs-three',
-  'features-tabs-variants',
 ]
 /** Tolerant set: pages carrying the runtime script element. */
 const TOLERANT_CORPUS = ['corpus-01', 'corpus-05']
 const TOLERANT_SITES = ['navbar-faq-no-tabs']
+/**
+ * Tab-set set: pages that render an opted-in tab set. Their tab-set blocks are
+ * masked by block id, so the ids are the fixture inputs, not arbitrary names.
+ */
+const TAB_SET_SITES = [
+  { slug: 'features-tabs-three', ids: ['f-1'] },
+  { slug: 'features-tabs-variants', ids: ['f-grid', 'f-list', 'f-alt'] },
+]
+
+/**
+ * Every pinned fixture must be NAMED by a comparison rule somewhere. The pin
+ * table proves a file exists and is unmodified; this proves the lists did not
+ * silently lose a row. It is bookkeeping, not enforcement: the fixtures marked
+ * delegated are compared by the tab-set suite, and deleting those comparisons
+ * would not fail this file.
+ */
+describe('every pinned fixture is named by a comparison rule', () => {
+  it('the lists name every fixture, including the delegated ones', () => {
+    const named = [
+      ...STRICT_CORPUS.map((slug) => `${slug}.html`),
+      ...STRICT_SITES.map((slug) => `${slug}.html`),
+      ...TOLERANT_CORPUS.map((slug) => `${slug}.html`),
+      ...TOLERANT_SITES.map((slug) => `${slug}.html`),
+      ...TAB_SET_SITES.map(({ slug }) => `${slug}.html`),
+      // Delegated to the tab-set suite.
+      'two-page-tabs--1.html',
+      'navbar-faq-tabs.html',
+      // Strict, in this file.
+      'two-page-tabs--2.html',
+    ]
+
+    expect(named.sort()).toEqual(Object.keys(FROZEN_SHA256).sort())
+  })
+})
 
 function renderCorpus(file: string): string {
   const entry = readCorpus().find((candidate) => candidate.slug === file)
@@ -103,14 +142,13 @@ describe('byte identity against the frozen 0.4.0 export (strict)', () => {
     expect(render(findSite(slug))).toBe(fixtureHtml(`${slug}.html`))
   })
 
-  it.each([
-    ['two-page-tabs--1.html', 0],
-    ['two-page-tabs--2.html', 1],
-  ])('%s is byte-identical', (file, index) => {
+  it('two-page-tabs--2.html is byte-identical', () => {
+    // The plain page of the multi-page site: it carries no tab set, so it stays
+    // under the strict rule permanently.
     const entry = findSite('two-page-tabs')
     const pages = exportSitePages(entry.config, entry.options ?? undefined)
     expect(pages).toHaveLength(2)
-    expect(pages[index as number].html).toBe(fixtureHtml(file as string))
+    expect(pages[1].html).toBe(fixtureHtml('two-page-tabs--2.html'))
   })
 
   it('a changed input is a failure, not a near match', () => {
@@ -153,5 +191,67 @@ describe('byte identity against the frozen 0.4.0 export (script-text-tolerant)',
     expect(stripRuntimeScriptText(frozen).html).not.toBe(
       stripRuntimeScriptText(mutated).html,
     )
+  })
+})
+
+describe('byte identity against the frozen 0.4.0 export (tab-set-tolerant)', () => {
+  /**
+   * Reduce a FRESH tab page to the bytes it must keep and assert the strip
+   * counts that keep the rule narrow. The frozen side is reduced identically —
+   * its block anchors are masked too — but only the fresh side's counts are
+   * asserted: it is the side that must show the expected population.
+   */
+  function expectTabSetMatch(fresh: string, file: string, ids: string[]) {
+    const reduced = reduceForComparison(fresh, ids, 'tabs-only')
+    const frozen = reduceForComparison(fixtureHtml(file), ids, 'tabs-only')
+
+    expect(reduced.counts.scripts, `${file}: runtime script element`).toBe(1)
+    expect(reduced.counts.noscripts, `${file}: no-script element`).toBe(1)
+    expect(reduced.counts.tabRules, `${file}: tab rules`).toBe(1)
+    expect(reduced.counts.sections, `${file}: masked tab-set sections`).toBe(ids.length)
+    // The frozen side is masked by the same ids: its default-layout sections
+    // carry the same block anchors, so a mask that stopped anchoring there would
+    // otherwise be caught only incidentally by the fresh-side count.
+    expect(frozen.counts.sections, `${file}: frozen tab-set sections`).toBe(ids.length)
+    expect(frozen.counts.scripts, `${file}: frozen script element`).toBe(0)
+    expect(reduced.html).toBe(frozen.html)
+  }
+
+  it.each(TAB_SET_SITES)(
+    '$slug matches once its tab sets are masked and the rules removed',
+    ({ slug, ids }) => {
+      expectTabSetMatch(render(findSite(slug)), `${slug}.html`, ids)
+    },
+  )
+
+  it('two-page-tabs--1.html matches, and page 2 stays under the strict rule', () => {
+    const entry = findSite('two-page-tabs')
+    const pages = exportSitePages(entry.config, entry.options ?? undefined)
+
+    expect(pages).toHaveLength(2)
+    expectTabSetMatch(pages[0].html, 'two-page-tabs--1.html', ['f-1'])
+    // The script lives on page 1 only: page 2 is the plain page.
+    expect(pages[1].html).not.toContain('data-sb-runtime')
+  })
+
+  it('a byte outside the masked tab section is a failure', () => {
+    const entry = findSite('features-tabs-three')
+    const mutated = render({ ...entry, config: { ...entry.config, name: 'Other' } })
+
+    expect(reduceForComparison(mutated, ['f-1'], 'tabs-only').html).not.toBe(
+      reduceForComparison(fixtureHtml('features-tabs-three.html'), ['f-1'], 'tabs-only').html,
+    )
+  })
+
+  it('a page with no tab-set wrappers fails the counts', () => {
+    // The frozen 0.4.0 document has no script and no no-script element, so the
+    // count assertions reject it. This is a guard TEETH case for the counts, not
+    // a dispatch-revert detector: a dispatch revert still emits the script and
+    // the tab rules (both predicates are independent of the dispatcher), and the
+    // default-layout section still carries the block anchor, so the masked
+    // comparison would pass. The markup suite owns the dispatch-revert case.
+    expect(() =>
+      expectTabSetMatch(fixtureHtml('features-tabs-three.html'), 'frozen.html', ['f-1']),
+    ).toThrow()
   })
 })
