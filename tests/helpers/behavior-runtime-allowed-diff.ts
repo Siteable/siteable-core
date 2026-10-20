@@ -113,3 +113,48 @@ export function stripLegacyFaq(html: string): StripResult<LegacyFaqStripCounts> 
     counts: { scripts: script.count, onclick: attrs.count, toggleFaq },
   }
 }
+
+const RUNTIME_SCRIPT_OPEN = '<script data-sb-runtime>'
+const SCRIPT_CLOSE = '</script>'
+
+/**
+ * Empty the text of the runtime script element, keeping the element itself.
+ *
+ * A frozen export baseline holds the runtime source AS IT WAS EMITTED THEN, so
+ * once that source changes there is no literal left to strip: `stripRuntimeAdditions`
+ * can only ever remove the current one. This rule is the comparison that
+ * survives the change — it blanks the script text on BOTH sides and leaves every
+ * other byte in the document compared.
+ *
+ * Bounded by literal markers rather than a regex: the start marker is literal and
+ * the text runs to the FIRST `</script>`, so the rule cannot run past the element
+ * while that marker is present — which is the case that matters, since an
+ * emitted script cannot contain a bare `</script>` in its body. If the marker is
+ * MISSING the loop exits and the remainder is left compared rather than
+ * truncated, so an exporter that loses the close tag fails the comparison loudly
+ * instead of silently hiding the elements in between. The count is returned so a
+ * no-op strip cannot pass a test that expects a populated page.
+ */
+export function stripRuntimeScriptText(html: string): StripResult<{ scripts: number }> {
+  let out = ''
+  let rest = html
+  let scripts = 0
+
+  for (;;) {
+    const start = rest.indexOf(RUNTIME_SCRIPT_OPEN)
+    if (start === -1) break
+    const bodyStart = start + RUNTIME_SCRIPT_OPEN.length
+    const end = rest.indexOf(SCRIPT_CLOSE, bodyStart)
+    // A missing close tag leaves the remainder compared rather than truncating
+    // it: swallowing everything after the marker would hide whatever markup sits
+    // in between. The failure is asymmetric on purpose — anything already
+    // stripped stays stripped, and the unterminated tail is reported as-is.
+    if (end === -1) break
+
+    out += rest.slice(0, bodyStart)
+    rest = rest.slice(end)
+    scripts += 1
+  }
+
+  return { html: out + rest, counts: { scripts } }
+}

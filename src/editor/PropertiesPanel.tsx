@@ -10,6 +10,8 @@ interface FieldDef {
   label: string
   type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links'
   options?: string[]
+  /** Display text per option value; a missing value renders the value itself. */
+  optionLabels?: Record<string, string>
 }
 
 // Friendly sub-field labels for the generic `array-items` renderer (otherwise it
@@ -98,6 +100,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         title: 'Style',
         fields: [
           { key: 'variant', label: 'Variant', type: 'select', options: ['grid', 'list', 'alternating'] },
+          { key: 'display', label: 'Display', type: 'select', options: ['', 'tabs'], optionLabels: { '': 'Default layout', tabs: 'Tabs' } },
         ],
       },
     ],
@@ -360,6 +363,13 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
   },
 }
 
+/** A copy of `props` without `key` — `updateBlockProps` merges and cannot delete. */
+function withoutKey(props: Record<string, unknown>, key: string): Record<string, unknown> {
+  const next = { ...props }
+  delete next[key]
+  return next
+}
+
 function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }) {
   const updateBlockProps = useConfigStore((s) => s.updateBlockProps)
   const updateBlock = useConfigStore((s) => s.updateBlock)
@@ -373,9 +383,16 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
   const onChange = (newValue: unknown) => {
     if (field.key === 'variant') {
       updateBlock(block.id, { variant: newValue as string })
-    } else {
-      updateBlockProps(block.id, { [field.key]: newValue })
+      return
     }
+    // An empty select value means "unset the option": the stored key must be
+    // absent, so replace `props` without it (undo still records the change).
+    // Scoped to selects — a cleared text field keeps its empty string.
+    if (field.type === 'select' && newValue === '') {
+      updateBlock(block.id, { props: withoutKey(block.props, field.key) })
+      return
+    }
+    updateBlockProps(block.id, { [field.key]: newValue })
   }
 
   switch (field.type) {
@@ -415,7 +432,7 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
             className="w-full px-2 py-1.5 rounded border border-border-default bg-bg-2 text-text-0 text-xs outline-none focus:border-green cursor-pointer"
           >
             {field.options?.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>{field.optionLabels?.[opt] ?? opt}</option>
             ))}
           </select>
         </div>

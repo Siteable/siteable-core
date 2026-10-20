@@ -42,8 +42,12 @@ jobs:
       - run: npm test
 
   # Real-browser checks: layout, computed CSS, the accessibility tree, and
-  # script-disabled rendering. Additive — NOT in the required-status-check set,
-  # so a flaky runner cannot soft-lock merges, but a red run is a real signal.
+  # script-disabled rendering. These carry evidence that no unit test can
+  # produce, so this job IS a required status check on main (listed in branch
+  # protection, Settings > Branches — that list, not this file, is what makes
+  # a check blocking; a job that runs but is not listed there cannot stop a
+  # merge). Accepted trade-off of requiring it: a flaky spec can soft-lock
+  # merges, so keep these specs deterministic.
   browser:
     name: browser
     runs-on: ubuntu-latest

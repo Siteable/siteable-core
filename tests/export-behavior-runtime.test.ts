@@ -34,7 +34,7 @@ const SIZE_CAP_BYTES = 5120
  * a green suite plus a silently drifted source is exactly the failure this
  * guards against.
  */
-const SOURCE_SHA256 = 'bab0c62f28acd1b2d679d0623fd04faa68304e535f08f37acc63fd71e460b760'
+const SOURCE_SHA256 = 'd518f2fbd638525bafe0c0bded8dab6e56b726795fe9435f86819923b984c973'
 
 describe('needsBehaviorRuntime — per-page emission predicate', () => {
   it.each([

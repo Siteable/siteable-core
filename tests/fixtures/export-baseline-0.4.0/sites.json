@@ -1,0 +1,389 @@
+{
+  "note": "Purpose-built input sites for the frozen 0.4.0 export baseline. Every entry is rendered by the 0.4.0 exporter and written to `<slug>.html` (single page) or `<slug>--<n>.html` (one file per page, in array order). Never regenerate the captured HTML. Content is generic placeholder text.",
+  "sites": [
+    {
+      "slug": "features-no-display",
+      "note": "Hero plus a features grid with three items and no `display` prop. The default rendering every other features site must stay byte-identical to.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "h-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "Baseline hero",
+              "subheadline": "Default features rendering",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Features",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" },
+                { "icon": "C", "title": "Third feature", "description": "The third baseline feature" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "features-tabs-one-item",
+      "note": "A features block asking for tabs with a single item — below the two-item threshold, so the default rendering is the frozen reference.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Single item",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "Only feature", "description": "One item is never a tab set" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "features-hostile-display",
+      "note": "Seven features blocks whose `display` value is a wrong-case string, a padded string, a near-miss string, a number, an object, an array and an injection-shaped string. 0.4.0 ignores `display` entirely, so every block renders as its variant default; that is exactly what this file freezes.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "f-upper",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Uppercase",
+              "display": "TABS",
+              "items": [{ "icon": "A", "title": "Alpha", "description": "Uppercase display value" }]
+            }
+          },
+          {
+            "id": "f-padded",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Padded",
+              "display": " tabs",
+              "items": [{ "icon": "B", "title": "Beta", "description": "Leading-space display value" }]
+            }
+          },
+          {
+            "id": "f-singular",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Singular",
+              "display": "tab",
+              "items": [{ "icon": "C", "title": "Gamma", "description": "Singular display value" }]
+            }
+          },
+          {
+            "id": "f-number",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Number",
+              "display": 1,
+              "items": [{ "icon": "D", "title": "Delta", "description": "Numeric display value" }]
+            }
+          },
+          {
+            "id": "f-object",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Object",
+              "display": {},
+              "items": [{ "icon": "E", "title": "Epsilon", "description": "Object display value" }]
+            }
+          },
+          {
+            "id": "f-array",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Array",
+              "display": ["tabs"],
+              "items": [{ "icon": "F", "title": "Zeta", "description": "Array display value" }]
+            }
+          },
+          {
+            "id": "f-injection",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Injection",
+              "display": "\"><script>alert(1)</script>",
+              "items": [{ "icon": "G", "title": "Eta", "description": "Injection-shaped display value" }]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "features-tabs-three",
+      "note": "Hero plus a three-item features grid asking for tabs — the primary tab site the export lane compares against this frozen default.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "h-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "Tabs hero",
+              "subheadline": "Three tab panels",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" },
+                { "icon": "C", "title": "Third feature", "description": "The third baseline feature" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "features-tabs-variants",
+      "note": "Three blocks asking for tabs with distinct ids and three variants (grid, list and an unknown variant that falls back to grid).",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "f-grid",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Grid tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "Grid one", "description": "Grid panel one" },
+                { "icon": "B", "title": "Grid two", "description": "Grid panel two" }
+              ]
+            }
+          },
+          {
+            "id": "f-list",
+            "type": "features",
+            "variant": "list",
+            "props": {
+              "title": "List tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "C", "title": "List one", "description": "List panel one" },
+                { "icon": "D", "title": "List two", "description": "List panel two" }
+              ]
+            }
+          },
+          {
+            "id": "f-alt",
+            "type": "features",
+            "variant": "alternating",
+            "props": {
+              "title": "Alternating tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "E", "title": "Alt one", "description": "Alternating panel one" },
+                { "icon": "F", "title": "Alt two", "description": "Alternating panel two" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "navbar-faq-no-tabs",
+      "note": "Navbar plus FAQ plus a plain features block. This page carries the behavior runtime, so it is compared with the script-element text emptied on both sides rather than byte-for-byte.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": ["Product", "Features", "Pricing"],
+              "ctaText": "Get Started"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "FAQ",
+              "items": [
+                { "question": "What is this?", "answer": "A baseline site" },
+                { "question": "Why frozen?", "answer": "A byte-identity tripwire" }
+              ]
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "list",
+            "props": {
+              "title": "Features",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "navbar-faq-tabs",
+      "note": "Navbar plus FAQ plus a features list asking for tabs — the combined runtime and tab page.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": ["Product", "Features"],
+              "ctaText": "Get Started"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "FAQ",
+              "items": [{ "question": "What is this?", "answer": "A tab page with a runtime" }]
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "list",
+            "props": {
+              "title": "Tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "two-page-tabs",
+      "note": "Two pages: page 1 is a three-item features grid asking for tabs, page 2 is a hero plus a plain features block. Captured as `two-page-tabs--1.html` and `two-page-tabs--2.html`.",
+      "multipage": true,
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "title": "Tabs",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" },
+                { "icon": "C", "title": "Third feature", "description": "The third baseline feature" }
+              ]
+            }
+          }
+        ],
+        "pages": [
+          {
+            "id": "page-tabs",
+            "name": "Tabs",
+            "path": "/",
+            "blocks": [
+              {
+                "id": "f-1",
+                "type": "features",
+                "variant": "grid",
+                "props": {
+                  "title": "Tabs",
+                  "display": "tabs",
+                  "items": [
+                    { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                    { "icon": "B", "title": "Second feature", "description": "The second baseline feature" },
+                    { "icon": "C", "title": "Third feature", "description": "The third baseline feature" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "page-plain",
+            "name": "Plain",
+            "path": "/plain/",
+            "blocks": [
+              {
+                "id": "h-1",
+                "type": "hero",
+                "variant": "gradient",
+                "props": {
+                  "headline": "Plain page",
+                  "subheadline": "No display prop anywhere",
+                  "primaryCta": "Start",
+                  "primaryCtaUrl": "https://example.com/start"
+                }
+              },
+              {
+                "id": "f-1",
+                "type": "features",
+                "variant": "grid",
+                "props": {
+                  "title": "Features",
+                  "items": [
+                    { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                    { "icon": "B", "title": "Second feature", "description": "The second baseline feature" }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": null
+    }
+  ]
+}

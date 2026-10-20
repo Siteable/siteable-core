@@ -7,9 +7,10 @@
  * run scripts assigned through `innerHTML`, so the runtime text is evaluated
  * explicitly with `new Function` — the same bytes a browser would run.
  *
- * The fixture blocks and the shared behavior table live in
- * `tests/helpers/behavior-test-table.ts`; the parity row replays that table in
- * the React preview and in the exported page and compares the outcomes.
+ * The fixture blocks live in `tests/helpers/behavior-fixtures.ts`; the shared
+ * behavior table and its runner live in `tests/helpers/behavior-test-table.ts`
+ * (re-exporting the fixtures). The parity row replays that table in the React
+ * preview and in the exported page and compares the outcomes.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
@@ -23,12 +24,9 @@ import { RenderBlock } from '../../src/blocks/registry'
 import {
   BEHAVIOR_CASES,
   FIXTURE_BLOCKS,
-  controlledPanel,
   isFaqOpen,
+  runCase,
   type BehaviorAdapter,
-  type BehaviorCase,
-  type ExpectedView,
-  type Step,
 } from '../helpers/behavior-test-table'
 import {
   stripLegacyFaq,
@@ -334,8 +332,9 @@ describe('editor parity', () => {
       editorHost = document.createElement('div')
       document.body.appendChild(editorHost)
       editorRoot = createRoot(editorHost)
-      const children = FIXTURE_BLOCKS[fixture].map((block) =>
-        createElement(RenderBlock, { key: block.id, block }),
+      // Index keys: a fixture may deliberately repeat a block id.
+      const children = FIXTURE_BLOCKS[fixture].map((block, index) =>
+        createElement(RenderBlock, { key: index, block }),
       )
       act(() => editorRoot!.render(createElement(Fragment, null, children)))
     },
@@ -377,85 +376,12 @@ describe('editor parity', () => {
     },
   }
 
-  function panelHasTransition(panel: HTMLElement | null): boolean {
-    if (!panel) return false
-    const classTransition = panel.className.split(/\s+/).some(
-      (name) =>
-        (name.startsWith('transition') && name !== 'transition-none') ||
-        (name.startsWith('animate') && name !== 'animate-none'),
-    )
-    return classTransition || panel.style.transition !== ''
-  }
-
-  function applyStep(adapter: BehaviorAdapter, step: Step): void {
-    switch (step.kind) {
-      case 'click': {
-        const buttons = step.target === 'menu' ? adapter.menuButtons() : adapter.faqButtons()
-        const target = buttons[step.index]
-        if (!target) throw new Error(`no ${step.target} button at index ${step.index}`)
-        adapter.click(target)
-        return
-      }
-      case 'focusFirstPanelLink': {
-        const button = adapter.menuButtons()[step.menu]
-        const link = button && controlledPanel(button)?.querySelector('a')
-        if (!link) throw new Error(`no panel link at menu ${step.menu}`)
-        ;(link as HTMLElement).focus()
-        if (document.activeElement !== link) throw new Error('panel link did not receive focus')
-        return
-      }
-      case 'key':
-        adapter.key(document.activeElement ?? document.body, step.key)
-        return
-      case 'reducedMotion':
-        adapter.setReducedMotion(step.on)
-        return
-    }
-  }
-
-  function observe(adapter: BehaviorAdapter, expected: ExpectedView): Record<string, unknown> {
-    const view: Record<string, unknown> = {}
-    const menus = adapter.menuButtons()
-    if (expected.menus) {
-      view.menus = menus.map((button) => {
-        const panel = controlledPanel(button)
-        const expanded = button.getAttribute('aria-expanded') === 'true'
-        const hidden = panel ? panel.hidden : true
-        return {
-          expanded,
-          hidden,
-          open: expanded && !!panel && !hidden,
-          reference: !!panel,
-          label: (button.getAttribute('aria-label') ?? '').trim().length > 0,
-          noTransition: !panelHasTransition(panel),
-        }
-      })
-    }
-    if (expected.focusMenu !== undefined) {
-      view.focusMenu = menus.indexOf(document.activeElement as HTMLButtonElement)
-    }
-    if (expected.distinctPanels !== undefined) {
-      const ids = menus.map((button) => button.getAttribute('aria-controls') ?? '')
-      view.distinctPanels =
-        ids.length === new Set(ids).size && ids.every((id) => !!document.getElementById(id))
-    }
-    if (expected.faq) view.faq = adapter.faqButtons().map(isFaqOpen)
-    return view
-  }
-
-  function runCase(
-    adapter: BehaviorAdapter,
-    behaviorCase: BehaviorCase,
-  ): Record<string, unknown> {
-    adapter.mount(behaviorCase.fixture)
-    for (const step of behaviorCase.steps) applyStep(adapter, step)
-    return observe(adapter, behaviorCase.expect)
-  }
-
   afterEach(unmountEditor)
 
   it('E2E-02-008 editor and export produce identical outcomes for every shared row', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
+    // The loop below can only catch a behavior whose rows reached the table.
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
     const rows = BEHAVIOR_CASES.map((behaviorCase) => ({
       behaviorCase,
       editor: runCase(editorAdapter, behaviorCase),
@@ -463,7 +389,7 @@ describe('editor parity', () => {
     }))
 
     for (const row of rows) {
-      // `observe` returns exactly the keys the row declares, so both sides are
+      // `runCase` observes exactly the keys the row declares, so both sides are
       // compared against the same concrete expectation as well as each other.
       expect(row.exported, row.behaviorCase.id).toEqual(row.editor)
       expect(row.exported, row.behaviorCase.id).toEqual(row.behaviorCase.expect)

@@ -1,8 +1,8 @@
 /**
  * Behavior runtime for exported pages.
  *
- * Every exported page that contains a navbar or faq block gets ONE inline
- * script (never a separate asset) that wires two behaviors through delegated
+ * Every exported page that contains a navbar, faq or tabs block gets ONE inline
+ * script (never a separate asset) that wires the behaviors through delegated
  * document listeners, so it performs no initialization work of its own:
  *
  *  - menu: a button carrying `data-sb-menu-toggle` toggles the element named by
@@ -13,6 +13,11 @@
  *  - faq: a `button` whose next sibling is `.faq-content` keeps the legacy
  *    accordion semantics — one item open per section, clicking the open item
  *    closes it, `aria-expanded` per button, inline max-height and padding.
+ *  - tabs: a button carrying `data-sb-tab` inside a `data-sb-tablist` selects
+ *    itself and shows the panel its `aria-controls` names. Arrow keys and
+ *    Home/End move the selection and the focus together; every tab of the set
+ *    mirrors the state, so a tab list never depends on a class or a CSS rule to
+ *    show which panel is open.
  *
  * The script is held as a plain string rather than a TypeScript function so the
  * emitted bytes never depend on the build toolchain: exported pages are
@@ -29,6 +34,7 @@
  */
 
 export const MENU_PANEL_ID_PREFIX = 'sb_menu_'
+export const TAB_ID_PREFIX = 'sb_tabs_'
 
 export const BEHAVIOR_RUNTIME_SOURCE = [
   '(function(d,w){',
@@ -79,6 +85,24 @@ export const BEHAVIOR_RUNTIME_SOURCE = [
   'for(i=0;i<list.length;i++)setMenu(list[i],false);',
   'list[0].focus();',
   '});',
+  'function tabsOf(t){var l=t.closest(\'[data-sb-tablist]\');',
+  "return l?l.querySelectorAll('[data-sb-tab]'):[]}",
+  'function selectTab(t,move){var l=tabsOf(t),i,x,p,on;',
+  'for(i=0;i<l.length;i++){',
+  'x=l[i];on=x===t;',
+  "x.setAttribute('aria-selected',on?'true':'false');x.tabIndex=on?0:-1;",
+  "p=d.getElementById(x.getAttribute('aria-controls')||'');if(p)p.hidden=!on}",
+  'if(move)t.focus()}',
+  "d.addEventListener('click',function(e){",
+  'var t=e.target,b=t&&t.closest&&t.closest(\'[data-sb-tab]\');',
+  'if(b)selectTab(b,false)});',
+  "d.addEventListener('keydown',function(e){",
+  'var t=e.target,b=t&&t.closest&&t.closest(\'[data-sb-tab]\');if(!b)return;',
+  'var l=tabsOf(b),n=l.length,i=Array.prototype.indexOf.call(l,b),k=e.key,j=-1;',
+  'if(!n)return;',
+  "if(k==='ArrowRight')j=(i+1)%n;else if(k==='ArrowLeft')j=(i-1+n)%n;",
+  "else if(k==='Home')j=0;else if(k==='End')j=n-1;",
+  'if(j<0)return;e.preventDefault();selectTab(l[j],true)});',
   '})(document,window);',
 ].join('\n')
 
@@ -89,14 +113,44 @@ export const BEHAVIOR_NOSCRIPT_CSS = [
   '.faq-chevron{display:none!important}',
 ].join('\n')
 
+/**
+ * Script-less stylesheet for tabs: with no script the panel markup is all the
+ * visitor has, so the tab strip is dropped and every panel is shown as a plain
+ * block. `!important` is required — the user agent's `[hidden]` rule is what
+ * hides the panels in the scripted case, and only a weighted declaration beats
+ * an author stylesheet's `display` utility.
+ */
+export const TABS_NOSCRIPT_CSS = [
+  '[data-sb-tablist]{display:none!important}',
+  '[data-sb-tab-panel],[data-sb-tab-title]{display:block!important}',
+].join('\n')
+
+/** True for a navbar or faq block — the two widgets the runtime shipped with. */
+function isMenuOrFaq(block: unknown): boolean {
+  if (!block || typeof block !== 'object') return false
+  const type = (block as { type?: unknown }).type
+  return type === 'navbar' || type === 'faq'
+}
+
+/**
+ * True for a features block that renders as a tab set: `display` must be the
+ * exact string `tabs` and the block must carry at least two items, because a
+ * single item has nothing to switch between. Exported so the exporter markup
+ * and this predicate can never disagree about what counts as a tab set.
+ */
+export function isFeaturesTabSet(block: unknown): boolean {
+  if (!block || typeof block !== 'object') return false
+  const candidate = block as { type?: unknown; props?: unknown }
+  if (candidate.type !== 'features') return false
+  if (!candidate.props || typeof candidate.props !== 'object') return false
+  const props = candidate.props as { display?: unknown; items?: unknown }
+  return props.display === 'tabs' && Array.isArray(props.items) && props.items.length >= 2
+}
+
 /** True when a page document contains at least one behavior-owning block. */
 export function needsBehaviorRuntime(blocks: unknown): boolean {
   if (!Array.isArray(blocks)) return false
-  return blocks.some((block) => {
-    if (!block || typeof block !== 'object') return false
-    const type = (block as { type?: unknown }).type
-    return type === 'navbar' || type === 'faq'
-  })
+  return blocks.some((block) => isMenuOrFaq(block) || isFeaturesTabSet(block))
 }
 
 /**
@@ -108,7 +162,20 @@ export function renderBehaviorScript(): string {
   return '\n    <script data-sb-runtime>' + BEHAVIOR_RUNTIME_SOURCE + '</script>'
 }
 
-/** No-script fallback stylesheet for the menu and faq behaviors. */
-export function renderBehaviorNoscript(): string {
-  return '\n  <noscript><style>' + BEHAVIOR_NOSCRIPT_CSS + '</style></noscript>'
+/**
+ * No-script fallback stylesheet, holding the rules only for the widgets the
+ * page actually renders. Called without a block list it emits the menu and faq
+ * rules unconditionally, which is the exact byte string the frozen 0.4.0
+ * baselines were captured with.
+ */
+export function renderBehaviorNoscript(blocks?: unknown): string {
+  if (blocks === undefined) {
+    return '\n  <noscript><style>' + BEHAVIOR_NOSCRIPT_CSS + '</style></noscript>'
+  }
+  if (!Array.isArray(blocks)) return ''
+  const rules: string[] = []
+  if (blocks.some((block) => isMenuOrFaq(block))) rules.push(BEHAVIOR_NOSCRIPT_CSS)
+  if (blocks.some((block) => isFeaturesTabSet(block))) rules.push(TABS_NOSCRIPT_CSS)
+  if (rules.length === 0) return ''
+  return '\n  <noscript><style>' + rules.join('\n') + '</style></noscript>'
 }

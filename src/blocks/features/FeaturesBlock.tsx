@@ -1,9 +1,11 @@
 import type { BlockConfig } from '../types'
+import { isFeaturesTabSet } from '@/lib/export-behavior-runtime'
 import {
   Blocks, Code, Bot, Zap, Shield, Globe,
   Layers, Palette, Rocket, Star, Lock, Settings,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { FeaturesTabs } from './FeaturesTabs'
 
 interface FeatureItem {
   icon?: string
@@ -15,6 +17,7 @@ interface FeaturesProps {
   label?: string
   title: string
   subtitle?: string
+  display?: string
   items: FeatureItem[]
 }
 
@@ -158,6 +161,11 @@ function FeaturesAlternating({ props }: { props: FeaturesProps }) {
 
 export function FeaturesBlock({ block }: { block: BlockConfig }) {
   const props = block.props as unknown as FeaturesProps
+
+  // The opt-in layout shares its predicate with the exporter, so an unknown
+  // `display` value (or fewer than two items) falls through to the default
+  // layout in both places.
+  if (isFeaturesTabSet(block)) return <FeaturesTabs props={props} />
 
   switch (block.variant) {
     case 'list':

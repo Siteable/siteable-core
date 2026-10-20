@@ -130,7 +130,7 @@ const BLOCK_META_KEYS = new Set(['id', 'type', 'variant', 'props'])
 const FLAT_EXTRA_PROPS: Record<string, readonly string[]> = {
   navbar: ['logoImage'],
   hero: ['primaryCtaUrl', 'secondaryCtaUrl', 'heroImage'],
-  features: ['label'],
+  features: ['label', 'display'],
   cta: ['buttonUrl'],
   footer: ['logoImage'],
   testimonials: ['subtitle'],

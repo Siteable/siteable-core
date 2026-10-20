@@ -8,10 +8,10 @@ coverage/
 
 # Local agent working artifacts — never committed, this repo ships as a pure
 # engine. Tracked planning for this repo lives in the siteable/ umbrella.
-plans/
-specs/
-issues/
-features/
+/plans/
+/specs/
+/issues/
+/features/
 **/autopilot-state.json
 # vk manual-test harness artifacts — tests/ is otherwise real tracked vitest
 # code, so scope these narrowly rather than ignoring tests/ wholesale.

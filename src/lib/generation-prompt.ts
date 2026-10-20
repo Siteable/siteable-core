@@ -55,7 +55,7 @@ Every entry below lists the contents of that block's "props" object.
 
 1. navbar (variants: default, centered) - props: { logo, logoImage?, links: (string | { label, href })[], ctaText, ctaUrl? }
 2. hero (variants: centered, split, gradient, minimal) - props: { badge?, headline, subheadline, primaryCta, secondaryCta?, primaryCtaUrl?, secondaryCtaUrl?, heroImage? }
-3. features (variants: grid, list, alternating) - props: { label?, title, subtitle?, items: [{ icon?, title, description }] }
+3. features (variants: grid, list, alternating) - props: { label?, title, subtitle?, display?: "tabs" (only with 2+ items; omit for the default layout), items: [{ icon?, title, description }] }
 4. pricing (variants: simple, comparison) - props: { title, subtitle?, tiers?: [{ name, price, period?, description?, features: string[], cta, ctaUrl?, featured? }] }
 5. cta (variants: simple, split) - props: { headline, subheadline?, buttonText, buttonUrl? }
 6. footer (variants: simple, multi-column, minimal) - props: { logo, logoImage?, copyright, links: (string | { label, href })[], columns?: [{ title, links: (string | { label, href })[] }] }

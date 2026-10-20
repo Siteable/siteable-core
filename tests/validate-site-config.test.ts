@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateSiteConfig, generateSiteConfig } from '../src/lib/generate-site'
+import { GENERATION_PROMPT } from '../src/lib/generation-prompt'
 import type { SiteConfig } from '../src/blocks/types'
 
 // ISS-005: AI (Gemini) returned navbar links as {label,href} objects; validateBlock
@@ -297,5 +298,48 @@ describe('validateSiteConfig — flattened (inline) block props', () => {
   it('unknown keys inside nested props are still kept (editor patches add keys)', () => {
     const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'hero', props: { headline: 'h', customKey: 1 } }] })
     expect(firstBlockProps(config).customKey).toBe(1)
+  })
+})
+
+describe('the features display option survives validation in both prop shapes', () => {
+  const items = [{ title: 'One', description: 'First' }, { title: 'Two', description: 'Second' }]
+
+  it('a flattened display is kept on a features block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'features', title: 'Features', display: 'tabs', items }],
+    })
+    expect(firstBlockProps(config).display).toBe('tabs')
+  })
+
+  it('a nested display is kept on a features block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'features', props: { title: 'Features', display: 'tabs', items } }],
+    })
+    expect(firstBlockProps(config).display).toBe('tabs')
+  })
+
+  it('display stays absent when the option is not set, so the default layout is the default', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'features', title: 'Features', items }],
+    })
+    expect(firstBlockProps(config)).not.toHaveProperty('display')
+  })
+
+  it('a flattened display on another block type is still dropped', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'hero', headline: 'h', display: 'tabs' }],
+    })
+    expect(firstBlockProps(config)).not.toHaveProperty('display')
+  })
+
+  it('the generation prompt documents the option with its own precondition', () => {
+    expect(GENERATION_PROMPT).toContain('display?: "tabs"')
+    // The precondition is what keeps a generator from emitting the option on a
+    // one-item block, where it renders the default layout anyway.
+    expect(GENERATION_PROMPT).toMatch(/display\?: "tabs"[^\n]*\d+\+/)
   })
 })
