@@ -98,12 +98,56 @@ function elementSequence(region: string): string[] {
   return [...region.matchAll(/<([a-zA-Z][\w-]*)\b[^>]*>/g)].map((m) => m[1].toLowerCase())
 }
 
+/** Every panel's open tag, in document order. */
+function panelOpenTags(doc: string): string[] {
+  return doc.match(/<div role="tabpanel"[^>]*>/g) ?? []
+}
+
+/**
+ * Attribute names and values on one open tag, in source order. A valueless
+ * attribute maps to `true`. Attribute values in the exported markup are
+ * escaped, so they never carry a raw quote that would end the match early.
+ */
+function attributes(openTag: string): Map<string, string | true> {
+  const body = openTag.replace(/^<[a-zA-Z][\w-]*/, '').replace(/\/?>$/, '')
+  const found = new Map<string, string | true>()
+  for (const match of body.matchAll(/([a-zA-Z][\w:-]*)(?:="([^"]*)")?/g)) {
+    found.set(match[1], match[2] ?? true)
+  }
+  return found
+}
+
+/**
+ * Text that sits DIRECTLY inside a region's root element, not inside a nested
+ * element. `elementSequence` only sees tags, so a bare text node inserted
+ * between two elements is invisible to it; this sees exactly that residue.
+ * The exported panel markup puts the title and description inside `h3`/`p`, so
+ * every container's direct text is whitespace.
+ */
+function directText(region: string): string {
+  const tokens = region.split(/(<[^>]*>)/).filter(Boolean)
+  const open: string[] = []
+  let text = ''
+  for (const token of tokens) {
+    if (token.startsWith('<')) {
+      if (token.startsWith('</')) open.pop()
+      else if (!/\/>$/.test(token)) open.push(token)
+    } else if (open.length === 1) {
+      text += token
+    }
+  }
+  return text
+}
+
 const SECTION_OPEN = '<section id="f-1" class="px-6 md:px-10 py-16 md:py-20">'
 const TABLIST_OPEN =
   '<div role="tablist" data-sb-tablist class="flex flex-wrap justify-center gap-2 mb-6">'
 /** Duplicated literal on purpose: importing the renderer constant would prove nothing. */
 const TAB_CLASS_LITERAL =
   'min-h-[40px] min-w-[40px] px-4 py-2 rounded-lg border border-border-default bg-bg-2 text-sm font-medium text-text-2 transition-colors hover:border-border-hover aria-selected:border-green aria-selected:text-green aria-selected:bg-green/10'
+/** Duplicated literal on purpose: importing the renderer constant would prove nothing. */
+const PANEL_CLASS_LITERAL =
+  'max-w-2xl mx-auto bg-bg-2 border border-border-default rounded-xl p-5'
 
 describe('SC-001 / FR-001 — one tab list, one tab and one panel per item', () => {
   it('renders exactly one tab list with three tabs and three panels', () => {
@@ -481,5 +525,70 @@ describe('NF-002 — the exempt tab section still has a pinned skeleton', () => 
   it('the tab list wrapper holds only the tab buttons', () => {
     const inner = tablistInner(html(threeTabs()))
     expect(elementSequence(inner)).toEqual(['div', 'button', 'button', 'button'])
+  })
+})
+
+describe('NF-002 — panel drift is pinned as tightly as tab drift', () => {
+  // The masked tab section is a permitted difference from the frozen baseline,
+  // so the markup inside it needs its own guards. The tab button class list,
+  // the wrapper class lists and the element sequence already have them; these
+  // pin the panel half: its exact class list, the attributes the contract
+  // requires, the absence of an inline style, and the absence of bare text
+  // nodes between elements (a text node changes no tag sequence).
+  it('every panel carries the full class list', () => {
+    const openTags = panelOpenTags(html(threeTabs()))
+    expect(openTags, 'no panels rendered').toHaveLength(3)
+
+    for (const tag of openTags) {
+      const classes = attributes(tag).get('class')
+      expect(classes, `panel without the expected class list: ${tag}`).toBe(PANEL_CLASS_LITERAL)
+    }
+  })
+
+  it('every panel carries exactly the required attributes and no inline style', () => {
+    const openTags = panelOpenTags(html(threeTabs()))
+    expect(openTags, 'no panels rendered').toHaveLength(3)
+
+    // Required by the export contract: the ARIA role, the runtime data hook,
+    // the id a tab points at, the back-reference to that tab, and the class
+    // list. `hidden` is required on every panel but the first (FR-001).
+    const required = ['role', 'data-sb-tab-panel', 'id', 'aria-labelledby', 'class']
+    // `tabindex` is tolerated but NOT required: no FR/SC mandates that a panel
+    // be focusable, so its absence is not drift and its presence must stay 0.
+    const allowed = new Set([...required, 'tabindex', 'hidden'])
+
+    openTags.forEach((tag, index) => {
+      const attrs = attributes(tag)
+      for (const name of required) {
+        expect(attrs.has(name), `required attribute ${name} missing: ${tag}`).toBe(true)
+      }
+      const unexpected = [...attrs.keys()].filter((name) => !allowed.has(name))
+      expect(unexpected, `attribute outside the contract on: ${tag}`).toEqual([])
+      expect(attrs.has('style'), `inline style on a panel: ${tag}`).toBe(false)
+
+      expect(attrs.get('role'), tag).toBe('tabpanel')
+      const id = attrs.get('id')
+      expect(typeof id, tag).toBe('string')
+      expect(id as string, tag).toMatch(PANEL_ID_RE)
+      // The panel's back-reference is the tab that controls it.
+      expect(attrs.get('aria-labelledby'), tag).toBe((id as string).replace('_p', '_t'))
+      if (attrs.has('tabindex')) expect(attrs.get('tabindex'), tag).toBe('0')
+
+      if (index === 0) expect(attrs.has('hidden'), tag).toBe(false)
+      else expect(attrs.has('hidden'), tag).toBe(true)
+    })
+  })
+
+  it('no tab container holds a bare text node outside its title and description', () => {
+    const doc = html(threeTabs())
+
+    // Direct text only: the title and description live inside h3/p, so any
+    // non-whitespace residue here is a stray text node inserted between
+    // elements, which no tag-sequence assertion can see.
+    expect(directText(tabSection(doc))).not.toMatch(/\S/)
+    expect(directText(tablistInner(doc))).not.toMatch(/\S/)
+    const panels = allPanels(doc)
+    expect(panels, 'no panels rendered').toHaveLength(3)
+    for (const panel of panels) expect(directText(panel)).not.toMatch(/\S/)
   })
 })
