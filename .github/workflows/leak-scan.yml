@@ -151,8 +151,20 @@ jobs:
             fi
             echo "::warning::fork PR — secrets are unavailable, so the private-name scan is skipped. A maintainer must run it before merge."
           else
+            # A malformed pattern makes grep exit 2, which an `if grep` would
+            # read as "no match" — a silent pass. Validate it once, explicitly.
+            printf 'probe' | grep -EI "$PRIVATE_NAME_PATTERN" >/dev/null 2>&1
+            if [ $? -gt 1 ]; then
+              echo "::error::PRIVATE_NAME_PATTERN is not a valid regular expression"
+              exit 1
+            fi
             for field in PR_TITLE PR_BODY HEAD_REF; do
-              if printf '%s' "${!field}" | grep -EI "$PRIVATE_NAME_PATTERN"; then
+              out=$(printf '%s' "${!field}" | grep -EI "$PRIVATE_NAME_PATTERN" 2>&1); rc=$?
+              if [ "$rc" -gt 1 ]; then
+                echo "::error::$field: the name scan itself failed (exit $rc)"
+                fail=1
+              elif [ "$rc" -eq 0 ]; then
+                printf '%s\n' "$out"
                 echo "::error::$field names a private repository or service"
                 fail=1
               fi
@@ -181,7 +193,12 @@ jobs:
             fail=1
           fi
           if [ -n "${PRIVATE_NAME_PATTERN:-}" ]; then
-            if grep -rInE "$PRIVATE_NAME_PATTERN" "$pkg"; then
+            out=$(grep -rInE "$PRIVATE_NAME_PATTERN" "$pkg" 2>&1); rc=$?
+            if [ "$rc" -gt 1 ]; then
+              echo "::error::tarball: the name scan itself failed (exit $rc)"
+              fail=1
+            elif [ "$rc" -eq 0 ]; then
+              printf '%s\n' "$out"
               echo "::error::the published tarball names a private repository or service"
               fail=1
             fi
