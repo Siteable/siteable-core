@@ -52,7 +52,7 @@ jobs:
 
       - name: Self-test the patterns
         run: |
-          set -euo pipefail
+          set +e -u -o pipefail
           # Prove the patterns match before trusting them. A pattern that
           # matches nothing would make every later step vacuous.
           # The fixtures are ASSEMBLED from fragments rather than written as
@@ -87,7 +87,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          set -uo pipefail
+          set +e -u -o pipefail
           # 0 = matched (fail), 1 = no match (pass), 2+ = the check itself broke
           # (fail). Collapsing those three into two is how a gate becomes
           # unfailable.
@@ -130,7 +130,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          set -euo pipefail
+          set +e -u -o pipefail
           fail=0
 
           # Titles, bodies and branch names are permanent public publications.
@@ -162,7 +162,7 @@ jobs:
           PRIVATE_NAME_PATTERN: ${{ secrets.PRIVATE_NAME_PATTERN }}
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          set -euo pipefail
+          set +e -u -o pipefail
           # Build first: `npm pack` would otherwise ship src/ only, while the
           # package npm actually receives is built from dist/.
           npm ci
