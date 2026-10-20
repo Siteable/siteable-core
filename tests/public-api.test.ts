@@ -163,7 +163,7 @@ describe('public API barrel — multi-page export surface', () => {
   })
 })
 
-// ISS-006: consumers (static-cms import-check) must ask the engine whether a
+// Consumers that validate imported configs must ask the engine whether a
 // `video.url` embeds, not re-derive the regexes and drift from the renderer.
 describe('public API barrel — video embed surface', () => {
   it('re-exports the extractors and videoEmbedUrl by identity', () => {
