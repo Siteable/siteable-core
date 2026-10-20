@@ -105,6 +105,26 @@ normalizes page 1 to `/`, so About's content is served at `/` and `/about` no
 longer exists. If page paths are meaningful to your callers, compare the page
 list before and after validation rather than assuming it is preserved.
 
+### `features` block: opt-in tab layout
+
+A `features` block takes an optional `display` prop. With `display: 'tabs'`
+and at least two items, it renders as one accessible tab set in both the
+editor preview and the exported HTML: each tab is labeled with the item's
+title (`Tab N`, the item's 1-based position, when the title is empty or only
+whitespace), its panel holds the item description, and the first tab is
+selected. Click and Left/Right (wrapping)/Home/End move the selection.
+
+The option is additive and opt-in. Any other `display` value, no `display`,
+or fewer than two items renders the block exactly as before. The editor
+exposes it as a Display select on the block (Default layout / Tabs); an
+unknown value falls back to the default layout.
+
+Exported pages that contain a rendered tab set carry the shared inline
+behaviour runtime — the same script the exporter already emits for the navbar
+menu and the FAQ accordion, one `<script>` per page, no external asset. With
+JavaScript disabled the tab strip is hidden and every panel is shown stacked
+in item order, each preceded by its title.
+
 ### Server / worker usage (`@siteable/core/worker`)
 
 The main entry re-exports the editor components and the zustand stores, so it
