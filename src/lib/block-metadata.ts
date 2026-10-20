@@ -90,7 +90,7 @@ export const blockMetadata: BlockMeta[] = [
     label: 'Testimonials',
     description: 'Customer testimonials with quotes and ratings',
     category: 'Social Proof',
-    variants: ['cards', 'carousel', 'spotlight'],
+    variants: ['cards', 'scroller', 'spotlight'],
     defaultProps: { title: 'What our customers say', items: defaultTestimonials },
   },
   {

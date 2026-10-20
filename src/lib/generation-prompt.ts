@@ -59,7 +59,7 @@ Every entry below lists the contents of that block's "props" object.
 4. pricing (variants: simple, comparison) - props: { title, subtitle?, tiers?: [{ name, price, period?, description?, features: string[], cta, ctaUrl?, featured? }] }
 5. cta (variants: simple, split) - props: { headline, subheadline?, buttonText, buttonUrl? }
 6. footer (variants: simple, multi-column, minimal) - props: { logo, logoImage?, copyright, links: (string | { label, href })[], columns?: [{ title, links: (string | { label, href })[] }] }
-7. testimonials (variants: cards, carousel, spotlight) - props: { title?, subtitle?, items?: [{ name, role?, quote, rating? }] }
+7. testimonials (variants: cards, scroller, spotlight) - props: { title?, subtitle?, items?: [{ name, role?, quote, rating? }] }
 8. stats (variants: grid, bar, counter) - props: { title?, items?: [{ value, label }] }
 9. faq (variants: accordion) - props: { title?, subtitle?, items: [{ question, answer }] }
 10. team (variants: grid) - props: { title?, subtitle?, members?: [{ name, role }] }
