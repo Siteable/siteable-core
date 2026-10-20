@@ -24,6 +24,9 @@ on:
   pull_request:
     branches:
       - main
+    # `edited` is required: this job gates PR metadata, and without it a
+    # title/body fix would never be re-evaluated.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
