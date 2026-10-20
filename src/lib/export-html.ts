@@ -801,7 +801,7 @@ function renderFooter(block: BlockConfig): string {
 }
 
 // ---------------------------------------------------------------------------
-// Testimonials (cards only, carousel skipped per spec)
+// Testimonials (cards only, the scroller variant is skipped per spec)
 // ---------------------------------------------------------------------------
 
 interface TestimonialItem {

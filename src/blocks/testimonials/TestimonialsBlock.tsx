@@ -79,7 +79,7 @@ function TestimonialsCards({ props }: { props: TestimonialsProps }) {
   )
 }
 
-function TestimonialsCarousel({ props }: { props: TestimonialsProps }) {
+function TestimonialsScroller({ props }: { props: TestimonialsProps }) {
   const items = props.items || defaultTestimonials
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -191,8 +191,11 @@ export function TestimonialsBlock({ block }: { block: BlockConfig }) {
   const props = block.props as unknown as TestimonialsProps
 
   switch (block.variant) {
+    // 'carousel' was this variant's name before it was renamed. Projects
+    // saved under the old name keep rendering; new configs use 'scroller'.
+    case 'scroller':
     case 'carousel':
-      return <TestimonialsCarousel props={props} />
+      return <TestimonialsScroller props={props} />
     case 'spotlight':
       return <TestimonialsSpotlight props={props} />
     default:
