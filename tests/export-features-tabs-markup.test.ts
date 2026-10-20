@@ -72,6 +72,39 @@ function allPanels(doc: string): string[] {
   return panels
 }
 
+/**
+ * The block's whole `<section>` — the region the baseline comparison masks.
+ * Bounded by the same literals the mask uses, so the skeleton pin and the
+ * exemption always describe the same bytes.
+ */
+function tabSection(doc: string, blockId = 'f-1'): string {
+  const open = `<section id="${blockId}"`
+  const CLOSE = '\n  </section>'
+  const start = doc.indexOf(open)
+  expect(start, 'no tab section rendered').toBeGreaterThan(-1)
+  const end = doc.indexOf(CLOSE, start)
+  expect(end, 'tab section is never closed').toBeGreaterThan(start)
+  return doc.slice(start, end + CLOSE.length)
+}
+
+/**
+ * Tag names inside a region, in document order, with attributes and text
+ * dropped. Not a byte match: class lists are pinned separately and panel
+ * bodies stay free-form. But any element the renderer does not emit — a stray
+ * `<span>`, an extra wrapper `<div>` — changes this sequence, so the exempt
+ * region cannot hide new markup.
+ */
+function elementSequence(region: string): string[] {
+  return [...region.matchAll(/<([a-zA-Z][\w-]*)\b[^>]*>/g)].map((m) => m[1].toLowerCase())
+}
+
+const SECTION_OPEN = '<section id="f-1" class="px-6 md:px-10 py-16 md:py-20">'
+const TABLIST_OPEN =
+  '<div role="tablist" data-sb-tablist class="flex flex-wrap justify-center gap-2 mb-6">'
+/** Duplicated literal on purpose: importing the renderer constant would prove nothing. */
+const TAB_CLASS_LITERAL =
+  'min-h-[40px] min-w-[40px] px-4 py-2 rounded-lg border border-border-default bg-bg-2 text-sm font-medium text-text-2 transition-colors hover:border-border-hover aria-selected:border-green aria-selected:text-green aria-selected:bg-green/10'
+
 describe('SC-001 / FR-001 — one tab list, one tab and one panel per item', () => {
   it('renders exactly one tab list with three tabs and three panels', () => {
     const doc = html(threeTabs())
@@ -392,5 +425,61 @@ describe('FR-001 — the tab set stays inside the block, with one script for the
   it('a page with a tab set carries exactly one shared script element', () => {
     const doc = html(threeTabs())
     expect(doc.match(/<script data-sb-runtime>/g) ?? []).toHaveLength(1)
+  })
+})
+
+describe('NF-002 — the exempt tab section still has a pinned skeleton', () => {
+  // The frozen-baseline comparison masks this whole section because the tab
+  // markup is a permitted difference. That mask must not turn into a licence
+  // for arbitrary markup, so the section's shell is pinned here: the two
+  // wrapper class lists, the tab-button class list, and the element sequence.
+  // Panel bodies and header text stay unconstrained by this block — they are
+  // pinned by the assertions above.
+  it('pins the section and tablist wrapper class lists exactly', () => {
+    const doc = html(threeTabs())
+
+    expect(doc).toContain(SECTION_OPEN)
+    expect(doc).toContain(TABLIST_OPEN)
+  })
+
+  it('every tab button carries the full class list', () => {
+    const buttons = allButtons(html(threeTabs()))
+    expect(buttons, 'no tab buttons rendered').toHaveLength(3)
+
+    for (const button of buttons) {
+      const classes = /class="([^"]*)"/.exec(button)?.[1]
+      expect(classes, `tab button without a class list: ${button}`).toBe(TAB_CLASS_LITERAL)
+    }
+  })
+
+  it('the section contains exactly the elements the renderer emits, in order', () => {
+    const sequence = elementSequence(tabSection(html(threeTabs())))
+
+    // section > header div > h2, tablist div > 3 buttons, then 3 panels each
+    // with a hidden h3 and a description p. A stray `<span>` or wrapper div
+    // anywhere in the section breaks this list.
+    expect(sequence).toEqual([
+      'section',
+      'div',
+      'h2',
+      'div',
+      'button',
+      'button',
+      'button',
+      'div',
+      'h3',
+      'p',
+      'div',
+      'h3',
+      'p',
+      'div',
+      'h3',
+      'p',
+    ])
+  })
+
+  it('the tab list wrapper holds only the tab buttons', () => {
+    const inner = tablistInner(html(threeTabs()))
+    expect(elementSequence(inner)).toEqual(['div', 'button', 'button', 'button'])
   })
 })

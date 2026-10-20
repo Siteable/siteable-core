@@ -417,6 +417,56 @@ describe('SC-012 (widened) / NF-003 — text/structural props of the remaining t
   }
 })
 
+/**
+ * The features label is a text run in the DEFAULT renderer too (grid and list
+ * share the same header shape). It is asserted on its own so a dropped escape
+ * here fails with a precise cause rather than only as a whole-document scan.
+ *
+ * `escapeLabel` is a test-local oracle: deriving the expectation from
+ * `escapeHtml` would make the assertion move with the implementation.
+ */
+describe('NF-003 — the features block label is escaped in both default variants', () => {
+  const LABEL_DIV_RE = /<div class="text-\[11px\][^"]*">([\s\S]*?)<\/div>/
+  const escapeLabel = (value: string): string =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+  const render = (variant: string, label: string): string =>
+    exportSiteToHTML({
+      name: 'XSS',
+      blocks: [
+        {
+          id: 'f',
+          type: 'features',
+          variant,
+          props: { label, items: [{ title: 'T', description: 'D' }] },
+        },
+      ],
+    })
+
+  for (const variant of ['grid', 'list']) {
+    for (const payload of CORPUS) {
+      it(`${variant} — label ← ${JSON.stringify(payload)}`, () => {
+        const html = render(variant, payload)
+        const msg = `${variant} — label ← ${payload}`
+
+        expect(html, `${msg}: renderer blanked`).not.toContain('Unknown block type')
+        expect(injectedHandlers(html), `${msg}: injected handler`).toEqual([])
+        expect(LABEL_DIV_RE.exec(html)?.[1], `${msg}: label bytes`).toBe(
+          escapeLabel(payload),
+        )
+        if (payload.includes('<')) {
+          expect(html, `${msg}: raw payload present`).not.toContain(payload)
+        }
+      })
+    }
+  }
+})
+
 describe('SC-012 (widened) / NF-003 — divider coerces, never emits', () => {
   // `divider` has no string prop that reaches output: `height` is coerced with
   // `Number(...) || 60` and `width` maps through a fixed allow-list. Its claim

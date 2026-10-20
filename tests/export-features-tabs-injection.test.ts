@@ -37,7 +37,7 @@ const HANDLER_RE = /<[a-zA-Z][^>]*[^\w]on[a-z]+\s*=/i
 const countScripts = (html: string): number => (html.match(/<script/gi) ?? []).length
 const ID_CHARSET_RE = /^[A-Za-z0-9_-]+$/
 
-function tabPage(titles: string[], descriptions: string[]): string {
+function tabPage(titles: string[], descriptions: string[], label?: string): string {
   const blocks: BlockConfig[] = [
     {
       id: 'f-1',
@@ -45,12 +45,34 @@ function tabPage(titles: string[], descriptions: string[]): string {
       variant: 'grid',
       props: {
         title: 'Features',
+        ...(label === undefined ? {} : { label }),
         display: 'tabs',
         items: titles.map((title, i) => ({ title, description: descriptions[i] ?? 'Body' })),
       },
     },
   ]
   return exportSiteToHTML({ name: 'XSS', blocks } as SiteConfig)
+}
+
+/**
+ * The label's emitted bytes. A test-local oracle on purpose: deriving the
+ * expectation from `escapeHtml` would move with the implementation, so a
+ * dropped escape would change both sides and stay green.
+ */
+function escapeLabel(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+const LABEL_DIV_RE = /<div class="text-\[11px\][^"]*">([\s\S]*?)<\/div>/
+
+/** The text run the label div actually emitted, or null when no label rendered. */
+function emittedLabel(html: string): string | null {
+  return LABEL_DIV_RE.exec(html)?.[1] ?? null
 }
 
 /** The same page with benign copy — the differential the script count compares against. */
@@ -107,7 +129,7 @@ describe('NF-003 — the payload survives as inert, literal text', () => {
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;</h3>')
   })
 
-  it('the block title and subtitle are escaped on a tab page too', () => {
+  it('the block title, label and subtitle are escaped on a tab page too', () => {
     const blocks: BlockConfig[] = [
       {
         id: 'f-1',
@@ -125,6 +147,8 @@ describe('NF-003 — the payload survives as inert, literal text', () => {
     const html = exportSiteToHTML({ name: 'XSS', blocks } as SiteConfig)
 
     expect(html).toContain('&lt;h2&gt;x&lt;/h2&gt;</h2>')
+    expect(html).toContain('&lt;b&gt;label&lt;/b&gt;</div>')
+    expect(html).not.toContain('<b>label</b>')
     expect(html).not.toContain('<script>alert(1)</script>')
     expect(countScripts(html)).toBe(countScripts(CLEAN))
   })
@@ -136,6 +160,33 @@ describe('NF-003 — the payload survives as inert, literal text', () => {
     expect(html).toContain(`${payload}</button>`)
     expectInert(html, 'long title')
   })
+})
+
+describe('NF-003 — a payload in the block label stays inert too', () => {
+  // The label is a user-controlled text run rendered by the SAME renderer as
+  // the title; without this matrix the sink is unasserted and a dropped escape
+  // would ship a live handler while the whole suite stayed green.
+  for (const payload of CORPUS) {
+    it(`label ← ${JSON.stringify(payload.slice(0, 40))}`, () => {
+      const html = tabPage(['One', 'Two'], ['First', 'Second'], payload)
+      const msg = `label ← ${payload.slice(0, 40)}`
+
+      // Whole-document checks: no live handler, no new script, ids intact.
+      expectInert(html, msg)
+
+      // The emitted label bytes themselves — an exact expectation, not an
+      // intermediate value. A dropped escape fails here even for a payload
+      // (a quote, an entity) that would still be inert as bare text.
+      const label = emittedLabel(html)
+      expect(label, `${msg}: no label emitted`).not.toBeNull()
+      expect(label, `${msg}: label bytes`).toBe(escapeLabel(payload))
+      expect(label, `${msg}: unescaped markup char`).not.toContain('<')
+
+      if (payload.includes('<')) {
+        expect(html, `${msg}: raw payload present`).not.toContain(payload)
+      }
+    })
+  }
 })
 
 describe('NF-003 — the shared runtime source stays injection-free', () => {
