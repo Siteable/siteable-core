@@ -1,12 +1,11 @@
 /**
- * NF-006 / SC-025 (source half) — the publish-fidelity work adds no runtime
+ * Source half — the export work adds no runtime
  * dependency.
  *
- * Spec: `specs/publish-fidelity/spec.md` NF-006 ("no new runtime dependency may
- * be added to the package; the markdown subset renderer is implemented in-repo")
- * and SC-025. Phase-07 of the publish-fidelity plan.
+ * Requirement: no new runtime dependency may
+ * be added to the package; the markdown subset renderer is implemented in-repo.
  *
- * The MANIFEST half of SC-025 (an empty/unchanged `dependencies` block, an
+ * The MANIFEST half (an empty/unchanged `dependencies` block, an
  * unchanged `peerDependencies` block) lives in `tests/package-manifest.test.ts`.
  * This file proves the other direction: none of the modules this atom added or
  * rewired reaches outside the package. A relative (`./`, `../`) or internal
@@ -20,16 +19,16 @@ import { pathToFileURL } from 'node:url'
 import { ensureFreshBuild, isArtifactStale } from './helpers/ensure-fresh-build'
 
 /**
- * Every module the publish-fidelity atom added or rewired: the URL policy, the
+ * Every module this work added or rewired: the URL policy, the
  * markdown-subset renderer, the shared link/escape/prop helpers, and the six new
- * export renderers. All of them must stay package-internal (NF-006).
+ * export renderers. All of them must stay package-internal.
  *
  * Note: `src/lib/export-site-pages.ts` no longer sits in the worker's
  * import closure ALONE — it pulls `export-html.ts`, which pulls theme presets,
  * the URL policy, six `export-blocks/*` renderers and more. That is precisely
  * the H3 defect this list could not express, so the worker-facing guarantee is
- * now made by the TRANSITIVE WALKER below (FR-H3), which needs no list at all.
- * These entries remain for the publish-fidelity half of the claim (NF-006: no
+ * now made by the TRANSITIVE WALKER below, which needs no list at all.
+ * These entries remain for the listed-module half of the claim (no
  * new runtime dependency), which is about specific modules, not the closure.
  */
 const ATOM_MODULES = [
@@ -52,7 +51,7 @@ const ATOM_MODULES = [
 
 /**
  * Modules this project has explicitly tasked the strong, zero-import guard with
- * (NF-005 bundle claim), not merely the "no external package" list above.
+ * (bundle claim), not merely the "no external package" list above.
  */
 const GUARDED_MODULES = [
   'src/lib/url-policy.ts',
@@ -88,7 +87,7 @@ function isExternalSpecifier(specifier: string): boolean {
   return !specifier.startsWith('.') && !specifier.startsWith('@/')
 }
 
-describe('NF-006 — the atom\'s modules stay package-internal', () => {
+describe('the modules stay package-internal', () => {
   it('the import detector actually detects imports (non-vacuous guard)', () => {
     // Without this, a regression that made `importSpecifiers` return [] would
     // leave every `toEqual([])` assertion passing while testing nothing.
@@ -129,7 +128,7 @@ describe('NF-006 — the atom\'s modules stay package-internal', () => {
     expect(ATOM_MODULES).toContain('src/lib/page-path.ts')
   })
 
-  // FR-001: `exportSitePages` is the entry point a server-side publisher calls, so it has
+  // `exportSitePages` is the entry point a server-side publisher calls, so it has
   // to reach a worker bundle without pulling a UI framework in. Its own module
   // name is a LITERAL for the same reason as the one above — a list-driven
   // guard can be mutated out of existence together with the check.
@@ -146,7 +145,7 @@ describe('NF-006 — the atom\'s modules stay package-internal', () => {
 })
 
 // ---------------------------------------------------------------------------
-// FR-H3 / NF-005 — the TRANSITIVE import closure of the worker entry.
+// The TRANSITIVE import closure of the worker entry.
 // ---------------------------------------------------------------------------
 //
 // H3: `export-site-pages.ts` imports `renderDocument` from `export-html.ts`, and
@@ -154,10 +153,10 @@ describe('NF-006 — the atom\'s modules stay package-internal', () => {
 // `export-blocks/*` renderers — NONE of which were in `ATOM_MODULES`. The old
 // guard checked each listed module's OWN import lines, so a future
 // `import { X } from '@/components/Foo'` inside `export-html.ts` passed every
-// NF-005 assertion and broke the worker bundle. The check was blind to exactly
+// closure assertion and broke the worker bundle. The check was blind to exactly
 // the path the new export actually takes.
 //
-// D4: walk the closure instead of extending the list. A list is validated by the
+// Walk the closure instead of extending the list. A list is validated by the
 // same edit that breaks it — add an import, forget the list, guard still green
 // (the same trap twice). A closure needs no list upkeep (it is still a text scan - see `stripComments`;
 // the built-artifact block below is the backstop). The walk is
@@ -195,9 +194,9 @@ function aliasRoot(): string {
 /**
  * Every module specifier a source file imports or re-exports.
  *
- * Deliberately different from the NF-006 `importSpecifiers` above, which requires
+ * Deliberately different from the `importSpecifiers` above, which requires
  * whitespace after `import` and so misses `import{a}from'react'`. That gap
- * was deliberately left unfixed for the publish-fidelity list; it
+ * was deliberately left unfixed for the listed-module check; it
  * CANNOT be left unfixed here, because for the worker closure a single missed
  * specifier is exactly the React import this exists to catch. Duplication of the
  * scanner is the accepted cost of two different claims (a documented house
@@ -304,7 +303,7 @@ export function walkClosure(
       if (!hit) {
         throw new Error(
           `closure walk could not resolve "${specifier}" imported by ${current}. The walk ` +
-            'is INCOMPLETE, so the NF-005 assertions below are not being proven — fix the ' +
+            'is INCOMPLETE, so the closure assertions below are not being proven — fix the ' +
             'resolution rather than accepting a partial closure.',
         )
       }
@@ -320,7 +319,7 @@ function workerClosure(): { closure: string[]; violations: Array<{ from: string;
   return walkClosure(WORKER_ENTRY)
 }
 
-describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no package', () => {
+describe('the worker entry\'s transitive closure reaches no package', () => {
   it('walks a non-trivial closure (non-vacuous: the walker must actually traverse)', () => {
     // Without this, a walker bug returning an empty closure would satisfy every
     // "no external import" assertion below while checking nothing. The
@@ -341,7 +340,7 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
   it('the closure never reaches an editor component or a store', () => {
     // Implied by the assertion above, but the SPECIFIC claim ("no editor, no
     // stores, no React") is the one a maintainer reads, and the two failures
-    // should read differently: a bare `immer` leak is a real NF-005 break but
+    // should read differently: a bare `immer` leak is a real bundle break but
     // is not a React-family leak.
     const offenders = workerClosure().closure.filter(
       (file) => file.startsWith('src/components/') || file.startsWith('src/store/'),
@@ -350,7 +349,7 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
   })
 
   it('the worker entry re-exports ONLY the six worker-facing names', () => {
-    // AC-04: the barrel keeps its own surface; this entry must not quietly grow.
+    // The barrel keeps its own surface; this entry must not quietly grow.
     // Named literally rather than counting export statements.
     const source = readRepoFile(WORKER_ENTRY)
     expect(closureImportSpecifiers(source).sort()).toEqual([
@@ -368,7 +367,7 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
     // tripwire that gets deleted rather than fixed.
     const code = stripComments(source)
 
-    // FR-D2: the two types in the renderer's signature ride along with the four
+    // The two types in the renderer's signature ride along with the four
     // functions/types it exports. `validateSiteConfig` is deliberately NOT here
     // (see the absence list below).
     for (const name of [
@@ -388,7 +387,7 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
       'useConfigStore',
       'useEditorStore',
       'renderDocument',
-      // FR-F1: a lossy AI-output sanitizer that drags the generation client
+      // A lossy AI-output sanitizer that drags the generation client
       // into the worker closure; removing a permanent export later is breaking.
       'validateSiteConfig',
       'generate-site',
@@ -455,7 +454,7 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
     expect(violations).toEqual([])
   })
 
-  it('the walker DETECTS the unspaced form the publish-fidelity scanner misses', () => {
+  it('the walker DETECTS the unspaced form the older scanner misses', () => {
     // `import{a}from'react'` is deliberately uncaught by
     // `importSpecifiers`. For the worker closure that gap is unacceptable, so
     // this pins the WIDENED scanner's advantage over the old one explicitly.
@@ -475,18 +474,18 @@ describe('NF-005 / FR-H3 — the worker entry\'s transitive closure reaches no p
   })
 })
 // ---------------------------------------------------------------------------
-// FR-C1 / NF-005 — the BUILT artifact (T306).
+// The BUILT artifact.
 // ---------------------------------------------------------------------------
 //
-// This is the ONLY assertion in the repo that can prove C1. Everything above
-// reasons about SOURCE: that the worker entry names four symbols, and that no
-// module it reaches imports a bare package. None of that shows up in the
-// artifact a consumer actually loads — and the whole C1 finding was that the
-// source and the barrel were fine while `dist/index.js` carried top-level React
-// imports. A source-level test cannot see bundler behaviour: chunk splitting,
+// This is the ONLY assertion in the repo that can prove the shipped bundle is
+// clean. Everything above reasons about SOURCE: that the worker entry names
+// four symbols, and that no module it reaches imports a bare package. None of
+// that shows up in the artifact a consumer actually loads — the source and the
+// barrel were fine while `dist/index.js` carried top-level React imports. A
+// source-level test cannot see bundler behaviour: chunk splitting,
 // tree-shaking, and external-vs-bundled resolution all happen after the source
-// is gone. C1 is exactly a case where "the source looks right" was true and the
-// shipped bundle was still wrong.
+// is gone. That defect is exactly a case where "the source looks right" was
+// true and the shipped bundle was still wrong.
 //
 // So this asserts on the REAL worker artifact and its TRANSITIVE relative-import
 // closure. That entry file is only a ~150-byte re-export shim — the actual body
@@ -592,7 +591,7 @@ function exportsTypes(entry: ExportsEntry | string | undefined): string | undefi
   return entry?.types
 }
 
-describe('FR-C1 — the built-artifact guard rebuilds when it must', () => {
+describe('the built-artifact guard rebuilds when it must', () => {
   it('an artifact OLDER than an input is stale (the branch M1c showed untested)', () => {
     expect(isArtifactStale(100, 200)).toBe(true)
   })
@@ -612,15 +611,15 @@ describe('FR-C1 — the built-artifact guard rebuilds when it must', () => {
 
 describe('stripComments - a `//` inside a string must not hide a real import', () => {
   it('still reports a bare import that shares a line with a URL string', () => {
-    // vk-tester's M4: dropping the colon/quote guard in the line-comment regex
+    // Dropping the colon/quote guard in the line-comment regex
     // survived the suite because no test put `//` in a string beside a real
     // import. Over-stripping hides the import, which is the one direction that
-    // matters for NF-005.
+    // matters for the closure guarantee.
     expect(closureImportSpecifiers('const u = "http://a"; import x from \'react\'')).toEqual(['react'])
   })
 })
 
-describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family package', () => {
+describe('the BUILT worker artifact imports no React-family package', () => {
   // One build for the whole block (`beforeAll`, not a per-test build), and only
   // when needed — see `ensureFreshBuild`.
   let buildState = 'not run'
@@ -628,7 +627,7 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
     buildState = ensureFreshBuild()
   }, 300_000)
 
-  it('emits both entries and both declaration files (FR-C1b, AC-01)', () => {
+  it('emits both entries and both declaration files', () => {
     for (const file of ['worker.js', 'index.js', 'worker.d.ts', 'index.d.ts']) {
       expect(
         existsSync(resolve(OUTPUT_DIR, file)),
@@ -647,7 +646,7 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
     expect(totalBytes).toBeGreaterThan(10_000)
   })
 
-  it('FR-D2 — the BUILT worker exposes exactly the three runtime names and the three type names', async () => {
+  it('the BUILT worker exposes exactly the three runtime names and the three type names', async () => {
     // Runtime half: import the real artifact. It is bare-specifier-free (asserted
     // above), so it loads without React present, which is the whole point.
     const mod = await import(pathToFileURL(WORKER_ARTIFACT).href)
@@ -669,7 +668,7 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
 
   it('names no React-family specifier anywhere in the worker closure', () => {
     // Subsumed by the closure-wide assertion above, but stated as the SPECIFIC
-    // claim: this is the sentence the phase exists to make true, and a reader
+    // claim: these assertions exist to make this sentence true, and a reader
     // should not have to reason about the general rule to find it.
     const found: Array<{ file: string; name: string }> = []
     for (const file of builtClosure(WORKER_ARTIFACT).files) {
@@ -698,17 +697,18 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
     expect(found).toContain('react')
   })
 
-  it('FR-C1b — the barrel keeps its React surface while the worker entry does not', () => {
-    // The two halves of C1 together: `.` must keep working EXACTLY as before
-    // (same React imports, same component surface) and `./worker` must be free
-    // of them. If a future build change made the worker entry re-export from the
-    // barrel's chunk, the worker would silently inherit React and only the
-    // first assertion would notice — this one states the contrast directly.
+  it('the barrel keeps its React surface while the worker entry does not', () => {
+    // Both halves of the bundling defect together: `.` must keep working
+    // EXACTLY as before (same React imports, same component surface) and
+    // `./worker` must be free of them. If a future build change made the worker
+    // entry re-export from the barrel's chunk, the worker would silently
+    // inherit React and only the first assertion would notice — this one states
+    // the contrast directly.
     expect(builtClosure(BARREL_ARTIFACT).bare.length).toBeGreaterThan(0)
     expect(builtClosure(WORKER_ARTIFACT).bare).toEqual([])
   })
 
-  it('the barrel artifact still exports its full name set (FR-C1b, artifact half)', () => {
+  it('the barrel artifact still exports its full name set (artifact half)', () => {
     // An earlier review noted: the React-surface assertion above proves the barrel kept
     // its IMPORTS, but nothing proved it kept its EXPORTS. A two-entry build
     // change could drop a barrel export and every source-level test would stay
@@ -754,7 +754,7 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
   })
 
   it('package.json routes both subpaths at files that exist, and declares no side effects', () => {
-    // AC-01 / D2 at the MANIFEST level: an `exports` map pointing at a file the
+    // At the MANIFEST level: an `exports` map pointing at a file the
     // build does not emit is a broken consumer contract that no runtime
     // assertion in this repo would catch.
     const manifest = JSON.parse(readRepoFile('package.json')) as {
@@ -784,16 +784,16 @@ describe('FR-C1 / NF-005 — the BUILT worker artifact imports no React-family p
 
     expect(existsSync(resolve(REPO_ROOT, 'src/styles.css')), 'exports["./src/styles.css"] target missing').toBe(true)
 
-    // D2: without this, a consumer's bundler cannot drop the zustand
+    // Without this, a consumer's bundler cannot drop the zustand
     // module-scope singletons when only the export API is imported — which is
-    // half of C1.
+    // half of the bundling defect.
     //
     // NOT `false`. `false` would let a consumer's bundler drop a
     // JS-side `import '@siteable/core/src/styles.css'` as dead code. Only CSS is
     // declared effectful, so the JS tree-shaking this guard exists for is unchanged.
     expect(manifest.sideEffects).toEqual(['**/*.css'])
 
-    // FR-C1b: legacy resolvers ignore `exports` and must still land on the file
+    // Legacy resolvers ignore `exports` and must still land on the file
     // the barrel has always used.
     expect(manifest.main).toBe('./dist/index.js')
     expect(manifest.module).toBe('./dist/index.js')

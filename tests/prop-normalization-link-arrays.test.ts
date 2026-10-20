@@ -8,12 +8,12 @@ import { validateSiteConfig } from '../src/lib/generate-site'
 import { normalizeBlockProps } from '../src/lib/prop-normalization'
 import { blockMetadata } from '../src/lib/block-metadata'
 
-// Phase 04 — link-array contract (FR-003, NF-005; SC-017, SC-018, SC-024).
+// Link-array contract.
 //
-// Mirrors src/lib/block-metadata navbar defaultProps (plus the phase-04 ctaUrl).
+// Mirrors src/lib/block-metadata navbar defaultProps (plus the ctaUrl).
 const navbarDefaults = { logo: 'Brand', links: ['Features', 'Pricing', 'About'], ctaText: 'Get Started' }
 
-describe('SC-017 — link arrays survive validation and render in the editor', () => {
+describe('link arrays survive validation and render in the editor', () => {
   it('navbar {label,href} objects round-trip through validateSiteConfig and render as labels', () => {
     const objectLinks = [
       { label: 'Home', href: 'https://x/home' },
@@ -46,7 +46,7 @@ describe('SC-017 — link arrays survive validation and render in the editor', (
   })
 })
 
-describe('SC-018 — hrefs preserved verbatim', () => {
+describe('hrefs preserved verbatim', () => {
   it('an href with a query string survives validation unchanged', () => {
     const config = validateSiteConfig({
       name: 'Site',
@@ -113,7 +113,7 @@ describe('normalizeBlockProps — 3rd linkArrays argument', () => {
   })
 })
 
-describe('SC-024 — NF-005: no block-name literals in the normalizer source', () => {
+describe('no block-name literals in the normalizer source', () => {
   it('the normalizer module source contains no BlockType member as a word', () => {
     // Anchored to this file (NOT process.cwd()) so the scan is location-independent.
     const sourcePath = join(import.meta.dirname, '..', 'src', 'lib', 'prop-normalization.ts')

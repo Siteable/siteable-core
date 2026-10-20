@@ -265,7 +265,7 @@ afterEach(() => {
 })
 
 describe('tabs option: editor parity and no-script guarantees', () => {
-  it('E2E-02-001 turns the tab layout on from the properties panel and exports it', () => {
+  it('turns the tab layout on from the properties panel and exports it', () => {
     const block: BlockConfig = {
       id: 'feat-1',
       type: 'features',
@@ -298,7 +298,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(exported.querySelectorAll('[data-sb-tab]')[1].textContent?.trim()).toBe('Two')
   })
 
-  it('E2E-02-002 gives the editor and the export identical outcomes for every shared row', () => {
+  it('gives the editor and the export identical outcomes for every shared row', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
     // The loop can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
@@ -340,7 +340,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(tabViews.some((view) => view.selected.length >= 2)).toBe(true)
   })
 
-  it('E2E-02-003 clamps the preview selection when items shrink and falls back at one', () => {
+  it('clamps the preview selection when items shrink and falls back at one', () => {
     const block = FIXTURE_BLOCKS.tabs[0]
     const host = document.createElement('div')
     document.body.appendChild(host)
@@ -377,7 +377,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(document.body.textContent).toContain('First feature')
   })
 
-  it('E2E-02-004 emits per-panel markup and the tab rules only on pages with a tab set', () => {
+  it('emits per-panel markup and the tab rules only on pages with a tab set', () => {
     const page = parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs)))
     const panels = Array.from(page.querySelectorAll<HTMLElement>('[data-sb-tab-panel]'))
     const tabs = Array.from(page.querySelectorAll<HTMLElement>('[role="tab"]'))
@@ -409,7 +409,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(menuAndFaqCss).not.toContain('[data-sb-tab-panel]')
   })
 
-  it('E2E-02-005 renders RTL and emoji labels literally and still moves with keys', () => {
+  it('renders RTL and emoji labels literally and still moves with keys', () => {
     const items = [
       { title: 'الميزة الأولى', description: 'وصف عربي كامل' },
       { title: '🚀 Rocket', description: 'Emoji description' },
@@ -443,7 +443,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(tabs.map((tab) => (tab.textContent ?? '').trim())).toEqual(labels)
   })
 
-  it('E2E-02-006 shows the default layout for an unknown stored value and leaves it stored', () => {
+  it('shows the default layout for an unknown stored value and leaves it stored', () => {
     const block: BlockConfig = {
       id: 'feat-1',
       type: 'features',
@@ -477,7 +477,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(exported).toContain('xl:grid-cols-3')
   })
 
-  it('E2E-02-007 removes the option when the default layout is chosen again', () => {
+  it('removes the option when the default layout is chosen again', () => {
     const base = findSite('features-no-display')
     const config = JSON.parse(JSON.stringify(base.config)) as SiteConfig
     const features = (config.blocks ?? []).find((candidate) => candidate.type === 'features')!
@@ -499,7 +499,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     )
   })
 
-  it('E2E-02-008 keeps a flattened generated display option through validation and export', () => {
+  it('keeps a flattened generated display option through validation and export', () => {
     const generated = {
       name: 'Generated',
       blocks: [
@@ -532,7 +532,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(count(html, '<script data-sb-runtime>')).toBe(1)
   })
 
-  it('E2E-02-009 renders the same tab page through the built worker entry', async () => {
+  it('renders the same tab page through the built worker entry', async () => {
     ensureFreshBuild()
     const worker = (await import(
       /* @vite-ignore */ pathToFileURL(
@@ -553,7 +553,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(gzipSync(Buffer.from(emitted, 'utf8')).length).toBeLessThanOrEqual(2048)
   }, 300_000)
 
-  it('E2E-02-010 keeps the editor preview and the exported page independent in one document', () => {
+  it('keeps the editor preview and the exported page independent in one document', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs))))
     const exportedTabs = tabsIn(tabLists()[0])
     const exportedBefore = selected(exportedTabs)

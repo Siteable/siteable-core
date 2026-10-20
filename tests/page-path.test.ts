@@ -1,7 +1,7 @@
 /**
- * SC-003 / NF-002 — page-path normalization and the raw-path shape predicate.
+ * Page-path normalization and the raw-path shape predicate.
  *
- * Requirements: FR-002, NF-002, SC-003. The normalizer is the single place that decides a page's published
+ * The normalizer is the single place that decides a page's published
  * URL, so its edge cases are pinned as a literal expected table rather than
  * re-derived: a "reasonable-looking" different answer here silently republishes
  * a customer's site at different URLs.
@@ -16,10 +16,10 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { normalizePagePaths, isValidPagePath, slugifyPagePath } from '../src/lib/page-path'
 
-/** FR-002 shape: `/` or 1–3 lowercase alphanumeric segments. */
+/** Page-path shape: `/` or 1–3 lowercase alphanumeric segments. */
 const SHAPE = /^\/(?:[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*){0,2})?$/
 
-/** Every output of a normalized list must satisfy every FR-002 invariant. */
+/** Every output of a normalized list must satisfy every shape invariant. */
 function expectInvariants(input: ReadonlyArray<string | undefined>): string[] {
   const out = normalizePagePaths(input)
   expect(out).toHaveLength(input.length)
@@ -35,7 +35,7 @@ function expectInvariants(input: ReadonlyArray<string | undefined>): string[] {
   return out
 }
 
-describe('SC-003 — normalizePagePaths expected table', () => {
+describe('normalizePagePaths expected table', () => {
   const TABLE: Array<[string, ReadonlyArray<string | undefined>, string[]]> = [
     ['slugifies and strips the extension', ['/', '/About Us.html'], ['/', '/about-us']],
     ['merges segments past the third', ['/', '/a/b/c/d'], ['/', '/a/b/c-d']],
@@ -73,7 +73,7 @@ describe('SC-003 — normalizePagePaths expected table', () => {
 
   it.each(TABLE)('%s', (_label, input, expected) => {
     expect(normalizePagePaths(input)).toEqual(expected)
-    // SC-003 ends with "and a second run returns identical output" — that is
+    // The rule ends with "and a second run returns identical output" — that is
     // part of the table scenario, so it is asserted per row, not only once in
     // a separate determinism test.
     expect(normalizePagePaths(input)).toEqual(normalizePagePaths(input))
@@ -81,7 +81,7 @@ describe('SC-003 — normalizePagePaths expected table', () => {
   })
 })
 
-describe('SC-003 — every table output satisfies the FR-002 invariants', () => {
+describe('every table output satisfies the shape invariants', () => {
   it.each<[ReadonlyArray<string | undefined>]>([
     [[]],
     [['/']],
@@ -92,7 +92,7 @@ describe('SC-003 — every table output satisfies the FR-002 invariants', () => 
     [['/' + 'deep/'.repeat(10)]],
   ])('%j', (input) => {
     if (input.length === 0) {
-      // Degenerate input, not a page list: nothing to normalize. FR-002's
+      // Degenerate input, not a page list: nothing to normalize. The
       // "exactly one /" invariant is stated over a non-empty page list.
       expect(normalizePagePaths(input)).toEqual([])
       return
@@ -101,7 +101,7 @@ describe('SC-003 — every table output satisfies the FR-002 invariants', () => 
   })
 })
 
-describe('SC-003 — isValidPagePath predicate', () => {
+describe('isValidPagePath predicate', () => {
   it.each(['/About Us.html', '/a/b/c/d', '', '/!!!', '/About', '/../x', '//x', '/about.html', 'about'])(
     'is false for %j',
     (raw) => {
@@ -158,13 +158,13 @@ describe('SC-003 — isValidPagePath predicate', () => {
 })
 
 /**
- * SC-003 — `slugifyPagePath` is rule 1 on its own, so the editor's add-page
+ * `slugifyPagePath` is rule 1 on its own, so the editor's add-page
  * SUGGESTION can be built by the canonical slugifier instead of a second,
  * weaker one. Pinned as a literal table for the same reason the normalizer's is:
  * the suggestion is what the user sees and what the flow then validates, so a
  * drift here is a user-visible URL change, not an internal detail.
  */
-describe('SC-003 — slugifyPagePath is the rule-1 slugifier', () => {
+describe('slugifyPagePath is the rule-1 slugifier', () => {
   it.each([
     ['& collapses with its spaces', 'Contact & Info', '/contact-info'],
     ['a precomposed accent is stripped whole', 'Café', '/caf'],
@@ -211,7 +211,7 @@ describe('SC-003 — slugifyPagePath is the rule-1 slugifier', () => {
       const suggestion = slugifyPagePath(name)
       expect(isValidPagePath(suggestion), `${JSON.stringify(name)} -> ${suggestion}`).toBe(true)
       // `/` is the honest fallback for a name with no slug-able characters
-      // (FR-R3): the duplicate check is then what tells the user the truth.
+      // The duplicate check is then what tells the user the truth.
       if (suggestion !== '/') {
         expect(suggestion, `${JSON.stringify(name)} -> ${suggestion}`).toMatch(SHAPE)
         for (const segment of suggestion.split('/').filter(Boolean)) {
@@ -241,7 +241,7 @@ describe('SC-003 — slugifyPagePath is the rule-1 slugifier', () => {
   })
 })
 
-describe('NF-002 — purity', () => {
+describe('purity', () => {
   it('does not mutate the input array', () => {
     const input = Object.freeze(['/', '/a', '/a']) as ReadonlyArray<string | undefined>
     expect(() => normalizePagePaths(input)).not.toThrow()
@@ -256,7 +256,7 @@ describe('NF-002 — purity', () => {
   })
 
   it('reads no clock, randomness or page id', () => {
-    // NF-002 says "no time, randomness or page-id dependence". The run-twice
+    // The rule says "no time, randomness or page-id dependence". The run-twice
     // check below is only PROBABLY able to catch that: a `Date.now() % 2`
     // implementation passes whenever both calls land in the same millisecond.
     // Scanning the source makes the guarantee deterministic instead.
@@ -275,7 +275,7 @@ describe('NF-002 — purity', () => {
 })
 
 /**
- * mulberry32 — a tiny, dependency-free, fully deterministic PRNG. NF-002 needs
+ * mulberry32 — a tiny, dependency-free, fully deterministic PRNG. Purity needs
  * ≥1,000 randomized inputs with identical re-runs; a fixed seed makes a failure
  * reproducible from the printed seed instead of flaky on CI.
  */
@@ -339,7 +339,7 @@ function randomList(rand: () => number): Array<string | undefined> {
   return list
 }
 
-describe('NF-002 — randomized sweep', () => {
+describe('randomized sweep', () => {
   it(`holds every invariant for 1000 seeded lists (seed 0x${SEED.toString(16)})`, () => {
     const rand = mulberry32(SEED)
     for (let i = 0; i < 1000; i++) {
@@ -351,7 +351,7 @@ describe('NF-002 — randomized sweep', () => {
         // `cause` keeps Vitest's assertion diff (which path failed, and how);
         // stringifying the error flattens it into one opaque line, which is
         // useless when the offending list is a thousand cases deep.
-        throw new Error(`NF-002 sweep failed at index ${i} for ${JSON.stringify(input)}`, { cause: error })
+        throw new Error(`purity sweep failed at index ${i} for ${JSON.stringify(input)}`, { cause: error })
       }
     }
   })
@@ -364,7 +364,7 @@ describe('NF-002 — randomized sweep', () => {
     expect(out[1]).toBe('/page-2')
   })
 })
-// FR-H1 — a non-string path entry is REAL input, not a type error.
+// A non-string path entry is REAL input, not a type error.
 // An earlier review showed `slugifyPagePath` did `(raw ?? '').toLowerCase()`,
 // which handles null/undefined and nothing else: `normalizePagePaths(['/', 42])`
 // threw `(raw ?? '').toLowerCase is not a function`. Index 0 was never slugified
@@ -372,7 +372,7 @@ describe('NF-002 — randomized sweep', () => {
 // `normalizePagePaths([42])` returned `['/']` and hid the defect entirely — which
 // is exactly why the table below drives the non-string through EVERY index,
 // including 0 and 1, rather than only the ones that trip it today.
-describe('SC-003 — FR-H1 non-string paths at every index never throw', () => {
+describe('non-string paths at every index never throw', () => {
   const NON_STRINGS: Array<[string, unknown]> = [
     ['number 42', 42],
     ['zero', 0],

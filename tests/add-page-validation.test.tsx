@@ -1,7 +1,7 @@
 /**
- * SC-004 — the add-page flow is a gate, not a passthrough.
+ * The add-page flow is a gate, not a passthrough.
  *
- * Requirement: FR-003 (with FR-002's shape predicate), covering SC-004. `page-path.test.ts` already pins
+ * The add-page flow builds on the shape predicate. `page-path.test.ts` already pins
  * the pure predicate/normalizer; what nothing covered is the EDITOR SEAM — the
  * popover accepting a bad path, hand-normalizing a good one, or duplicating an
  * existing page. A `normalizePagePaths` that always rewrites is exactly what
@@ -12,7 +12,7 @@
  * rewritten variant).
  *
  * No @testing-library dependency — react-dom/client + act + jsdom, matching
- * `sc-m02-panel-to-publish.test.tsx`.
+ * `panel-edit-to-publish-roundtrip.test.tsx`.
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -31,7 +31,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-/** Seed the store with `/` and `/about` — two pages, per the SC-004 fixture. */
+/** Seed the store with `/` and `/about` — two pages, per the fixture. */
 function seedPages(): void {
   useConfigStore.getState().setConfig({
     name: 'X',
@@ -142,7 +142,7 @@ function isPopoverOpen(container: HTMLElement): boolean {
 
 const pageCount = () => useConfigStore.getState().config.pages!.length
 
-describe('SC-004 — add-page rejects invalid/duplicate paths with an inline reason', () => {
+describe('add-page rejects invalid/duplicate paths with an inline reason', () => {
   const REJECTED: Array<[label: string, path: string]> = [
     ['uppercase (shape violation)', '/About'],
     ['a .html file suffix (shape violation)', '/about.html'],
@@ -189,7 +189,7 @@ describe('SC-004 — add-page rejects invalid/duplicate paths with an inline rea
   it('accepts a multi-segment valid path verbatim, not slugified or lowercased', () => {
     // `/team` is already lowercase and single-segment, so on its own it cannot
     // tell "stored as entered" apart from "stored lowercased". A valid-but-not-
-    // already-normalized path is what actually pins FR-003's "as entered"
+    // already-normalized path is what actually pins the "as entered"
     // clause: an implementation that lowercases or flattens on the way to the
     // store fails here.
     const container = renderToolbar()
@@ -292,17 +292,17 @@ describe('SC-004 — add-page rejects invalid/duplicate paths with an inline rea
 })
 
 /**
- * SC-003 — the SUGGESTED path is produced by the canonical rule-1 slugifier in
+ * The SUGGESTED path is produced by the canonical rule-1 slugifier in
  * `src/lib/page-path.ts`, so the editor never rejects a value it suggested.
  *
  * Before the fix the popover ran a second, weaker slugifier (lowercase +
  * spaces-to-dashes) that left `&`, accents and every other non-`[a-z0-9]`
- * character in place. The suggestion then failed the FR-003 `isValidPagePath`
+ * character in place. The suggestion then failed the `isValidPagePath`
  * gate and the user got an error on a field they never typed. Each case below
  * is one where that old slugifier's answer is shape-INVALID, so the test fails
  * if the canonical slugifier is reverted.
  */
-describe('SC-003 — the add-page suggestion uses the canonical slugifier', () => {
+describe('the add-page suggestion uses the canonical slugifier', () => {
   const SUGGESTED: Array<[name: string, expected: string]> = [
     ['Contact & Info', '/contact-info'],
     ['Café', '/caf'],
@@ -410,7 +410,7 @@ describe('SC-003 — the add-page suggestion uses the canonical slugifier', () =
   })
 
   it('falls back to the duplicate reason when a name slugifies to nothing', () => {
-    // FR-R3: `!!!` has no slug, so the suggestion is `/` — page 1's own path —
+    // `!!!` has no slug, so the suggestion is `/` — page 1's own path —
     // and the existing exact-duplicate check gives the accurate message rather
     // than a shape error blaming the Path field.
     const container = renderToolbar()
@@ -453,12 +453,12 @@ describe('SC-003 — the add-page suggestion uses the canonical slugifier', () =
   })
 })
 
-// FR-R1 — "no third slugifier may exist". A behavioural test cannot see a
+// No third slugifier may exist. A behavioural test cannot see a
 // private inline helper that happens to agree today, so the file is scanned
 // directly. The subject is named as a literal path (not looped over a shared
 // list of files), so deleting the component or moving the helper cannot shrink
 // the check away with it.
-describe('SC-003 — no second slugifier in the add-page popover', () => {
+describe('no second slugifier in the add-page popover', () => {
   const CANVAS_TOOLBAR = 'src/editor/CanvasToolbar.tsx'
 
   it('has no inline slugifier left in CanvasToolbar', () => {
@@ -476,7 +476,7 @@ describe('SC-003 — no second slugifier in the add-page popover', () => {
 
     // Scope the scan to the popover, not the whole file: `handleExport` has a
     // legitimate lowercase+slug for the DOWNLOAD FILENAME (`.html`), which is
-    // not a page path and must not be conflated with FR-R1's "no third
+    // not a page path and must not be conflated with the "no third
     // slugifier".
     const popover = source.slice(start, end)
     expect(popover, 'the exact expression the defect was built from').not.toMatch(
@@ -484,7 +484,7 @@ describe('SC-003 — no second slugifier in the add-page popover', () => {
     )
     expect(popover, 'the popover must not lowercase by hand either').not.toMatch(/toLowerCase\(\)/)
 
-    // FR-R1 says the suggestion comes from the canonical module; assert the
+    // The suggestion must come from the canonical module; assert the
     // import is actually there rather than assuming it.
     expect(source).toMatch(/import \{[^}]*slugifyPagePath[^}]*\} from '@\/lib\/page-path'/)
   })

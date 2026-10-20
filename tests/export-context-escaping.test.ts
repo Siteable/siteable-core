@@ -1,5 +1,5 @@
 /**
- * ISS-004 — context-appropriate escaping for config-derived values in the
+ * Context-appropriate escaping for config-derived values in the
  * exporter's `<script>`, `<style>` and attribute contexts.
  *
  * The defect was one root cause with several sinks: settings/theme values were
@@ -43,7 +43,7 @@ const SCRIPT_CLOSE = /<\/script>/gi
 const STYLE_OPEN = /<style\b/gi
 const IMG = /<img\b/gi
 
-describe('ISS-004 — inline <script> context', () => {
+describe('inline <script> context', () => {
   it('gaId payloads cannot terminate the script element or add markup', () => {
     const clean = exportSiteToHTML(config(), { settings: { gaId: 'G-ABC123' } })
     for (const payload of PAYLOADS) {
@@ -79,7 +79,7 @@ describe('ISS-004 — inline <script> context', () => {
   })
 })
 
-describe('ISS-004 — <style> and Tailwind script theme context', () => {
+describe('<style> and Tailwind script theme context', () => {
   it('theme payloads cannot break out of the script or style blocks', () => {
     const clean = exportSiteToHTML(config())
     for (const payload of PAYLOADS) {

@@ -1,6 +1,6 @@
 import { ImageIcon } from 'lucide-react'
 import type { BlockConfig } from '../types'
-// ISS-005: fallback images are the block-default-content contract, shared with
+// Fallback images are the block-default-content contract, shared with
 // the prop normalizer (was an inline literal; src/caption:'' additions are
 // falsy → placeholder icon + no caption div, byte-identical render).
 import { defaultGalleryImages } from '@/lib/block-default-content'

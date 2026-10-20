@@ -1,6 +1,6 @@
 /**
  * Single HTML-escape implementation, shared by the exporter's block renderers
- * and the markdown-subset renderer (NF-006: no new dependency).
+ * and the markdown-subset renderer (no new dependency).
  *
  * Every literal text run in an emitted string MUST pass through this function
  * before it is concatenated into markup. `isAllowedUrl` decides whether a URL

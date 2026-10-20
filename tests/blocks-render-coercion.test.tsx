@@ -7,7 +7,7 @@ import { LogoCloudBlock } from '../src/blocks/logocloud/LogoCloudBlock'
 import { validateSiteConfig } from '../src/lib/generate-site'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
-// ISS-005 class fix render smokes: the highest-risk child maps. Each block
+// Render smokes for the highest-risk child maps. Each block
 // gets a raw-crash canary (the bug class, pre-normalization) + the validated
 // render (post-normalization). react-dom/server only — no new deps.
 
@@ -16,7 +16,7 @@ function validated(type: string, variant: string, props: Record<string, unknown>
   return config.blocks[0]
 }
 
-describe('StatsBlock render (ISS-005 class)', () => {
+describe('StatsBlock render (class)', () => {
   it('canary: raw object item.value throws', () => {
     const raw: BlockConfig = {
       id: 's1', type: 'stats', variant: 'grid',
@@ -33,7 +33,7 @@ describe('StatsBlock render (ISS-005 class)', () => {
   })
 })
 
-describe('TeamBlock render (ISS-005 class)', () => {
+describe('TeamBlock render (class)', () => {
   it('canary: raw object member.name throws', () => {
     const raw: BlockConfig = {
       id: 't1', type: 'team', variant: 'grid',
@@ -48,7 +48,7 @@ describe('TeamBlock render (ISS-005 class)', () => {
   })
 })
 
-describe('LogoCloudBlock render (ISS-005 review item 1)', () => {
+describe('LogoCloudBlock render', () => {
   it('canary: raw object logo crashes LogoPlaceholder (name.charAt + {name} child)', () => {
     const raw: BlockConfig = {
       id: 'l1', type: 'logocloud', variant: 'default',
@@ -65,7 +65,7 @@ describe('LogoCloudBlock render (ISS-005 review item 1)', () => {
   })
 })
 
-describe('TestimonialsBlock render (ISS-005 class)', () => {
+describe('TestimonialsBlock render (class)', () => {
   it('canary: raw object item.name throws — item.name.split() is the real crash site', () => {
     const raw: BlockConfig = {
       id: 'q1', type: 'testimonials', variant: 'cards',

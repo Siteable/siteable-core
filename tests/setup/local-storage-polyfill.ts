@@ -1,4 +1,4 @@
-// ISS-003: Node >= 22 defines an experimental `globalThis.localStorage`
+// Node >= 22 defines an experimental `globalThis.localStorage`
 // accessor that returns `undefined` (and emits an ExperimentalWarning) unless
 // `--localstorage-file` is passed. That accessor shadows the jsdom-provided
 // localStorage inside vitest — even for files under `@vitest-environment

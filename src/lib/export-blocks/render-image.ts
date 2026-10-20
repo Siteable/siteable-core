@@ -9,7 +9,7 @@ import { defaultImageGridItems } from '@/lib/block-default-content'
  * An `<img>` is emitted ONLY when the `src` passes the image URL policy
  * (`https:` only); a rejected or empty source degrades to the same gradient
  * placeholder shape the React block uses, so a stored `data:` URL never
- * becomes a live image (SC-011).
+ * becomes a live image.
  */
 const IMAGE_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-3"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>'

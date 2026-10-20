@@ -1,12 +1,12 @@
 /**
- * FR-001 — multi-page export. Covers SC-001 (page isolation + single-doc == `/`)
- * and SC-002 / NF-001 (legacy byte-identity against the frozen 0.2.0 corpus).
+ * Multi-page export. Covers page isolation + single-doc == `/`
+ * and legacy byte-identity against the frozen 0.2.0 corpus.
  *
  * The corpus under `tests/fixtures/export-legacy-corpus/` was rendered by
  * `exportSiteToHTML` on a `git worktree` of tag v0.2.1, BEFORE any production
- * edit in this phase, from the `*.json` configs sitting beside it; the same
+ * edit, from the `*.json` configs sitting beside it; the same
  * generator run against tag v0.2.0 produced byte-identical files, which is what
- * records the 0.2.0 === 0.2.1 claim the spec's NF-001 baseline rests on. The
+ * records the 0.2.0 === 0.2.1 claim the baseline rests on. The
  * generator script was deleted afterwards, exactly like
  * `export-legacy-snapshot.test.ts`. Regenerating these files to make a test
  * pass defeats the entire fixture — do not.
@@ -71,7 +71,7 @@ const multiPageConfig: SiteConfig = {
   blocks: topLevelBlocks,
 }
 
-describe('SC-001 — page isolation', () => {
+describe('page isolation', () => {
   it('returns one document per page, in page order, keyed by normalized path', () => {
     const docs = exportSitePages(multiPageConfig)
     expect(docs.map((doc) => doc.path)).toEqual(['/', '/about'])
@@ -160,7 +160,7 @@ describe('SC-001 — page isolation', () => {
     }
   })
 
-  // Review finding: the behavior runtime is gated on the page's own blocks,
+  // The behavior runtime is gated on the page's own blocks,
   // which is one of the two reads of `blocks` inside the document body. It
   // survives every other assertion in this suite if it is reverted to reading
   // `config.blocks`: reversing the mutation left the full suite green, because
@@ -186,10 +186,10 @@ describe('SC-001 — page isolation', () => {
     expect(docs[1].html).not.toContain('toggleFaq')
   })
 
-    // vk-tester (category 1) found the one surviving mutation: writing normalized
-  // paths back onto `config.pages` in place. `page-path.ts` already promises the
-  // input array is never mutated, but nothing carried that promise through the
-  // public entry point — and a consuming worker holds a config it may re-persist.
+  // A mutation that writes normalized paths back onto `config.pages` in place
+  // survived the suite: `page-path.ts` already promises the input array is never
+  // mutated, but nothing carried that promise through the public entry point —
+  // and a consuming worker holds a config it may re-persist.
   it('never mutates the caller\'s config', () => {
     const config: SiteConfig = {
       name: 'Purity',
@@ -233,11 +233,11 @@ describe('SC-001 — page isolation', () => {
   })
 })
 
-// Red Team #10 — sanitization is only proven for the single-page path by the
+// Sanitization is only proven for the single-page path by the
 // existing suite. Pages 2 and 3 carry the payloads, so an implementation that
 // rendered pages through a different (un-escaping) branch would pass every
 // isolation test above and still ship stored XSS on sub-pages.
-describe('FR-001 — per-page XSS payloads (Red Team #10)', () => {
+describe('per-page XSS payloads', () => {
   const payloadBlocks: BlockConfig[] = [
     {
       id: 'xss-text',
@@ -289,7 +289,7 @@ describe('FR-001 — per-page XSS payloads (Red Team #10)', () => {
   })
 })
 
-describe('SC-002 / NF-001 — legacy corpus byte-identity', () => {
+describe('legacy corpus byte-identity', () => {
   // Read + parse the corpus ONCE: `corpus()` re-reads and re-parses every JSON
   // file on each call, and it was being called from three `it.each` maps.
   const entries = corpus()
@@ -362,20 +362,20 @@ describe('SC-002 / NF-001 — legacy corpus byte-identity', () => {
     },
   )
 })
-// FR-C2 — `exportSiteToHTML` must not throw on any config `main`
+// `exportSiteToHTML` must not throw on any config `main`
 // accepted. `homeBlocks` read `pages[0].blocks` unguarded and `renderDocument`
 // immediately calls `blocks.some(...)`, so `pages:[{path:'/',blocks:undefined}]`
 // and `pages:[{blocks:null}]` both threw. On `main` those configs exported fine
 // (it read `config.blocks`), so this is a backwards-compatibility break on a
 // shipped, consumer-facing public export.
 //
-// D3: tolerant, not loud. Both entry points return `[]` blocks rather than
+// Tolerant, not loud. Both entry points return `[]` blocks rather than
 // throwing. (An earlier note claimed `exportSitePages` already did this; it only guarded
 // page `blocks`, not `pages` itself — that was fixed and the
 // both-entry-points table at the bottom of this file now proves it.)
 // DATA-LOSS FRAMING: a blank home page is silently published, which is
 // why README states the outcome explicitly.
-describe('SC-001 — FR-C2 exportSiteToHTML never throws on configs main accepted', () => {
+describe('exportSiteToHTML never throws on configs main accepted', () => {
   const MALFORMED: Array<[string, unknown]> = [
     ['blocks undefined', [{ path: '/', blocks: undefined }]],
     ['blocks null', [{ blocks: null }]],
@@ -389,8 +389,8 @@ describe('SC-001 — FR-C2 exportSiteToHTML never throws on configs main accepte
     ['pages an object', { '0': { path: '/' } }],
     ['pages empty array', []],
     ['pages array of empty objects', [{}]],
-    // Review finding: `?? []` covers null/undefined but passes a STRING, NUMBER or
-    // OBJECT straight through, so these threw the identical TypeError the phase
+    // `?? []` covers null/undefined but passes a STRING, NUMBER or
+    // OBJECT straight through, so these threw the identical TypeError the change
     // was raised to remove. Guarding at `renderDocument` (the one function both
     // entry points pass blocks through) is what makes the fix class-complete
     // rather than a longer list of the same two cases.
@@ -499,7 +499,7 @@ describe('SC-001 — FR-C2 exportSiteToHTML never throws on configs main accepte
 // Each hostile input below would coerce to a PLAUSIBLE wrong answer if the guard
 // were `!pages || !pages.length` (the shipped one): `{length:2}` and 'ab' have a
 // truthy non-zero `length`, so a length-only check walks straight into `.map`.
-describe('SC-001 — exportSitePages and exportSiteToHTML are both total and agree', () => {
+describe('exportSitePages and exportSiteToHTML are both total and agree', () => {
   const okPage = { path: '/', blocks: [{ id: 'h', type: 'hero', variant: 'centered', props: { headline: marker('OK') } }] }
   const CASES: Array<[string, unknown]> = [
     ['pages a string', 'abc'],

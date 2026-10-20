@@ -1,8 +1,8 @@
 /**
- * Phase 04 — footer link objects must never export as `[object Object]`.
+ * Footer link objects must never export as `[object Object]`.
  *
  * The link-array model change means a footer `links` / `columns[].links` value
- * may now hold `{label,href}` objects. Phase 05 renders each entry through the
+ * may now hold `{label,href}` objects. Each entry is rendered through the
  * policy-gated `renderLink`: a policy-passing href publishes as an anchor, an
  * empty/rejected href (and every legacy string) as the non-anchor element. The
  * label always survives to the output. Two reachable paths are covered:

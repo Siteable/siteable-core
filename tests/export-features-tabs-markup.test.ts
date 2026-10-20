@@ -1,5 +1,5 @@
 /**
- * SC-001 / FR-001 / FR-002 / FR-003 — the exported tab-set markup.
+ * The exported tab-set markup.
  *
  * This suite is about the markup CONTRACT, not the runtime: one tab list, one
  * button per item, one panel per item, a unique reference in both directions,
@@ -149,7 +149,7 @@ const TAB_CLASS_LITERAL =
 const PANEL_CLASS_LITERAL =
   'max-w-2xl mx-auto bg-bg-2 border border-border-default rounded-xl p-5'
 
-describe('SC-001 / FR-001 — one tab list, one tab and one panel per item', () => {
+describe('one tab list, one tab and one panel per item', () => {
   it('renders exactly one tab list with three tabs and three panels', () => {
     const doc = html(threeTabs())
     expect(doc.match(/role="tablist"/g) ?? []).toHaveLength(1)
@@ -227,7 +227,7 @@ describe('SC-001 / FR-001 — one tab list, one tab and one panel per item', () 
   )
 })
 
-describe('FR-002 — selection, references and the single tab stop', () => {
+describe('selection, references and the single tab stop', () => {
   it('the first tab is selected and every other tab is not', () => {
     const buttons = allButtons(html(threeTabs()))
     expect(buttons).toHaveLength(3)
@@ -290,7 +290,7 @@ describe('FR-002 — selection, references and the single tab stop', () => {
   })
 })
 
-describe('FR-001 / FR-002 — several tab sets stay independent on one page', () => {
+describe('several tab sets stay independent on one page', () => {
   it('numbers each tab set separately and keeps its ids disjoint', () => {
     const doc = html(threeTabs(), tabsBlock({
       title: 'Second',
@@ -350,7 +350,7 @@ describe('FR-001 / FR-002 — several tab sets stay independent on one page', ()
   })
 })
 
-describe('FR-003 / NF-006 — panel content and class lists', () => {
+describe('panel content and class lists', () => {
   it('each panel leads with a hidden heading carrying the item title', () => {
     const doc = html(threeTabs())
     expect(doc.match(/<h3 data-sb-tab-title hidden/g) ?? []).toHaveLength(3)
@@ -423,7 +423,7 @@ describe('FR-003 / NF-006 — panel content and class lists', () => {
   })
 })
 
-describe('FR-001 / SC-002 — an empty or whitespace-only title gets a positional fallback label', () => {
+describe('an empty or whitespace-only title gets a positional fallback label', () => {
   it.each([
     ['empty', ''],
     ['single space', ' '],
@@ -459,7 +459,7 @@ describe('FR-001 / SC-002 — an empty or whitespace-only title gets a positiona
   })
 })
 
-describe('FR-001 — the tab set stays inside the block, with one script for the page', () => {
+describe('the tab set stays inside the block, with one script for the page', () => {
   it('the tab list holds exactly the tab buttons and nothing else', () => {
     const inner = tablistInner(html(threeTabs()))
     expect(inner.match(/<button/g) ?? []).toHaveLength(3)
@@ -472,7 +472,7 @@ describe('FR-001 — the tab set stays inside the block, with one script for the
   })
 })
 
-describe('NF-002 — the exempt tab section still has a pinned skeleton', () => {
+describe('the exempt tab section still has a pinned skeleton', () => {
   // The frozen-baseline comparison masks this whole section because the tab
   // markup is a permitted difference. That mask must not turn into a licence
   // for arbitrary markup, so the section's shell is pinned here: the two
@@ -528,7 +528,7 @@ describe('NF-002 — the exempt tab section still has a pinned skeleton', () => 
   })
 })
 
-describe('NF-002 — panel drift is pinned as tightly as tab drift', () => {
+describe('panel drift is pinned as tightly as tab drift', () => {
   // The masked tab section is a permitted difference from the frozen baseline,
   // so the markup inside it needs its own guards. The tab button class list,
   // the wrapper class lists and the element sequence already have them; these
@@ -551,9 +551,9 @@ describe('NF-002 — panel drift is pinned as tightly as tab drift', () => {
 
     // Required by the export contract: the ARIA role, the runtime data hook,
     // the id a tab points at, the back-reference to that tab, and the class
-    // list. `hidden` is required on every panel but the first (FR-001).
+    // list. `hidden` is required on every panel but the first.
     const required = ['role', 'data-sb-tab-panel', 'id', 'aria-labelledby', 'class']
-    // `tabindex` is tolerated but NOT required: no FR/SC mandates that a panel
+    // `tabindex` is tolerated but NOT required: nothing mandates that a panel
     // be focusable, so its absence is not drift and its presence must stay 0.
     const allowed = new Set([...required, 'tabindex', 'hidden'])
 

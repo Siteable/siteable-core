@@ -1,5 +1,5 @@
 /**
- * FR-C1 — the worker-facing package entry (`@siteable/core/worker`).
+ * The worker-facing package entry (`@siteable/core/worker`).
  *
  * The package's only entry was the barrel, which
  * re-exports `CanvasToolbar`, `EditorLayout`, `useConfigStore` and
@@ -13,13 +13,13 @@
  * This module is deliberately a THIN re-export list and nothing more. It is a
  * list of names, not an implementation, so every module it pulls in is exactly
  * the transitive closure of those two functions. It is the root that
- * `tests/export-runtime-deps.test.ts` walks (FR-H3) and the file `vite build`
+ * `tests/export-runtime-deps.test.ts` walks and the file `vite build`
  * emits as `dist/worker.js` — those two are the same claim about the same set,
- * which is why adding a name here is the single act that can break NF-005.
+ * which is why adding a name here is the single act that can break the guarantee.
  *
  * DELIBERATELY NOT ON THE BARREL (`src/index.ts`): widening the pinned `.`
- * surface for a build-tooling concern is not free, and AC-04 pins the barrel's
- * export set exactly. Consumers of the worker entry get these names from
+ * surface for a build-tooling concern is not free, and the barrel's
+ * export set is pinned exactly. Consumers of the worker entry get these names from
  * `@siteable/core/worker` instead.
  *
  * `export-html.ts` reaches `downloadHTML`/`previewHTML`, which touch
@@ -28,10 +28,10 @@
  * not about `document` existing. `renderDocument` itself is pure string work.
  */
 
-/** FR-001 — one rendered page: its published path and its complete HTML document. */
+/** One rendered page: its published path and its complete HTML document. */
 export { type PageDocument, exportSitePages } from './export-site-pages'
 
-/** FR-002 — the published URL per page, and the raw-path shape predicate. */
+/** The published URL per page, and the raw-path shape predicate. */
 export { normalizePagePaths, isValidPagePath } from './page-path'
 
 /** The two types in the renderer's signature, so a consumer need not import the main entry. */

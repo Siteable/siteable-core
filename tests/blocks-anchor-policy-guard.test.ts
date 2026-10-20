@@ -1,5 +1,5 @@
 /**
- * Structural guard for ISS-005 — the whole bug CLASS, not just the instance.
+ * Structural guard for the anchor URL policy — the whole bug CLASS, not just the instance.
  *
  * `BannerBlock` rendered an ungated `<a href>` while its three siblings gated
  * theirs. Nothing failed: no test asserted the invariant, so review caught it by
@@ -31,7 +31,7 @@ function walk(dir: string): string[] {
   )
 }
 
-describe('src/blocks anchors are URL-policy gated (ISS-005 class guard)', () => {
+describe('src/blocks anchors are URL-policy gated (class guard)', () => {
   it('every component rendering <a ... href= references isAllowedUrl', () => {
     const offenders = walk(BLOCKS_DIR)
       .filter((f) => f.endsWith('.tsx'))

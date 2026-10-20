@@ -21,7 +21,7 @@ import {
   renderBehaviorNoscript,
 } from '../src/lib/export-behavior-runtime'
 
-/** NF-001 ceiling for the menu + faq + tabs budget. */
+/** Gzip ceiling for the menu + faq + tabs budget. */
 const GZIP_CAP_BYTES = 2048
 
 /** The exact no-script wrapper 0.4.0 emitted; pinned, not derived. */
@@ -127,7 +127,7 @@ describe('BEHAVIOR_RUNTIME_SOURCE — tab budget', () => {
   it('pins the panel id prefix the exporter markup must build ids from', () => {
     // The `_` is what no block id can contain, so `sb_tabs_<blockId>_<n>`
     // cannot collide with a generated block id. The half of that claim which
-    // depends on the id GENERATOR lives with the generator, in phase 02 —
+    // depends on the id GENERATOR lives with the generator —
     // asserting it here would only re-state the literal.
     expect(TAB_ID_PREFIX).toBe('sb_tabs_')
   })

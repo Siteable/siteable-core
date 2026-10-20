@@ -1,5 +1,5 @@
 /**
- * NF-003 / SC-001 — the injection corpus against the tab-set export.
+ * The injection corpus against the tab-set export.
  *
  * The shipped corpus file compares each payload's script count against a
  * `props: {}` render, which is the wrong clean side here: a tab set legitimately
@@ -28,7 +28,7 @@ const CORPUS = [
   // direction or width assumptions rather than only quoting.
   '‮gnitset‭',
   '🙂 tab',
-  // A 10 000-character title is the NF-003 corpus length explicitly named.
+  // A 10 000-character title is the corpus length explicitly named.
   'X'.repeat(10_000),
 ]
 
@@ -89,7 +89,7 @@ function expectInert(html: string, msg: string): void {
   }
 }
 
-describe('NF-003 — payloads in tab labels and panel bodies stay inert', () => {
+describe('payloads in tab labels and panel bodies stay inert', () => {
   for (const payload of CORPUS) {
     it(`title ← ${JSON.stringify(payload.slice(0, 40))}`, () => {
       const html = tabPage([payload, 'Two'], ['First', 'Second'])
@@ -120,7 +120,7 @@ describe('NF-003 — payloads in tab labels and panel bodies stay inert', () => 
   }
 })
 
-describe('NF-003 — the payload survives as inert, literal text', () => {
+describe('the payload survives as inert, literal text', () => {
   it('a markup payload is escaped into visible text rather than dropped', () => {
     const payload = '<img src=x onerror=alert(1)>'
     const html = tabPage([payload, 'Two'], ['First', 'Second'])
@@ -162,7 +162,7 @@ describe('NF-003 — the payload survives as inert, literal text', () => {
   })
 })
 
-describe('NF-003 — a payload in the block label stays inert too', () => {
+describe('a payload in the block label stays inert too', () => {
   // The label is a user-controlled text run rendered by the SAME renderer as
   // the title; without this matrix the sink is unasserted and a dropped escape
   // would ship a live handler while the whole suite stayed green.
@@ -189,7 +189,7 @@ describe('NF-003 — a payload in the block label stays inert too', () => {
   }
 })
 
-describe('NF-003 — the shared runtime source stays injection-free', () => {
+describe('the shared runtime source stays injection-free', () => {
   it('carries no HTML-string injection and no dynamic evaluation', () => {
     expect(BEHAVIOR_RUNTIME_SOURCE).not.toMatch(/\beval\b/)
     expect(BEHAVIOR_RUNTIME_SOURCE).not.toMatch(/new\s+Function\b/)

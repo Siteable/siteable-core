@@ -1,5 +1,5 @@
 /**
- * FR-002 — page-path normalization + raw-path shape predicate.
+ * Page-path normalization + raw-path shape predicate.
  *
  * This module decides a page's published URL, so it is pure and framework-free
  * by construction: no React, no clock, no randomness, no page ids. The output
@@ -13,7 +13,7 @@
  * URLs and needs its own RFC; it is not a fix hidden in this function.
  */
 
-/** FR-002 shape: `/`, or 1–3 lowercase alphanumeric segments. Module-private. */
+/** Page-path shape: `/`, or 1–3 lowercase alphanumeric segments. Module-private. */
 const PAGE_PATH_SHAPE = /^\/(?:[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*){0,2})?$/
 
 /** Trailing `.<alnum>` on the whole path, so `/about us.html` loses only `.html`. */
@@ -31,7 +31,7 @@ type Candidate = { index: number; value: string; demoted: boolean }
 /**
  * Rule 1 — one raw path (or page NAME) to its slug form.
  *
- * FR-H1: `typeof raw === 'string' ? raw : ''` keeps a missing OR MALFORMED path
+ * `typeof raw === 'string' ? raw : ''` keeps a missing OR MALFORMED path
  * total (it degrades to `/`, which the home rules then place). `raw ?? ''` was
  * not enough: it covers `null`/`undefined` and nothing else, so
  * `normalizePagePaths(['/', 42])` threw `(raw ?? '').toLowerCase is not a
@@ -152,23 +152,23 @@ function resolvePagePaths(rawPaths: ReadonlyArray<string | undefined>): string[]
 }
 
 /**
- * FR-002 — normalize an ordered page list to one unique, valid path per page,
+ * Normalize an ordered page list to one unique, valid path per page,
  * in the input's order. Pure: the input array is never mutated, and the result
  * depends on nothing but the input values.
  *
- * An empty input yields an empty output. FR-002's "exactly one `/`" invariant
+ * An empty input yields an empty output. The "exactly one `/`" invariant
  * is stated over a non-empty page list; callers that hold a site config with no
- * pages render a single document at `/` (FR-001) and never need this function.
+ * pages render a single document at `/` and never need this function.
  */
 export function normalizePagePaths(rawPaths: ReadonlyArray<string | undefined>): string[] {
   return resolvePagePaths(rawPaths)
 }
 
 /**
- * FR-002 — does this raw path already satisfy the shape rule? The editor's
- * add-page flow rejects on `false` (FR-003), and a consuming app's import check asks
- * this rather than keeping a second copy of the regex (NF-005 keeps this module
- * dependency-free so a worker can import it alone).
+ * Does this raw path already satisfy the shape rule? The editor's
+ * add-page flow rejects on `false`, and a consuming app's import check asks
+ * this rather than keeping a second copy of the regex. This module stays
+ * dependency-free so a worker can import it alone.
  *
  * The `typeof` guard is NOT redundant with the signature. Callers reach this
  * across a package boundary with config parsed from JSON, where `path` is only

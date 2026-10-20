@@ -48,9 +48,9 @@ function AddPagePopover({ onAdd, onClose, existingPaths }: {
     const trimmed = name.trim()
     if (!trimmed) return
     // The suggested default comes from the SAME rule-1 slugifier the exporter
-    // applies, so the flow can never reject its own suggestion (SC-003).
+    // applies, so the flow can never reject its own suggestion.
     const cleanPath = path.trim() || slugifyPagePath(trimmed)
-    // FR-003 — reject before the store, so a rejected path leaves the page list
+    // Reject before the store, so a rejected path leaves the page list
     // untouched. Duplicate check is EXACT raw equality against existing paths
     // (spec-literal); the publish normalizer resolves anything looser.
     if (!isValidPagePath(cleanPath)) {

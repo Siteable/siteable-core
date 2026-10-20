@@ -44,7 +44,7 @@ function ComponentsPanel() {
       id: generateBlockId(),
       type,
       variant: meta.variants[0],
-      // ISS-005 review item 3: deep copy — defaultProps now hold shared array-of-object
+      // Deep copy — defaultProps now hold shared array-of-object
       // constants; a shallow spread would let this block's edits mutate every future insert.
       props: structuredClone(meta.defaultProps),
     }

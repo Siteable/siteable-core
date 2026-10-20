@@ -1,6 +1,6 @@
 import { ImageIcon } from 'lucide-react'
 import type { BlockConfig } from '../types'
-// ISS-005: grid placeholder items are the block-default-content contract, shared
+// Grid placeholder items are the block-default-content contract, shared
 // with the prop normalizer (was an inline literal; src:'' is falsy like the
 // original src:undefined → identical Placeholder render).
 import { defaultImageGridItems } from '@/lib/block-default-content'

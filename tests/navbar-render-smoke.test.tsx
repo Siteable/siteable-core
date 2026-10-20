@@ -5,16 +5,16 @@ import { LogoCloudBlock } from '../src/blocks/logocloud/LogoCloudBlock'
 import { validateSiteConfig } from '../src/lib/generate-site'
 import type { BlockConfig } from '../src/blocks/types'
 
-// ISS-005 render smoke. Phase 04 reverses the navbar contract: declared link
+// Render smoke. The navbar contract reverses here: declared link
 // arrays ({label,href}) now render as labels instead of crashing, so the old
 // crash canary moved to a block whose array-of-objects prop is NOT declared as
 // a link array (logocloud.logos) — that bug class still exists.
 
 const OBJECT_LINKS = [{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }]
 
-describe('NavbarBlock render smoke (ISS-005)', () => {
+describe('NavbarBlock render smoke', () => {
   it('NEW contract: RAW object-links props render as labels, no [object Object]', () => {
-    // Phase 04: navbar declares `links` as a link array, so a RAW {label,href}
+    // The navbar declares `links` as a link array, so a RAW {label,href}
     // prop renders each item's label. It must not reach React as an object child.
     const rawBlock: BlockConfig = {
       id: 'b1', type: 'navbar', variant: 'default',
@@ -27,8 +27,8 @@ describe('NavbarBlock render smoke (ISS-005)', () => {
   })
 
   it('crash canary: a NON-declared object array still throws (logocloud.logos)', () => {
-    // The bug class (object rendered as a React child) is real; the phase-04 fix
-    // narrows it to declared link arrays, it does not make React accept objects.
+    // The bug class (object rendered as a React child) is real. The fix narrows
+    // it to declared link arrays; it does not make React accept objects.
     expect(() =>
       renderToString(
         <LogoCloudBlock

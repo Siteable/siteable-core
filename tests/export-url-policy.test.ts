@@ -1,11 +1,9 @@
 /**
- * SC-001 / SC-003 / SC-004 — the URL policy applied at the export chokepoints.
+ * The URL policy applied at the export chokepoints.
  *
- * Spec: `specs/publish-fidelity/spec.md` FR-001 / FR-004.
- * Phase: `plans/261005-0718-.../phase-02-apply-url-policy-in-export.md`.
  * Module under test: `src/lib/export-html.ts` (`renderLink` + export settings).
  *
- * FR-001 scope note (intentional, do NOT "fix" into scope): `gaId` and
+ * Scope note (intentional, do NOT "fix" into scope): `gaId` and
  * `posthogKey` are interpolated into a `<script>` BODY, not into an `href` /
  * `src` attribute. `encodeURIComponent` / `JSON.stringify` handle them and the
  * URL policy does not apply. They are deliberately left un-gated here.
@@ -41,7 +39,7 @@ function heroConfig(overrides: Record<string, unknown>): SiteConfig {
   }
 }
 
-describe('SC-001 — hero primary CTA with a rejected URL', () => {
+describe('hero primary CTA with a rejected URL', () => {
   it('omits the javascript: href and degrades to the non-anchor element', () => {
     const html = exportSiteToHTML(
       heroConfig({ primaryCtaUrl: 'javascript:alert(1)' })
@@ -55,7 +53,7 @@ describe('SC-001 — hero primary CTA with a rejected URL', () => {
   })
 })
 
-describe('SC-003 — hero primary CTA with a policy-passing URL', () => {
+describe('hero primary CTA with a policy-passing URL', () => {
   it('keeps the anchor markup byte-identical for https://x', () => {
     const html = exportSiteToHTML(
       heroConfig({ primaryCtaUrl: 'https://x' })
@@ -65,11 +63,12 @@ describe('SC-003 — hero primary CTA with a policy-passing URL', () => {
       `<a href="https://x" class="${HERO_PRIMARY_CLASS}">Start</a>`
     )
     // Whole-document byte-identity for the legacy baseline is covered
-    // separately by `tests/export-legacy-snapshot.test.ts` (phase-01).
+    // separately by `tests/export-legacy-snapshot.test.ts` (the whole-document
+    // tripwire).
   })
 })
 
-describe('SC-004 — settings image URLs are policy-gated', () => {
+describe('settings image URLs are policy-gated', () => {
   it('omits both elements when the sources fail the policy', () => {
     const html = exportSiteToHTML(heroConfig({}), {
       settings: {
@@ -130,7 +129,7 @@ describe('SC-004 — settings image URLs are policy-gated', () => {
   })
 })
 
-describe('SC-001 deny coverage — every renderLink caller', () => {
+describe('deny coverage — every renderLink caller', () => {
   it('cta buttonUrl degrades to a non-anchor element', () => {
     const config: SiteConfig = {
       name: 'Test Site',
@@ -166,7 +165,7 @@ describe('SC-001 deny coverage — every renderLink caller', () => {
 })
 
 /**
- * FR-001 general URL-policy scope — the six PRE-EXISTING `<img src>` emitters
+ * General URL-policy scope — the six PRE-EXISTING `<img src>` emitters
  * are gated through the GENERAL policy `isAllowedUrl(x)` (no `{ image: true }`),
  * per the FC1 correction. An `<img src>` cannot execute `javascript:` or `data:`,
  * and the https-only image rule bought ~zero security while dropping legacy
@@ -174,8 +173,8 @@ describe('SC-001 deny coverage — every renderLink caller', () => {
  * and relative paths, and still deny script-bearing and blank values.
  *
  * The `{ image: true }` https-only rule remains for the NEW `image`/`gallery`
- * renderers and for `faviconUrl`/`ogImageUrl` (spec FR-004 image rule) — covered
- * by the SC-004 settings tests above and the XSS corpus, not here.
+ * renderers and for `faviconUrl`/`ogImageUrl` (the image rule) — covered
+ * by the settings-URL tests above and the XSS corpus, not here.
  *
  * One minimal single-block config per emitter, so a single `<img src=` in the
  * document can only come from the emitter under test.
@@ -264,7 +263,7 @@ const gatedEmitters: { name: string; config: (image: string) => SiteConfig }[] =
   },
 ]
 
-describe('FR-001 — every pre-existing <img src> emitter uses the general URL policy', () => {
+describe('every pre-existing <img src> emitter uses the general URL policy', () => {
   for (const emitter of gatedEmitters) {
     for (const pass of GENERAL_PASS_IMAGES) {
       it(`${emitter.name}: emits an <img> for a ${pass.label} value`, () => {
@@ -318,7 +317,7 @@ const GENERAL_INERT_IMAGES: { label: string; value: string }[] = [
   { label: 'fragment', value: '#anchor' },
 ]
 
-describe('FR-001 — general-policy breadth on the six emitters (documented inert boundary)', () => {
+describe('general-policy breadth on the six emitters (documented inert boundary)', () => {
   for (const emitter of gatedEmitters) {
     for (const inert of GENERAL_INERT_IMAGES) {
       it(`${emitter.name}: admits a ${inert.label} value (inert in <img>, general-policy breadth)`, () => {

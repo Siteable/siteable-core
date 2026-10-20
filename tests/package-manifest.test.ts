@@ -1,10 +1,10 @@
 /**
- * SC-025 / NF-006 — package-manifest tripwires for the publish-fidelity work.
+ * Package-manifest tripwires for the export work.
  *
- * Spec: `specs/publish-fidelity/spec.md` NF-006 ("no new runtime dependency may
- * be added to the package; the markdown subset renderer is implemented in-repo")
- * and SC-025 ("Given the package manifest, when compared to the pre-change
- * manifest, then no new runtime dependency is present").
+ * Requirement: no new runtime dependency may
+ * be added to the package; the markdown subset renderer is implemented in-repo.
+ * Also: given the package manifest, when compared to the pre-change
+ * manifest, then no new runtime dependency is present.
  *
  * These assertions live at package level rather than inside a feature suite, so a
  * future violation fails here instead of failing an unrelated feature test for a
@@ -50,7 +50,7 @@ function readRepoFile(relativePath: string): string {
   return readFileSync(resolve(import.meta.dirname, '..', relativePath), 'utf8')
 }
 
-describe('SC-025 / NF-006 — package manifest', () => {
+describe('package manifest', () => {
   it('adds no new runtime dependency', () => {
     const manifest = JSON.parse(readRepoFile('package.json')) as {
       dependencies?: Record<string, string>
@@ -62,7 +62,7 @@ describe('SC-025 / NF-006 — package manifest', () => {
   })
 
   it('adds no new peer dependency', () => {
-    // Peer deps are a second, easier-to-miss channel for NF-006: adding a
+    // Peer deps are a second, easier-to-miss channel for the same rule: adding a
     // required peer would change the package's install contract.
     const current = JSON.parse(readRepoFile('package.json')) as {
       peerDependencies?: Record<string, string>
@@ -74,7 +74,7 @@ describe('SC-025 / NF-006 — package manifest', () => {
   })
 })
 
-describe('NF-006 — import-free modules', () => {
+describe('import-free modules', () => {
   it.each(IMPORT_FREE_MODULES)('%s imports nothing', (relativePath) => {
     const source = readRepoFile(relativePath)
 

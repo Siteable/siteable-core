@@ -28,7 +28,7 @@ export interface LinkItem {
   href?: string
 }
 
-// ISS-005 (class fix): defaultProps below ARE the prop contracts the generation
+// The defaultProps below ARE the prop contracts the generation
 // normalizer (src/lib/prop-normalization.ts) coerces AI output against.
 // Content defaults live in src/lib/block-default-content.ts.
 
@@ -49,7 +49,7 @@ export const blockMetadata: BlockMeta[] = [
     category: 'Hero',
     variants: ['centered', 'split', 'gradient', 'minimal'],
     // badge:'' gives the normalizer a string contract for badge (renders only
-    // when truthy → byte-identical output vs the key being absent) — ISS-005 review item 1.
+    // when truthy → byte-identical output vs the key being absent).
     defaultProps: { badge: '', headline: 'Your Headline Here', subheadline: 'A compelling subheadline that explains your value proposition.', primaryCta: 'Get Started', secondaryCta: 'Learn More' },
   },
   {

@@ -1,11 +1,11 @@
 /**
- * SC-M02 (mechanical half) — a URL typed into the properties panel is the URL
+ * Panel-to-publish (mechanical half) — a URL typed into the properties panel is the URL
  * that reaches the published page.
  *
- * SC-M02 is `[HUMAN-ONLY]` because its final step — "clickable and navigates to
+ * The full scenario is `[HUMAN-ONLY]` because its final step — "clickable and navigates to
  * the intended destination in a real browser" — needs a browser. Its two
- * deterministic halves are already covered separately: SC-019 exercises the
- * panel's fields, and SC-014/015/016 exercise the exporter's anchor output.
+ * deterministic halves are already covered separately: the panel-field tests exercise the
+ * panel's fields, and the link-model tests exercise the exporter's anchor output.
  *
  * What nothing covered is the SEAM between them. Each half could pass in
  * isolation while the URL a user types is mangled in transit — normalised into
@@ -72,7 +72,7 @@ function publishedHtml(): string {
   return exportSiteToHTML(useConfigStore.getState().config)
 }
 
-describe('SC-M02 — panel edit reaches the published href', () => {
+describe('panel edit reaches the published href', () => {
   it('navbar: a URL typed into a link field publishes as that link item href', () => {
     const block: BlockConfig = {
       id: 'b-nav',

@@ -6,7 +6,7 @@ import { useConfigStore } from '../src/store/configStore'
 import { defaultPricingTiers } from '../src/lib/block-default-content'
 import type { BlockConfig } from '../src/blocks/types'
 
-// Phase 04 — SC-019: the properties panel exposes an editable field for each
+// The properties panel exposes an editable field for each
 // new URL prop (navbar ctaUrl, per-link Label/URL, pricing tier ctaUrl) and
 // saves the typed value to the config store. No @testing-library dependency —
 // react-dom/client + act + jsdom only.
@@ -58,7 +58,7 @@ function storedBlockProps(): Record<string, any> {
   return useConfigStore.getState().config.pages![0].blocks[0].props as Record<string, any>
 }
 
-describe('SC-019 — properties panel link/URL fields', () => {
+describe('properties panel link/URL fields', () => {
   it('navbar exposes a CTA URL field and Label/URL inputs per link; URL edit converts a string item', () => {
     const navbarBlock: BlockConfig = {
       id: 'b-nav', type: 'navbar', variant: 'default',
@@ -79,9 +79,9 @@ describe('SC-019 — properties panel link/URL fields', () => {
   })
 
   it('footer exposes a Label/URL input per link and saves a URL edit', () => {
-    // SC-019 names "navbar/footer/pricing"; the footer's top-level `links` uses
+    // The requirement names "navbar/footer/pricing"; the footer's top-level `links` uses
     // the same `array-links` field as the navbar. (Nested `columns[].links` has
-    // no panel field — a deliberate phase-04 boundary, not a spec gap.)
+    // no panel field — a deliberate boundary, not a spec gap.)
     const footerBlock: BlockConfig = {
       id: 'b-footer', type: 'footer', variant: 'simple',
       props: { logo: 'A', copyright: 'C', links: ['Privacy', 'Terms'] },

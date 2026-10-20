@@ -8,7 +8,7 @@
  * So a barrel regression is a real, consumer-visible break — and nothing else in
  * the suite imports it, which would make such a regression invisible.
  *
- * This file exists to assert the new publish-fidelity surface actually routes
+ * This file exists to assert the new public surface actually routes
  * through the barrel, rather than a feature test importing `src/lib/...`
  * directly and proving nothing about the entry point.
  */
@@ -25,7 +25,7 @@ import * as barrel from '../src/index'
  * `PageDocument` referenced THROUGH THE BARREL, not from `export-site-pages.ts`.
  *
  * A deep import would keep compiling after the barrel dropped the type, so the
- * import path is the assertion. See the AC-04 note below.
+ * import path is the assertion. See the surface note below.
  */
 type PageDocumentViaBarrel = import('../src/index').PageDocument
 
@@ -44,7 +44,7 @@ describe('public API barrel', () => {
   })
 
   it('keeps the pre-existing export-site surface intact', () => {
-    // The publish-fidelity work is additive to this barrel, never a re-shape of
+    // New surface is additive to this barrel, never a re-shape of
     // it: these are the symbols the README names as the host-app entry points,
     // so losing one would be a breaking change to a shipped package.
     for (const name of [
@@ -59,7 +59,7 @@ describe('public API barrel', () => {
     }
   })
 
-  // FR-002: a server-side publisher and a consuming app's import check both consume
+  // A server-side publisher and a consuming app's import check both consume
   // these through the package entry, and neither can deep-import — so a missing
   // or shadow-wrapped barrel export breaks their build at bump time, not here.
   it('re-exports the page-path normalizer and predicate by identity', () => {
@@ -83,7 +83,7 @@ describe('public API barrel', () => {
     expect(barrel).not.toHaveProperty('slugifyPagePath')
   })
 
-  // AC-04 / FR-C1: the `src/lib/worker-entry.ts` entry and the `exports`
+  // The `src/lib/worker-entry.ts` entry and the `exports`
   // map add a risk that MIRRORS the barrel one: the
   // worker entry is a new place for these four names to appear, and the easy
   // "fix" for a worker bundling problem is to re-export something extra from
@@ -121,7 +121,7 @@ describe('public API barrel', () => {
 
     // The runtime check above cannot see `PageDocument` — it is a TYPE, erased
     // at runtime, so `not.toHaveProperty` would pass even if the barrel stopped
-    // exporting it. That is a real gap for AC-04 ("exports exactly the 4"), so
+    // exporting it. That is a real gap for the pinned surface ("exports exactly the 4"), so
     // the type-level half is asserted here: a missing type export fails
     // `npm run typecheck`, which is a required CI check. Referencing the type
     // through the barrel (rather than importing it from the lib module) is the
@@ -131,7 +131,7 @@ describe('public API barrel', () => {
   })
 })
 
-// FR-001: a server-side publisher emits one object per page and must reach this
+// A server-side publisher emits one object per page and must reach this
 // through the package entry. Identity, not just presence — a barrel
 // re-implementation would let the two copies drift.
 describe('public API barrel — multi-page export surface', () => {

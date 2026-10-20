@@ -11,7 +11,7 @@ interface StatsProps {
   items?: StatItem[]
 }
 
-// ISS-005: fallback items are the block-default-content contract, shared with
+// Fallback items are the block-default-content contract, shared with
 // the prop normalizer (was an inline literal, value-identical).
 const defaultStats = defaultStatItems as StatItem[]
 

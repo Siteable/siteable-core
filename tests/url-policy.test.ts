@@ -1,17 +1,16 @@
 /**
- * SC-002 — the exact table-driven allowed/denied set for the shared URL policy,
- * plus the `{ image: true }` narrowing and the NF-001 linearity assertion.
+ * The exact table-driven allowed/denied set for the shared URL policy,
+ * plus the `{ image: true }` narrowing and the linearity assertion.
  *
- * Spec: `specs/publish-fidelity/spec.md` FR-004 / SC-002, NF-001, NF-006.
  * Module: `src/lib/url-policy.ts`.
  */
 import { describe, it, expect } from 'vitest'
 import { isAllowedUrl } from '../src/lib/url-policy'
 
-/** SC-002 allowed set — verbatim from the spec. */
+/** URLs the policy must accept. */
 const ALLOWED = ['https://x', 'http://x', 'mailto:a@b', 'tel:+1', '/p', './p', '../p', 'p', '#a']
 
-/** SC-002 denied set — verbatim from the spec. */
+/** URLs the policy must reject. */
 const DENIED = [
   'javascript:',
   'JaVaScRiPt:',
@@ -24,13 +23,13 @@ const DENIED = [
   '&#106;avascript:',
 ]
 
-describe('isAllowedUrl — SC-002 allowed set', () => {
+describe('isAllowedUrl — allowed set', () => {
   it.each(ALLOWED)('accepts %j', (value) => {
     expect(isAllowedUrl(value)).toBe(true)
   })
 })
 
-describe('isAllowedUrl — SC-002 denied set', () => {
+describe('isAllowedUrl — denied set', () => {
   it.each(DENIED)('rejects %j', (value) => {
     expect(isAllowedUrl(value)).toBe(false)
   })
@@ -69,13 +68,12 @@ describe('isAllowedUrl — structural deny rules', () => {
   })
 
   it('accepts a space inside a relative path', () => {
-    // The phase-01 plan originally listed "a space run" as a first-segment deny
-    // character. That clause was dropped during calibrate Stage 2: a space is
-    // legal in a URL path (`/my page.html`, `foo bar`) and a browser
-    // percent-encodes it on navigation. The rule rejects only
-    // `& < > " ' \` — the characters that actually matter for injection. Pinned
-    // here so the behavior is deliberate rather than accidental, and so the
-    // stale plan clause cannot silently come back.
+    // An early draft listed "a space run" as a first-segment deny character,
+    // then dropped it: a space is legal in a URL path (`/my page.html`,
+    // `foo bar`) and a browser percent-encodes it on navigation. The rule
+    // rejects only `& < > " ' \` — the characters that actually matter for
+    // injection. Pinned here so the behavior is deliberate rather than
+    // accidental, and so the removed clause cannot silently come back.
     expect(isAllowedUrl('foo bar')).toBe(true)
     expect(isAllowedUrl('/my page.html')).toBe(true)
     // A whitespace-only value is still rejected — deny reason 1 catches it
@@ -124,7 +122,7 @@ describe('isAllowedUrl — structural deny rules', () => {
   })
 })
 
-describe('isAllowedUrl — image narrowing (FR-004)', () => {
+describe('isAllowedUrl — image narrowing', () => {
   it('accepts only absolute https: image sources', () => {
     expect(isAllowedUrl('https://cdn.example.com/a.png', { image: true })).toBe(true)
   })
@@ -138,7 +136,7 @@ describe('isAllowedUrl — image narrowing (FR-004)', () => {
   })
 })
 
-describe('isAllowedUrl — NF-001 linearity', () => {
+describe('isAllowedUrl — linearity', () => {
   it('resolves a 2 KB hostile input in well under 5 ms', () => {
     // Must reach the FULL scan, not an early exit. The previous payload was
     // `javascript:` + control chars, which deny reason 2 rejected at index 11 —
@@ -173,11 +171,11 @@ describe('isAllowedUrl — NF-001 linearity', () => {
     expect(perCall).toBeLessThan(5)
   })
 
-  // ── Phase-07 strengthening ────────────────────────────────────────────────
-  // Phase 01 proved NF-001 with a fixed absolute threshold on a 2 KB call. That
+  // ── Complexity-class strengthening ────────────────────────────────────────
+  // A fixed absolute threshold on a 2 KB call is not enough: it
   // distinguishes "fast on this box" from "slow on this box" — it does NOT
   // distinguish O(n) from O(n²): a quadratic policy on a 2 KB input still
-  // returns in well under 5 ms. (The accepted phase-01 gap U1 recorded exactly
+  // returns in well under 5 ms. (The gap accepted earlier was exactly
   // this: linearity was shown by wall-clock timing, not an observable work
   // count.) A production walk-counter would close it only by adding an API that
   // exists solely for test observability — rejected as worse than the gap. The
@@ -215,7 +213,7 @@ describe('isAllowedUrl — NF-001 linearity', () => {
     // ~10,000x a quadratic/backtracking one produces, so it cannot false-pass a
     // quadratic/backtracking regression nor false-fail on ordinary timing noise.
     // It does NOT discriminate mild super-linear growth (e.g. n log n ≈ 130x) —
-    // that slack is deliberate; NF-001 targets catastrophic backtracking only.
+    // that slack is deliberate; the linearity goal targets catastrophic backtracking only.
     expect(
       ratio,
       `2 KB → ${perSmall.toFixed(5)} ms/call, 200 KB → ${perLarge.toFixed(5)} ms/call ` +

@@ -3,7 +3,7 @@ import { validateSiteConfig, generateSiteConfig } from '../src/lib/generate-site
 import { GENERATION_PROMPT } from '../src/lib/generation-prompt'
 import type { SiteConfig } from '../src/blocks/types'
 
-// ISS-005: AI (Gemini) returned navbar links as {label,href} objects; validateBlock
+// AI (Gemini) returned navbar links as {label,href} objects; validateBlock
 // spread raw props without checking values, so NavbarBlock crashed on render.
 
 function docWithNavbarProps(props: Record<string, unknown>): unknown {
@@ -17,7 +17,7 @@ function firstBlockProps(config: SiteConfig): Record<string, unknown> {
   return config.pages[0].blocks[0].props
 }
 
-describe('validateSiteConfig — ISS-005 prop normalization', () => {
+describe('validateSiteConfig — prop normalization', () => {
   it('THE regression core: object navbar links preserve {label,href}', () => {
     const config = validateSiteConfig(
       docWithNavbarProps({ links: [{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }] }),
@@ -26,7 +26,7 @@ describe('validateSiteConfig — ISS-005 prop normalization', () => {
     expect(firstBlockProps(config).links).toEqual([{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }])
   })
 
-  it('ISS-005 exact Gemini shape via full pages doc', () => {
+  it('exact Gemini shape via full pages doc', () => {
     const raw = {
       name: 'Acme',
       pages: [{
@@ -125,7 +125,7 @@ describe('validateSiteConfig — ISS-005 prop normalization', () => {
   })
 })
 
-describe('generateSiteConfig — tier-2 onServerFallback validation (ISS-005 hole)', () => {
+describe('generateSiteConfig — tier-2 onServerFallback validation (previously skipped)', () => {
   it('normalizes object-links config returned by the host fallback', async () => {
     localStorage.removeItem('openpage-gemini-key')
     const raw: SiteConfig = {
@@ -145,7 +145,7 @@ describe('generateSiteConfig — tier-2 onServerFallback validation (ISS-005 hol
     expect(firstBlockProps(result.config).links).toEqual([{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }])
   })
 
-  // ISS-005 review item 4 — private repo E2E-01-002 depends on this contract
+  // An end-to-end flow depends on this contract, so it is pinned here.
   it('propagates AbortError from the host fallback unchanged (no template swallow)', async () => {
     localStorage.removeItem('openpage-gemini-key')
     const abort = new Error('The user aborted a request.')

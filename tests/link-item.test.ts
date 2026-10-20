@@ -1,5 +1,5 @@
 /**
- * Phase 04 — direct unit coverage for the shared link reader.
+ * Direct unit coverage for the shared link reader.
  *
  * `toLinkItem` is the single shape-preserving entry point used by the editor
  * blocks, the properties panel and the exporter, so its branches (string

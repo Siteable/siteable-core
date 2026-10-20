@@ -6,9 +6,9 @@ import { renderMarkdownToHtml } from '@/lib/markdown-html'
  *
  * The body is rendered through the markdown-subset STRING renderer, which
  * escapes every literal text run. The root element is the first tag returned
- * (phase 06 depends on this). Markup uses the exporter's Tailwind vocabulary
- * (`px-6 md:px-10`, `text-text-*`, `rounded-lg`), not the React blocks'
- * container-query classes.
+ * (the page assembly depends on this). Markup uses the exporter's Tailwind
+ * vocabulary (`px-6 md:px-10`, `text-text-*`, `rounded-lg`), not the React
+ * blocks' container-query classes.
  */
 export function renderContent(block: BlockConfig): string {
   const body = typeof block.props.body === 'string' ? block.props.body : ''

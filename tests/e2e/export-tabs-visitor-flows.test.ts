@@ -91,7 +91,7 @@ afterEach(() => {
 })
 
 describe('exported tab-set visitor flows', () => {
-  it('E2E-01-001 selects a tab by tapping and shows only its panel', () => {
+  it('selects a tab by tapping and shows only its panel', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs))))
     const tabs = tabsIn(tabLists()[0])
     expect(tabs).toHaveLength(3)
@@ -108,7 +108,7 @@ describe('exported tab-set visitor flows', () => {
     )
   })
 
-  it('E2E-01-002 moves through tabs with ArrowRight and keeps one tab stop', () => {
+  it('moves through tabs with ArrowRight and keeps one tab stop', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs))))
     const tabs = tabsIn(tabLists()[0])
 
@@ -122,7 +122,7 @@ describe('exported tab-set visitor flows', () => {
     expect(document.activeElement).toBe(tabs[2])
   })
 
-  it('E2E-01-003 jumps with End and Home from a focused middle tab', () => {
+  it('jumps with End and Home from a focused middle tab', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs))))
     const tabs = tabsIn(tabLists()[0])
 
@@ -139,7 +139,7 @@ describe('exported tab-set visitor flows', () => {
     expect(document.activeElement).toBe(tabs[0])
   })
 
-  it('E2E-01-004 wraps the selection at both ends', () => {
+  it('wraps the selection at both ends', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.tabs))))
     const tabs = tabsIn(tabLists()[0])
 
@@ -156,7 +156,7 @@ describe('exported tab-set visitor flows', () => {
     expect(document.activeElement).toBe(tabs[2])
   })
 
-  it('E2E-01-005 keeps two sets sharing a block id independent of a third set', () => {
+  it('keeps two sets sharing a block id independent of a third set', () => {
     const [sharedFirst, sharedSecond] = FIXTURE_BLOCKS['tab-sets-shared-id']
     const third: BlockConfig = {
       id: 'feat-2',
@@ -212,7 +212,7 @@ describe('exported tab-set visitor flows', () => {
     expect(sectionIds).toEqual(['feat-1', 'feat-2'])
   })
 
-  it('E2E-01-006 renders one item as the default layout, byte-identical to 0.4.0', () => {
+  it('renders one item as the default layout, byte-identical to 0.4.0', () => {
     const html = render(findSite('features-tabs-one-item'))
 
     expect(html).toBe(fixtureHtml('features-tabs-one-item.html'))
@@ -224,7 +224,7 @@ describe('exported tab-set visitor flows', () => {
     expect(html).toContain('xl:grid-cols-3')
   })
 
-  it('E2E-01-007 renders every hostile display value as the default layout', () => {
+  it('renders every hostile display value as the default layout', () => {
     const html = render(findSite('features-hostile-display'))
 
     expect(html).toBe(fixtureHtml('features-hostile-display.html'))
@@ -237,7 +237,7 @@ describe('exported tab-set visitor flows', () => {
     expect(html).not.toContain('<script>alert(1)</script>')
   })
 
-  it('E2E-01-008 shows hostile and very long labels literally and still responds to keys', () => {
+  it('shows hostile and very long labels literally and still responds to keys', () => {
     const markupText = '<img src=x onerror=alert(1)>'
     const quotedText = 'He said "hi" & left'
     const longText = 'L'.repeat(10_000)
@@ -290,7 +290,7 @@ describe('exported tab-set visitor flows', () => {
     expect(document.activeElement).toBe(tabs[2])
   })
 
-  it('E2E-01-009 runs navbar, faq and tabs together without cross-talk', () => {
+  it('runs navbar, faq and tabs together without cross-talk', () => {
     const blocks = [...FIXTURE_BLOCKS['navbar-and-faq'], ...FIXTURE_BLOCKS.tabs]
     const html = exportSiteToHTML(site(blocks))
     expect(count(html, '<script data-sb-runtime>')).toBe(1)
@@ -329,7 +329,7 @@ describe('exported tab-set visitor flows', () => {
     ])
   })
 
-  it('E2E-01-010 puts the script and tab rules only on the page with the tab set', () => {
+  it('puts the script and tab rules only on the page with the tab set', () => {
     const entry = findSite('two-page-tabs')
     const pages = exportSitePages(entry.config, entry.options ?? undefined)
 

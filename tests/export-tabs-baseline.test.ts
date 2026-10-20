@@ -1,5 +1,5 @@
 /**
- * SC-001 / NF-001 / NF-002 — tab pages against the frozen 0.4.0 export.
+ * Tab pages against the frozen 0.4.0 export.
  *
  * The frozen fixtures in `tests/fixtures/export-baseline-0.4.0/` were captured
  * on the released 0.4.0 commit and are digest-pinned by the frozen-baseline
@@ -69,7 +69,7 @@ function maskedSite(slug: string, ids: string[]) {
   return { html: render(findSite(slug)), ids }
 }
 
-describe('SC-001 (a) — features-tabs-three', () => {
+describe('features-tabs-three', () => {
   const FRESH = maskedSite('features-tabs-three', ['f-1'])
   const GOLDEN = fixtureHtml('features-tabs-three.html')
 
@@ -97,19 +97,19 @@ describe('SC-001 (a) — features-tabs-three', () => {
     expect(FRESH.html).toContain(BEHAVIOR_RUNTIME_SOURCE)
   })
 
-  it('NF-001 — the emitted script is inside the gzip ceiling', () => {
+  it('the emitted script is inside the gzip ceiling', () => {
     const size = gzipSync(Buffer.from(BEHAVIOR_RUNTIME_SOURCE, 'utf8')).length
-    expect(size, 'NF-001 cumulative ceiling').toBeLessThanOrEqual(2048)
-    expect(size, 'NF-001 hard cap').toBeLessThanOrEqual(5120)
+    expect(size, 'cumulative ceiling').toBeLessThanOrEqual(2048)
+    expect(size, 'hard cap').toBeLessThanOrEqual(5120)
   })
 
-  it('NF-002 — the page matches the golden once the permitted differences are removed', () => {
+  it('the page matches the golden once the permitted differences are removed', () => {
     expect(normalizeTabsOnly(FRESH.html, FRESH.ids)).toBe(reduceTabsOnly(GOLDEN, ['f-1']))
   })
 })
 
-describe('SC-001 (a) — features-tabs-variants, one layout for every variant', () => {
-  it('NF-002 — the page matches the golden with all three tab sections masked', () => {
+describe('features-tabs-variants, one layout for every variant', () => {
+  it('the page matches the golden with all three tab sections masked', () => {
     const entry = findSite('features-tabs-variants')
     const ids = ['f-grid', 'f-list', 'f-alt']
     expect(normalizeTabsOnly(render(entry), ids)).toBe(
@@ -126,7 +126,7 @@ describe('SC-001 (a) — features-tabs-variants, one layout for every variant', 
   })
 })
 
-describe('SC-001 (a) — navbar-faq-tabs, a combo page', () => {
+describe('navbar-faq-tabs, a combo page', () => {
   const html = render(findSite('navbar-faq-tabs'))
 
   it('keeps the 0.4.0 menu and faq rules and appends the tab rules after them', () => {
@@ -135,14 +135,14 @@ describe('SC-001 (a) — navbar-faq-tabs, a combo page', () => {
     expect(html.indexOf('[data-sb-menu-toggle]')).toBeLessThan(html.indexOf(TABS_NOSCRIPT_CSS))
   })
 
-  it('NF-002 — the page matches the golden with the tab section and tab rules removed', () => {
+  it('the page matches the golden with the tab section and tab rules removed', () => {
     expect(normalizeCombo(html, ['f-1'])).toBe(
       reduceCombo(fixtureHtml('navbar-faq-tabs.html'), ['f-1']),
     )
   })
 })
 
-describe('SC-001 (b)(c)(d) — the non-tab pages carry no shared script', () => {
+describe('the non-tab pages carry no shared script', () => {
   // Strict byte identity to the script-free goldens is owned by the
   // frozen-baseline suite; this is the explicit re-assertion, so a suite move
   // cannot leave the claim unasserted here.
@@ -163,7 +163,7 @@ describe('SC-001 (b)(c)(d) — the non-tab pages carry no shared script', () => 
   })
 })
 
-describe('SC-001 — a tabs-only page carries only the tab rules', () => {
+describe('a tabs-only page carries only the tab rules', () => {
   it('its no-script block has no menu or faq rule', () => {
     const html = render(findSite('features-tabs-three'))
     expect(hasLegacyNoScriptRules(html)).toBe(false)
@@ -186,7 +186,7 @@ describe('SC-001 — a tabs-only page carries only the tab rules', () => {
   })
 })
 
-describe('SC-001 — two-page site, only page 1 carries the script', () => {
+describe('two-page site, only page 1 carries the script', () => {
   const entry: BaselineSite = findSite('two-page-tabs')
   const pages = exportSitePages(entry.config, entry.options ?? undefined)
 

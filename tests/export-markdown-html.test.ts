@@ -1,8 +1,8 @@
 /**
- * SC-007 / SC-008 — the markdown-subset → HTML STRING renderer.
+ * The markdown-subset → HTML STRING renderer.
  *
- * Spec: `specs/publish-fidelity/spec.md` Constraints (markdown subset, no raw
- * HTML passthrough). Phase: `plans/261005-0718-.../phase-03-...md`.
+ * Constraint: markdown subset, no raw
+ * HTML passthrough.
  * Module under test: `src/lib/markdown-html.ts`.
  */
 import { describe, it, expect } from 'vitest'
@@ -11,7 +11,7 @@ import { exportSiteToHTML } from '../src/lib/export-html'
 import { renderContent } from '../src/lib/export-blocks/render-content'
 import type { SiteConfig } from '../src/blocks/types'
 
-describe('SC-007 — a <script> in the input is escaped, bold still renders', () => {
+describe('a <script> in the input is escaped, bold still renders', () => {
   it('never emits a literal <script and still produces <strong>', () => {
     const out = renderMarkdownToHtml(
       'Intro <script>alert(1)</script> and **bold** here.'
@@ -22,7 +22,7 @@ describe('SC-007 — a <script> in the input is escaped, bold still renders', ()
   })
 })
 
-describe('SC-008 — every supported construct escapes its literal < and &', () => {
+describe('every supported construct escapes its literal < and &', () => {
   const md = [
     '## Head < one & two',
     '',
@@ -61,7 +61,7 @@ describe('SC-008 — every supported construct escapes its literal < and &', () 
   })
 })
 
-describe('SC-007 integration — a content block exported through exportSiteToHTML', () => {
+describe('integration — a content block exported through exportSiteToHTML', () => {
   it('escapes the body (page chrome holds its own legitimate scripts)', () => {
     const config: SiteConfig = {
       name: 'Markdown Escape',

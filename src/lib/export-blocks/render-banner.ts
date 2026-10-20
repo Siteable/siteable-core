@@ -6,8 +6,8 @@ import { renderLink } from '@/lib/render-link'
  * `banner` block (variants: ribbon default, bar).
  *
  * The optional CTA goes through the shared `renderLink`, so a `linkUrl` the
- * policy rejects (`javascript:`) degrades to a `<span>` rather than an anchor
- * (SC-011). Text props are coerced defensively and escaped.
+ * policy rejects (`javascript:`) degrades to a `<span>` rather than an anchor.
+ * Text props are coerced defensively and escaped.
  */
 const RIBBON_LINK_CLASS =
   'text-[12.5px] font-semibold text-green hover:text-green-dim transition-colors flex items-center gap-1'

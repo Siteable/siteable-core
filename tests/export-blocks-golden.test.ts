@@ -1,7 +1,5 @@
 /**
- * SC-006 — golden markup fixtures for the six new renderers, per variant.
- *
- * Spec: `specs/publish-fidelity/spec.md`. Phase-03 of the publish-fidelity plan.
+ * Golden markup fixtures for the six new renderers, per variant.
  *
  * The fixtures under `tests/fixtures/export-blocks-golden/` are committed
  * reviewed output, NOT opaque `toMatchSnapshot()` blobs — each was read line by
@@ -143,7 +141,7 @@ const UPDATE = Boolean(process.env.UPDATE_GOLDEN)
 // UPDATE_GOLDEN is a deliberate local escape hatch for regenerating fixtures
 // after an intended markup change (see the file header). In CI it would turn
 // this suite into a silent no-op — every case would rewrite its fixture and
-// assert `true`, so SC-006 would pass without comparing anything. Fail closed
+// assert `true`, so the test would pass without comparing anything. Fail closed
 // instead: if the variable is set alongside CI, refuse to run rather than
 // report a green suite that proved nothing.
 if (UPDATE && process.env.CI) {
@@ -153,7 +151,7 @@ if (UPDATE && process.env.CI) {
   )
 }
 
-describe('SC-006 — golden markup for the six new renderers', () => {
+describe('golden markup for the six new renderers', () => {
   for (const c of CASES) {
     it(`${c.type}-${c.variant}`, () => {
       const actual = c.render({ id: 'b', type: c.type, variant: c.variant, props: c.props })

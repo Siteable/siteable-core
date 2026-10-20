@@ -79,7 +79,7 @@ test.describe('tabs on a phone-width viewport', () => {
   })
 
   test('two tab sets keep their own selection and tap targets', async ({ page }) => {
-    // Explicit, not inherited from the config: NF-006 is a 390 px claim.
+    // Explicit, not inherited from the config: this is a 390 px claim.
     await page.setViewportSize({ width: 390, height: 844 })
     await openExportedPage(page, 'two-tab-sets')
     await assertTapTargets(page)

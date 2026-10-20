@@ -1,5 +1,5 @@
 import type { BlockConfig } from '../types'
-// ISS-005: fallback logos are the block-default-content contract, shared with
+// Fallback logos are the block-default-content contract, shared with
 // the prop normalizer (was an inline literal, value-identical).
 import { defaultLogos } from '@/lib/block-default-content'
 

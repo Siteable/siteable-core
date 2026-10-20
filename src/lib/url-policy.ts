@@ -8,9 +8,9 @@
  *  - Deny-by-default. Anything not positively classified below is rejected.
  *  - No backtracking-prone regex. A single char-code loop plus a "first `:` before
  *    any `/?#`" scheme scan keeps this O(n); the only regexes here (`/^\s+/` and a
- *    literal `search(/[/?#]/)`) are both linear and anchored, satisfying NF-001's
+ *    literal `search(/[/?#]/)`) are both linear and anchored, satisfying the
  *    "no catastrophic backtracking on a 2 KB input" requirement by construction.
- *  - NF-006: this module imports nothing at all — not even the TS stdlib — so
+ *  - This module imports nothing at all — not even the TS stdlib — so
  *    it can be pulled into the editor, the normalizer, and the exporter without
  *    creating a dependency cycle or pulling a runtime package into the bundle.
  *
@@ -34,10 +34,10 @@ export interface UrlPolicyOptions {
   image?: boolean
 }
 
-/** Schemes allowed for ordinary links (FR-004). */
+/** Schemes allowed for ordinary links. */
 const LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
-/** Schemes allowed for image `src` values (FR-004, last sentence). */
+/** Schemes allowed for image `src` values. */
 const IMAGE_SCHEMES = ['https:']
 
 /** Characters rejected in the first `/`-delimited segment (deny reason 4). */
@@ -109,7 +109,7 @@ export function isAllowedUrl(value: string, opts?: UrlPolicyOptions): boolean {
   const scheme = readScheme(trimmed)
 
   if (scheme === null) {
-    // Image `src` is restricted to an absolute `https:` URL (FR-004); a
+    // Image `src` is restricted to an absolute `https:` URL; a
     // relative path would resolve against whatever host serves the export.
     if (opts?.image) return false
     // Scheme-less: a `#fragment` or a relative path. Deny reason 4 still applies
@@ -130,7 +130,7 @@ export function isAllowedUrl(value: string, opts?: UrlPolicyOptions): boolean {
   // Consequence, stated plainly because it is a security boundary: this policy
   // does NOT neutralize a quote inside an `http(s)` URL. A caller MUST still
   // HTML-escape the value before writing it into an attribute — `isAllowedUrl`
-  // decides whether to emit a URL, not how to render it. Phase 02 wires it at
-  // the call sites that already escape.
+  // decides whether to emit a URL, not how to render it. It is wired in at the
+  // call sites that already escape.
   return firstSegmentIsClean(trimmed.slice(scheme.length))
 }

@@ -1,13 +1,13 @@
 /**
- * FR-001 — multi-page export.
+ * Multi-page export.
  *
- * One document per page, in page order, keyed by the normalized path (FR-002).
+ * One document per page, in page order, keyed by the normalized path.
  * The document body comes from that page's blocks; everything else in the
  * document (theme, fonts, settings, title, OG, analytics) is site-level and is
  * therefore shared across pages — per-page SEO is explicitly out of scope.
  *
  * This module deliberately imports only `export-html.ts` and `page-path.ts`,
- * so a worker can pull it without dragging React in (NF-005).
+ * so a worker can pull it without dragging React in.
  */
 import type { BlockConfig, SiteConfig } from '@/blocks/types'
 import { normalizePagePaths } from './page-path'
