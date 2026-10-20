@@ -1,53 +1,32 @@
 /**
  * One behavior table, two environments.
  *
- * Menu and faq interactions are described once here as `BEHAVIOR_CASES`, then
- * replayed against an adapter that mounts and drives one environment (an
- * exported page in a DOM document, or the React editor preview). Nothing here
+ * Menu and faq interactions are described in this module as `BEHAVIOR_CASES`;
+ * the tab rows live beside their own observation helpers in
+ * `behavior-test-table-tabs.ts` and are appended to the same array. Then the
+ * rows are replayed against an adapter that mounts and drives one environment
+ * (an exported page in a DOM document, or the React editor preview). Nothing here
  * knows which one it is running in: expected values are identical for both, so
  * a divergence fails one of the two runs. Later behaviors append a case — and,
  * where needed, a fixture.
+ *
+ * Fixtures live in `behavior-fixtures.ts`; the cases are replayed through
+ * `runCase`, which the cross-environment parity runner reuses so a row cannot
+ * be interpreted two different ways.
  */
 import { it, expect } from 'vitest'
-import type { BlockConfig } from '../../src/blocks/types'
+import { FIXTURE_BLOCKS, type Fixture } from './behavior-fixtures'
+import {
+  TAB_CASES,
+  applyTabStep,
+  observeTabs,
+  panelHasTransition,
+  type TabSetView,
+  type TabStep,
+} from './behavior-test-table-tabs'
 
-export type Fixture = 'navbar' | 'two-navbars' | 'faq' | 'navbar-and-faq'
-
-const navbarBlock = (id: string, variant: string): BlockConfig => ({
-  id,
-  type: 'navbar',
-  variant,
-  props: {
-    logo: 'Acme',
-    links: [
-      { label: 'Product', href: '/product' },
-      { label: 'Pricing', href: '/pricing' },
-    ],
-    ctaText: 'Start',
-    ctaUrl: 'https://example.com/start',
-  },
-})
-
-const faqBlock = (id: string): BlockConfig => ({
-  id,
-  type: 'faq',
-  variant: 'accordion',
-  props: {
-    title: 'Questions',
-    items: [
-      { question: 'First?', answer: 'One.' },
-      { question: 'Second?', answer: 'Two.' },
-      { question: 'Third?', answer: 'Three.' },
-    ],
-  },
-})
-
-/** Block configs are the single source of markup for both environments. */
-export const FIXTURE_BLOCKS: Record<Fixture, BlockConfig[]> = { navbar: [navbarBlock('nav-1', 'default')],
-  'two-navbars': [navbarBlock('nav-1', 'default'), navbarBlock('nav-2', 'centered')],
-  faq: [faqBlock('faq-1')],
-  'navbar-and-faq': [navbarBlock('nav-1', 'default'), faqBlock('faq-1')],
-}
+export { FIXTURE_BLOCKS }
+export type { Fixture }
 
 export interface BehaviorAdapter {
   /** Reset the environment and render the fixture's blocks. */
@@ -66,6 +45,7 @@ export type Step =
   | { kind: 'focusFirstPanelLink'; menu: number }
   | { kind: 'key'; key: string }
   | { kind: 'reducedMotion'; on: boolean }
+  | TabStep
 
 /** What one menu button and the panel it controls must look like. */
 export interface MenuView {
@@ -89,11 +69,19 @@ export interface ExpectedView {
   distinctPanels?: boolean
   /** Expanded state per faq button, in document order. */
   faq?: boolean[]
+  /** One view per tab set, in document order. */
+  tabs?: TabSetView[]
+  /** Focused tab as [set index, tab index]; null when no tab owns focus. */
+  focusTab?: [number, number] | null
+  /** Label text per tab, per set. */
+  labels?: string[][]
+  /** Description text per tab's panel, per set. */
+  descriptions?: string[][]
 }
 
 export interface BehaviorCase {
   id: string
-  behavior: 'menu' | 'faq'
+  behavior: 'menu' | 'faq' | 'tabs'
   fixture: Fixture
   steps: Step[]
   expect: ExpectedView
@@ -116,6 +104,7 @@ export const BEHAVIOR_CASES: BehaviorCase[] = [
   { id: 'F2', behavior: 'faq', fixture: 'faq', steps: [clickFaq(1)], expect: { faq: [false, true, false] } },
   { id: 'F3', behavior: 'faq', fixture: 'faq', steps: [clickFaq(0)], expect: { faq: [false, false, false] } },
   { id: 'F4', behavior: 'faq', fixture: 'faq', steps: [clickFaq(2), clickFaq(2)], expect: { faq: [false, false, false] } },
+  ...TAB_CASES,
 ]
 
 /** Panel element named by a button's `aria-controls`, when it exists. */
@@ -129,15 +118,6 @@ export function isMenuOpen(button: HTMLButtonElement): boolean {
 }
 
 export function isFaqOpen(button: HTMLButtonElement): boolean { return button.getAttribute('aria-expanded') === 'true' }
-
-function panelHasTransition(panel: HTMLElement | null): boolean {
-  if (!panel) return false
-  const hasTransition = panel.className.split(/\s+/).some(
-    (name) => (name.startsWith('transition') && name !== 'transition-none') ||
-      (name.startsWith('animate') && name !== 'animate-none'),
-  )
-  return hasTransition || panel.style.transition !== ''
-}
 
 function menuView(button: HTMLButtonElement): MenuView {
   const panel = controlledPanel(button)
@@ -170,6 +150,9 @@ function applyStep(adapter: BehaviorAdapter, step: Step): void {
     case 'reducedMotion':
       adapter.setReducedMotion(step.on)
       return
+    default:
+      applyTabStep(adapter, step)
+      return
   }
 }
 
@@ -184,16 +167,21 @@ function observe(adapter: BehaviorAdapter, expected: ExpectedView): Record<strin
     view.distinctPanels = ids.length === new Set(ids).size && ids.every((id) => !!document.getElementById(id))
   }
   if (expected.faq) view.faq = adapter.faqButtons().map(isFaqOpen)
-  return view
+  return { ...view, ...observeTabs(expected) }
+}
+
+/** Mount, drive and observe one case. Shared with the cross-environment parity runner. */
+export function runCase(adapter: BehaviorAdapter, behaviorCase: BehaviorCase): Record<string, unknown> {
+  adapter.mount(behaviorCase.fixture)
+  for (const step of behaviorCase.steps) applyStep(adapter, step)
+  return observe(adapter, behaviorCase.expect)
 }
 
 /** Replay every case through one adapter, one assertion per row. */
 export function runBehaviorTable(adapter: BehaviorAdapter, cases: BehaviorCase[] = BEHAVIOR_CASES): void {
   for (const behaviorCase of cases) {
     it(`${behaviorCase.id}: ${behaviorCase.behavior} on ${behaviorCase.fixture}`, () => {
-      adapter.mount(behaviorCase.fixture)
-      for (const step of behaviorCase.steps) applyStep(adapter, step)
-      expect(observe(adapter, behaviorCase.expect)).toEqual(behaviorCase.expect)
+      expect(runCase(adapter, behaviorCase)).toEqual(behaviorCase.expect)
     })
   }
 }

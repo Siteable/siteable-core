@@ -10,6 +10,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { RenderBlock } from '../src/blocks/registry'
+import type { BlockConfig } from '../src/blocks/types'
 import {
   FIXTURE_BLOCKS,
   controlledPanel,
@@ -30,6 +31,24 @@ afterEach(() => {
   host = undefined
 })
 
+/** Mount blocks in a fresh host. Index keys: a fixture may repeat a block id. */
+function renderBlocks(blocks: BlockConfig[]): void {
+  act(() => root?.unmount())
+  host?.remove()
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+  act(() =>
+    root!.render(
+      <>
+        {blocks.map((block, index) => (
+          <RenderBlock key={index} block={block} />
+        ))}
+      </>,
+    ),
+  )
+}
+
 function reducedMotion(on: boolean): MediaQueryList {
   return {
     matches: on,
@@ -46,21 +65,7 @@ function reducedMotion(on: boolean): MediaQueryList {
 const adapter: BehaviorAdapter = {
   mount(fixture) {
     ;(window as unknown as { matchMedia?: unknown }).matchMedia = undefined
-    act(() => root?.unmount())
-    host?.remove()
-    host = document.createElement('div')
-    document.body.appendChild(host)
-    root = createRoot(host)
-    const blocks = FIXTURE_BLOCKS[fixture]
-    act(() =>
-      root!.render(
-        <>
-          {blocks.map((block) => (
-            <RenderBlock key={block.id} block={block} />
-          ))}
-        </>,
-      ),
-    )
+    renderBlocks(FIXTURE_BLOCKS[fixture])
   },
   menuButtons: () =>
     Array.from(document.querySelectorAll<HTMLButtonElement>('nav button[aria-label="Toggle menu"]')),
@@ -152,5 +157,70 @@ describe('editor preview behavior', () => {
     buttons.forEach((button, index) => {
       expect(controlledPanel(button)?.textContent).toContain(['One.', 'Two.', 'Three.'][index])
     })
+  })
+
+  // Editor-specific contracts: the shared table sees state, not markup hooks
+  // or a mid-edit item list.
+  it('renders the tab preview without any data attribute hook', () => {
+    adapter.mount('tabs')
+
+    expect(document.querySelectorAll('[role="tab"]')).toHaveLength(3)
+    const attributes = Array.from(document.querySelectorAll('*')).flatMap((element) =>
+      Array.from(element.attributes).map((attribute) => attribute.name),
+    )
+    expect(attributes.filter((name) => name.startsWith('data-sb-'))).toEqual([])
+  })
+
+  it('clamps the selected tab when items shrink while the preview is open', () => {
+    adapter.mount('tabs')
+    const tabs = () => Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'))
+    act(() => tabs()[2].click())
+    expect(tabs().map((tab) => tab.getAttribute('aria-selected'))).toEqual(['false', 'false', 'true'])
+
+    const block = FIXTURE_BLOCKS.tabs[0]
+    const shrunk = {
+      ...block,
+      props: { ...block.props, items: (block.props.items as unknown[]).slice(0, 2) },
+    }
+    act(() => root!.render(<><RenderBlock key={0} block={shrunk} /></>))
+
+    expect(tabs()).toHaveLength(2)
+    expect(tabs().map((tab) => tab.getAttribute('aria-selected'))).toEqual(['false', 'true'])
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('[role="tabpanel"]'))
+    expect(panels.map((panel) => panel.hidden)).toEqual([true, false])
+  })
+
+  it('falls back to Tab N for a non-string item title', () => {
+    const block = FIXTURE_BLOCKS.tabs[0]
+    renderBlocks([
+      {
+        ...block,
+        props: {
+          ...block.props,
+          items: [
+            { title: 7, description: 'Numeric title.' },
+            { title: 'Second', description: 'Second description.' },
+          ],
+        },
+      },
+    ])
+
+    const labels = Array.from(document.querySelectorAll('[role="tab"]')).map((tab) =>
+      (tab.textContent ?? '').trim(),
+    )
+    expect(labels).toEqual(['Tab 1', 'Second'])
+  })
+
+  it('falls back to the default layout when items drop below two', () => {
+    adapter.mount('tabs')
+    const block = FIXTURE_BLOCKS.tabs[0]
+    const single = {
+      ...block,
+      props: { ...block.props, items: (block.props.items as unknown[]).slice(0, 1) },
+    }
+    act(() => root!.render(<><RenderBlock key={0} block={single} /></>))
+
+    expect(document.querySelector('[role="tablist"]')).toBeNull()
+    expect(document.body.textContent).toContain('First feature')
   })
 })
