@@ -89,10 +89,11 @@ jobs:
           printf 'see %s%sthing\n'  "$p1" "$SL"      > "$tmp/c1"
           printf 'see %s%sthing\n'  "$p2" "$SL"      > "$tmp/c2"
           printf 'see %s%sthing\n'  "$p3" "$SL"      > "$tmp/c3"
+          printf 'see %s%sthing\n'  "$p4" "$SL"      > "$tmp/c4"
           printf 'src/blocks/%s/FeaturesBlock.tsx\n' "$p4" > "$tmp/good1"
           printf 'the exported surface is clean\n'   > "$tmp/good2"
           rc_of() { "$@" >/dev/null 2>&1; echo $?; }
-          for f in b1 b2 b3 b4 b5 b6 b7 b8 b9 c1 c2 c3; do
+          for f in b1 b2 b3 b4 b5 b6 b7 b8 b9 c1 c2 c3 c4; do
             r=$(rc_of grep -EI "$IDS|$PATHS" "$tmp/$f")
             if [ "$r" -ne 0 ]; then
               echo "::error::self-test: $f did not match (exit $r) — that alternative is dead"
@@ -106,7 +107,7 @@ jobs:
               exit 1
             fi
           done
-          echo "patterns are live: 12 banned fixtures matched, 2 clean fixtures did not"
+          echo "patterns are live: 13 banned fixtures matched, 2 clean fixtures did not"
 
       - name: Scan tracked files and commit messages
         env:
@@ -203,12 +204,23 @@ jobs:
       # scripts, and `vite build` loads vite.config from the PR), so exposing
       # the pattern here would let a contributor with write access read the
       # very names this gate hides.
-      - name: Build the package
+      - name: Build and pack the package
         run: |
           set +e -u -o pipefail
+          # `npm pack` belongs HERE, not in the scanning step: packing runs
+          # prepack/prepare/postpack from the pull request's package.json, and
+          # the scanning step holds the private-name pattern. Packing with no
+          # secret in the environment is what actually isolates it.
           npm ci || { echo "::error::npm ci failed"; exit 1; }
           npm run build || { echo "::error::build failed — refusing to scan an unbuilt package"; exit 1; }
           [ -f dist/index.js ] || { echo "::error::build produced no dist/index.js"; exit 1; }
+          rm -rf /tmp/pack && mkdir -p /tmp/pack
+          npm pack --pack-destination /tmp/pack || { echo "::error::npm pack failed"; exit 1; }
+          tar -xzf /tmp/pack/*.tgz -C /tmp/pack || { echo "::error::could not extract the tarball"; exit 1; }
+          [ -f /tmp/pack/package/package.json ] || { echo "::error::tarball payload missing"; exit 1; }
+          # Assert the entry point npm actually ships, so a pack that silently
+          # dropped dist/ fails here instead of being scanned as clean.
+          [ -f /tmp/pack/package/dist/index.js ] || { echo "::error::tarball has no dist/index.js — it is not what npm would publish"; exit 1; }
 
       - name: Scan the published artifact
         env:
@@ -216,16 +228,10 @@ jobs:
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set +e -u -o pipefail
-          # `npm pack` with a missing dist/ exits 0 and produces a three-file
-          # tarball, so every command here is checked and the payload is
-          # asserted before it is scanned. Scanning an unbuilt tarball would
-          # report a clean result over something npm never ships.
-          rm -rf /tmp/pack && mkdir -p /tmp/pack
-          npm pack --pack-destination /tmp/pack || { echo "::error::npm pack failed"; exit 1; }
-          tar -xzf /tmp/pack/*.tgz -C /tmp/pack || { echo "::error::could not extract the tarball"; exit 1; }
+          # The tarball was produced by the previous step, which carries no
+          # secrets. Nothing here executes code from the pull request.
           pkg=/tmp/pack/package
-          [ -f "$pkg/package.json" ] || { echo "::error::tarball payload missing"; exit 1; }
-          [ -f "$pkg/dist/index.js" ] || { echo "::error::tarball has no dist/index.js — it is not what npm would publish"; exit 1; }
+          [ -d "$pkg" ] || { echo "::error::no extracted tarball — the pack step did not produce one"; exit 1; }
 
           judge() {
             local label="$1" out="$2" rc="$3"
