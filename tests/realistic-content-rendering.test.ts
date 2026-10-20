@@ -1,17 +1,17 @@
 /**
- * SC-M04 (mechanical half) — the six previously-unrendered block types publish
+ * Realistic content (mechanical half) — the six previously-unrendered block types publish
  * as real sections when given realistic, hand-authored content.
  *
- * SC-M04 is declared `[HUMAN-ONLY]` and asks a reviewer to confirm each block
- * "renders as a plausible, visually coherent section rather than a raw prop
- * dump". Only the aesthetic half of that needs a person. The "rather than a raw
- * prop dump" half is a set of mechanical properties that a broken renderer fails
- * immediately — a React object leaking through as `[object Object]`, an
- * unresolved `undefined`, an unhandled `NaN`, or the dispatcher's
- * `<!-- Unknown block type -->` fallback. Those are pinned here.
+ * The full scenario is declared `[HUMAN-ONLY]` and asks a person to confirm
+ * that each block "renders as a plausible, visually coherent section rather
+ * than a raw prop dump". Only the aesthetic half of that needs a person. The
+ * "rather than a raw prop dump" half is a set of mechanical properties that a
+ * broken renderer fails immediately — a React object leaking through as
+ * `[object Object]`, an unresolved `undefined`, an unhandled `NaN`, or the
+ * dispatcher's `<!-- Unknown block type -->` fallback. Those are pinned here.
  *
  * The published path is exercised (`exportSiteToHTML`), not the bare renderers,
- * because SC-M04 is about what a *published site* shows. Existing coverage sits
+ * because the scenario is about what a *published site* shows. Existing coverage sits
  * elsewhere: `export-blocks-golden` pins exact markup per variant, and
  * `export-block-coverage` asserts dispatch. This file asserts the properties a
  * human would otherwise have to eyeball.
@@ -110,7 +110,7 @@ const RAW_DUMP_MARKERS = [
   '<!-- Unknown block type',
 ]
 
-describe('SC-M04 — no raw prop dump reaches the published page', () => {
+describe('no raw prop dump reaches the published page', () => {
   it('leaks none of the stringified-value markers', () => {
     const found = RAW_DUMP_MARKERS.filter((m) => html.includes(m))
     expect(found).toEqual([])
@@ -128,7 +128,7 @@ describe('SC-M04 — no raw prop dump reaches the published page', () => {
   })
 })
 
-describe('SC-M04 — each of the six blocks publishes its content', () => {
+describe('each of the six blocks publishes its content', () => {
   it('content: renders the markdown body as real prose, not escaped source', () => {
     // `##`/`**`/`*`/`-` are markdown, so none should survive as literal syntax.
     expect(html).toContain('Why teams switch')

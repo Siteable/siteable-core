@@ -95,7 +95,7 @@ afterEach(() => {
 })
 
 describe('exported navbar flows', () => {
-  it('E2E-01-001 opens the menu and exposes every nav link', () => {
+  it('opens the menu and exposes every nav link', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.navbar))))
     const [toggle] = menuButtons()
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
@@ -116,7 +116,7 @@ describe('exported navbar flows', () => {
     expect(document.activeElement).toBe(firstLink)
   })
 
-  it('E2E-01-002 closes the menu on the second tap', () => {
+  it('closes the menu on the second tap', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.navbar))))
     const [toggle] = menuButtons()
 
@@ -130,7 +130,7 @@ describe('exported navbar flows', () => {
     expect(panelOf(toggle)!.hidden).toBe(true)
   })
 
-  it('E2E-01-003 closes the menu with Escape and returns focus to the toggle', () => {
+  it('closes the menu with Escape and returns focus to the toggle', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.navbar))))
     const [toggle] = menuButtons()
 
@@ -147,7 +147,7 @@ describe('exported navbar flows', () => {
     expect(document.activeElement).toBe(toggle)
   })
 
-  it('E2E-01-004 keeps two navbars independent and their panel ids distinct', () => {
+  it('keeps two navbars independent and their panel ids distinct', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS['two-navbars']))))
     const [first, second] = menuButtons()
 
@@ -166,7 +166,7 @@ describe('exported navbar flows', () => {
     for (const id of controls) expect(document.getElementById(id)).not.toBeNull()
   })
 
-  it('E2E-01-005 reduced motion changes no menu state and applies no transition', () => {
+  it('reduced motion changes no menu state and applies no transition', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.navbar))))
     const [toggle] = menuButtons()
     const panel = panelOf(toggle)!
@@ -196,7 +196,7 @@ describe('exported navbar flows', () => {
     // computed-style concern jsdom does not model.
   })
 
-  it('E2E-01-006 renders an empty panel for a navbar with zero links', () => {
+  it('renders an empty panel for a navbar with zero links', () => {
     const navbar: BlockConfig = {
       id: 'nav-empty',
       type: 'navbar',
@@ -216,7 +216,7 @@ describe('exported navbar flows', () => {
     expect(panel!.hidden).toBe(false)
   })
 
-  it('E2E-01-007 emits no runtime, no noscript and no byte change without navbar or faq', () => {
+  it('emits no runtime, no noscript and no byte change without navbar or faq', () => {
     const corpus = JSON.parse(
       readFileSync(
         resolve(
@@ -249,7 +249,7 @@ describe('exported navbar flows', () => {
     expect(html).not.toContain('<noscript>')
   })
 
-  it('E2E-01-008 keeps hostile link labels inert in the opened panel', () => {
+  it('keeps hostile link labels inert in the opened panel', () => {
     const markupLabel = '<img src=x onerror=alert(1)>'
     const quoteLabel = 'He said "hi" & left'
     const navbar: BlockConfig = {
@@ -282,7 +282,7 @@ describe('exported navbar flows', () => {
     expect(document.querySelectorAll('[onerror]')).toHaveLength(0)
   })
 
-  it('E2E-01-009 emits the runtime only on pages that carry a navbar', () => {
+  it('emits the runtime only on pages that carry a navbar', () => {
     const hero: BlockConfig = {
       id: 'about-hero',
       type: 'hero',
@@ -332,7 +332,7 @@ describe('worker entry parity', () => {
     workerHtml = docs[0].html
   }, 300_000)
 
-  it('E2E-01-010 renders the same page through the worker entry within the runtime budget', () => {
+  it('renders the same page through the worker entry within the runtime budget', () => {
     expect(workerHtml).not.toBe('')
     expect(workerHtml).toBe(exportSiteToHTML(workerConfig))
 

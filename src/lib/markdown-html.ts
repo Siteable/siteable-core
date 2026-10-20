@@ -7,7 +7,7 @@ import { escapeHtml } from './html-escape'
  * Subset: `##` / `###` headers, `**bold**`, `*italic*`, `-` / `*` list items,
  * and paragraphs. No link syntax, no raw-HTML passthrough.
  *
- * Security model (SC-007, SC-008, NF-003): the line loop and the inline
+ * Security model: the line loop and the inline
  * splitter are ported from the React renderer so the parse structure matches,
  * but every literal text run is passed through `escapeHtml` before it is
  * concatenated. Structural tags are the ONLY raw markup in the output; no

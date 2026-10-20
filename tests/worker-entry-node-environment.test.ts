@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * FR-E3 — the BUILT worker entry loads and runs with NO browser globals.
+ * The BUILT worker entry loads and runs with NO browser globals.
  *
  * Vitest runs the rest of this suite under jsdom with a `localStorage` polyfill,
  * so a future MODULE-SCOPE read of `localStorage` / `window` / `document` /
@@ -16,7 +16,7 @@
  * Non-vacuity: this test was proven RED by injecting a module-scope
  * `localStorage.getItem('x')` into a module in the worker closure and rebuilding
  * (RED: "worker entry touched browser global \"localStorage\""; restored -> GREEN).
- * The evidence record lives in the plan's harness report, not in this repo.
+ * The full evidence record lives outside this repo.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { resolve } from 'node:path'
@@ -63,7 +63,7 @@ afterAll(() => {
   }
 })
 
-describe('FR-E3 — the built worker entry needs no DOM globals', () => {
+describe('the built worker entry needs no DOM globals', () => {
   it('the traps are live (a read of each trapped global throws and is recorded)', () => {
     // Without this, a trap that silently failed to install would make the
     // import test below pass while checking nothing.

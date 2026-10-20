@@ -7,9 +7,9 @@
  * `./worker`, `./src/styles.css` and `./package.json`, so a deep import like
  * `@siteable/core/src/store/configStore` is rejected by the resolver — it would
  * instantiate a second zustand singleton inside one app, breaking the
- * single-store invariant when both private app + package copy coexist.
+ * single-store invariant when both a host application and the package copy coexist.
  *
- * SC-001: enumerate every named export, with `validateSiteConfig` explicit.
+ * Enumerate every named export, with `validateSiteConfig` explicit.
  */
 
 // ── Blocks ──────────────────────────────────────────────────────────────────
@@ -114,11 +114,11 @@ export { GENERATION_PROMPT } from './lib/generation-prompt'
 export { renderMarkdown } from './lib/markdown'
 
 // ── Lib — page-path (published URL per page + raw-path shape predicate) ─────
-// Framework-free on purpose (NF-005): a server or edge runtime and a consuming
+// Framework-free on purpose: a server or edge runtime and a consuming
 // app's import check can consume these two without pulling any UI module along.
 export { normalizePagePaths, isValidPagePath } from './lib/page-path'
 
-// ── Lib — url policy (shared href/src allow-list, FR-004) ───────────────────
+// ── Lib — url policy (shared href/src allow-list) ──────────────────────────
 export { isAllowedUrl, type UrlPolicyOptions } from './lib/url-policy'
 
 // ── Lib — video embed (one embeddability decision for editor, exporter, consumers)

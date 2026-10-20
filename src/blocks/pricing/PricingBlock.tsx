@@ -20,7 +20,7 @@ interface PricingProps {
   tiers?: PricingTier[]
 }
 
-// ISS-005: fallback tiers are the block-metadata contract (defaultPricingTiers),
+// Fallback tiers are the block-metadata contract (defaultPricingTiers),
 // shared with the prop normalizer so shape and render default can never drift.
 const defaultTiers = defaultPricingTiers as PricingTier[]
 

@@ -65,7 +65,7 @@ export function tabSetView(list: Element): TabSetView {
     visible: panels.map((panel) => !!panel && !panel.hidden),
     // "In the keyboard tab order" is any non-negative tabIndex. Testing
     // `=== 0` would read a non-selected tab at tabIndex 1 as absent from the
-    // order, which is not the property FR-002 states.
+    // order, which is not what "in the keyboard tab order" means.
     tabStops: tabs.map((tab) => tab.tabIndex >= 0),
     wired: idsAreUnique() && tabs.every((tab, index) => {
       const panel = panels[index]

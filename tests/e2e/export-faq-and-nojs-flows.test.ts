@@ -96,7 +96,7 @@ afterEach(() => {
 })
 
 describe('exported faq flows', () => {
-  it('E2E-02-001 opens the first answer and collapses the rest by default', () => {
+  it('opens the first answer and collapses the rest by default', () => {
     const page = parse(exportSiteToHTML(site(FIXTURE_BLOCKS.faq)))
     const buttons = Array.from(
       page.querySelectorAll<HTMLButtonElement>('section button[aria-expanded]'),
@@ -119,7 +119,7 @@ describe('exported faq flows', () => {
     expect(faqButtons().map(isFaqOpen)).toEqual([true, false, false])
   })
 
-  it('E2E-02-002 switches the open answer to the clicked question', () => {
+  it('switches the open answer to the clicked question', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.faq))))
     const buttons = faqButtons()
 
@@ -132,7 +132,7 @@ describe('exported faq flows', () => {
     expect((buttons[0].nextElementSibling as HTMLElement).style.maxHeight).toBe('0px')
   })
 
-  it('E2E-02-003 closes the only open answer on a second click', () => {
+  it('closes the only open answer on a second click', () => {
     mount(parse(exportSiteToHTML(site(FIXTURE_BLOCKS.faq))))
     const first = faqButtons()[0]
     expect(isFaqOpen(first)).toBe(true)
@@ -146,7 +146,7 @@ describe('exported faq flows', () => {
     expect(chevron.classList.contains('text-text-3')).toBe(true)
   })
 
-  it('E2E-02-004 leaves a second faq section untouched when one item changes', () => {
+  it('leaves a second faq section untouched when one item changes', () => {
     const faqBlock = (id: string, prefix: string): BlockConfig => ({
       id,
       type: 'faq',
@@ -184,7 +184,7 @@ describe('exported faq flows', () => {
 })
 
 describe('script-disabled fallback', () => {
-  it('E2E-02-005 ships noscript overrides that open the faq and reveal the panel', () => {
+  it('ships noscript overrides that open the faq and reveal the panel', () => {
     const page = parse(exportSiteToHTML(site(FIXTURE_BLOCKS['navbar-and-faq'])))
     const style = page.querySelector('noscript style')
     const css = style?.textContent ?? ''
@@ -219,7 +219,7 @@ describe('script-disabled fallback', () => {
 })
 
 describe('safety and packaging', () => {
-  it('E2E-02-006 ships no legacy handler and the faq responds only through the runtime', () => {
+  it('ships no legacy handler and the faq responds only through the runtime', () => {
     const corpusDir = resolve(import.meta.dirname, '../fixtures/export-legacy-corpus')
     const corpus = readdirSync(corpusDir)
       .filter((file) => file.endsWith('.json'))
@@ -253,7 +253,7 @@ describe('safety and packaging', () => {
     expect(faqButtons()[1].getAttribute('aria-expanded')).toBe('true')
   })
 
-  it('E2E-02-007 keeps an injected script payload inert in the faq text', () => {
+  it('keeps an injected script payload inert in the faq text', () => {
     const payload = '</script><script>alert(1)</script>'
     const config = site([
       {
@@ -299,7 +299,7 @@ describe('safety and packaging', () => {
     expect(document.querySelector('.faq-content p')?.textContent).toBe(payload)
   })
 
-  it('E2E-02-010 keeps the shipped runtime within the 5 KB gzip budget', () => {
+  it('keeps the shipped runtime within the 5 KB gzip budget', () => {
     expect(gzipSync(Buffer.from(BEHAVIOR_RUNTIME_SOURCE, 'utf8')).length).toBeLessThanOrEqual(
       SIZE_CAP_BYTES,
     )
@@ -378,7 +378,7 @@ describe('editor parity', () => {
 
   afterEach(unmountEditor)
 
-  it('E2E-02-008 editor and export produce identical outcomes for every shared row', () => {
+  it('editor and export produce identical outcomes for every shared row', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
     // The loop below can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
@@ -411,7 +411,7 @@ describe('editor parity', () => {
 })
 
 describe('legacy fixtures', () => {
-  it('E2E-02-009 differs from the frozen exports only by the permitted set', () => {
+  it('differs from the frozen exports only by the permitted set', () => {
     const corpusDir = resolve(import.meta.dirname, '../fixtures/export-legacy-corpus')
     const entry = (slug: string): {
       config: SiteConfig

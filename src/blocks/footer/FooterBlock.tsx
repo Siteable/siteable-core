@@ -54,7 +54,7 @@ function FooterSimple({ props }: { props: FooterProps }) {
 }
 
 function FooterMultiColumn({ props }: { props: FooterProps }) {
-  // ISS-005: fallback columns are the block-metadata contract (defaultFooterColumns),
+  // Fallback columns are the block-metadata contract (defaultFooterColumns),
   // shared with the prop normalizer so shape and render default can never drift.
   const columns = props.columns || defaultFooterColumns
 

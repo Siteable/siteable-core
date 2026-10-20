@@ -1,13 +1,12 @@
 /**
- * Phase 05 — exporter link/URL rendering for navbar, footer and pricing.
+ * Exporter link/URL rendering for navbar, footer and pricing.
  *
- * Spec: `specs/publish-fidelity/spec.md` FR-003, SC-013, SC-014, SC-015, SC-016.
  * Module under test: `src/lib/export-html.ts` (renderNavbar / renderFooter* / renderPricingSimple).
  *
  * Rule: a link item carrying a policy-passing `href` publishes as a real `<a>`;
  * every rejected/empty href (and every legacy bare string) keeps today's non-anchor
  * output byte-identically. The strongest byte-identity proof lives in
- * `tests/export-legacy-snapshot.test.ts` (phase-01 whole-document tripwire); the
+ * `tests/export-legacy-snapshot.test.ts` (the whole-document tripwire); the
  * substring assertions here pin the exact markup shape at each call site.
  */
 import { describe, it, expect } from 'vitest'
@@ -35,7 +34,7 @@ function oneBlock(type: string, variant: string, props: Record<string, unknown>)
   return { name: 'Site', blocks: [{ id: 'b1', type, variant, props } as never] }
 }
 
-describe('SC-013 — string-only link configs stay byte-identical (non-anchor output)', () => {
+describe('string-only link configs stay byte-identical (non-anchor output)', () => {
   it('navbar string links render as spans with the nav link class', () => {
     const html = exportSiteToHTML(
       oneBlock('navbar', 'default', { logo: 'A', links: ['Features', 'Pricing'], ctaText: 'Go' }),
@@ -97,7 +96,7 @@ describe('SC-013 — string-only link configs stay byte-identical (non-anchor ou
   })
 })
 
-describe('SC-014 — a policy-passing href publishes as a real anchor', () => {
+describe('a policy-passing href publishes as a real anchor', () => {
   it('navbar link object renders an anchor carrying the label and href', () => {
     const html = exportSiteToHTML(
       oneBlock('navbar', 'default', {
@@ -148,7 +147,7 @@ describe('SC-014 — a policy-passing href publishes as a real anchor', () => {
   })
 })
 
-describe('SC-015 — a rejected href never becomes an anchor and never appears in the output', () => {
+describe('a rejected href never becomes an anchor and never appears in the output', () => {
   it('navbar link object with a javascript: href degrades to the non-anchor element', () => {
     const html = exportSiteToHTML(
       oneBlock('navbar', 'default', {
@@ -184,7 +183,7 @@ describe('SC-015 — a rejected href never becomes an anchor and never appears i
   })
 })
 
-describe('SC-016 — pricing tier ctaUrl', () => {
+describe('pricing tier ctaUrl', () => {
   it('renders an anchor carrying btnClass when ctaUrl passes policy', () => {
     const html = exportSiteToHTML(
       oneBlock('pricing', 'simple', {

@@ -147,7 +147,7 @@ function logoPlaceholderSvg(name: string): string {
 //
 // Shared by the anchor and non-anchor branches of every link renderer. Each
 // value is byte-identical to the class literal the pre-anchor markup inlined,
-// so a legacy string-only config stays byte-identical (FR-003, NF-004).
+// so a legacy string-only config stays byte-identical.
 // ---------------------------------------------------------------------------
 
 const NAV_LINK_CLASS =
@@ -451,7 +451,7 @@ function renderFeatures(block: BlockConfig): string {
 // Tier shape is the shared default constant's element type — one source of
 // truth (`block-default-content`), so the exporter fallback can never drift
 // from the prop normalizer's contract. `ctaUrl` is optional; an absent or
-// policy-failing value keeps rendering the CTA as a button (FR-003).
+// policy-failing value keeps rendering the CTA as a button.
 type PricingTier = (typeof defaultPricingTiers)[number]
 
 function renderPricingSimple(block: BlockConfig): string {
@@ -479,7 +479,7 @@ function renderPricingSimple(block: BlockConfig): string {
         : 'w-full py-2.5 rounded-lg text-sm font-semibold transition-all bg-bg-3 text-text-0 border border-border-default hover:bg-bg-4 hover:border-border-hover'
 
       // A policy-passing ctaUrl turns the CTA into an anchor carrying the same
-      // button classes; absent/failing keeps the button (FR-003, SC-016).
+      // button classes; absent/failing keeps the button.
       const ctaHtml =
         tier.ctaUrl && isAllowedUrl(tier.ctaUrl)
           ? `<a href="${escapeHtml(tier.ctaUrl)}" class="${btnClass}">${escapeHtml(tier.cta)}</a>`
@@ -1254,7 +1254,7 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
 // ---------------------------------------------------------------------------
 
 /**
- * FR-001 — the blocks behind the `/` page.
+ * The blocks behind the `/` page.
  *
  * Page 1 is ALWAYS `/` after normalization (`page-path.ts` discards page 1's
  * authored path and promotes it), so "the `/` page" is simply "page 1" — no
@@ -1268,7 +1268,7 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
  * non-`/` document — `tests/export-site-pages.test.ts` pins the coupling from
  * both sides (path list AND block pairing), so that refactor fails there.
  *
- * FR-C2: every step is guarded. `pages` is `unknown` in practice — this is a
+ * Every step is guarded. `pages` is `unknown` in practice — this is a
  * published entry point fed configs parsed from JSON, where `pages` can be a
  * string, a number, `null`, or an array of holes — and `pages[0]` can itself be
  * `null` with `blocks` absent or `null`. `renderDocument` calls `blocks.some(...)`
@@ -1291,7 +1291,7 @@ function homeBlocks(config: SiteConfig): BlockConfig[] {
 }
 
 /**
- * FR-C2 — coerce a page's `blocks` to a list, or `[]` when it is not one.
+ * Coerce a page's `blocks` to a list, or `[]` when it is not one.
  *
  * `?? []` alone is NOT enough, and an earlier review caught this: it covers `null` and
  * `undefined` but passes a STRING, NUMBER or OBJECT straight through, and
@@ -1322,7 +1322,7 @@ export function renderDocument(
   blocks: BlockConfig[],
   options?: ExportSiteOptions,
 ): string {
-  // FR-C2: `blocks` is guarded HERE rather than only at each call site, because
+  // `blocks` is guarded HERE rather than only at each call site, because
   // this is the one function both public entry points pass it through. An earlier
   // review found that guarding `homeBlocks` (in this file) and `export-site-pages.ts`
   // with `?? []` still left `pages:[{blocks:'x'}]` throwing at the very next
@@ -1513,9 +1513,10 @@ ${needs ? renderBehaviorScript() : ''}
 }
 
 /**
- * FR-001 — the single-document export. Under a non-empty page list this is the
+ * The single-document export. Under a non-empty page list this is the
  * `/` page (page 1); it is never the last-edited page, which is the behaviour
- * change the spec accepts. Callers that want every page use `exportSitePages`.
+ * change this export deliberately adopts. Callers that want every page use
+ * `exportSitePages`.
  */
 export function exportSiteToHTML(config: SiteConfig, options?: ExportSiteOptions): string {
   return renderDocument(config, homeBlocks(config), options)

@@ -14,7 +14,7 @@ interface FaqProps {
   items?: FaqItem[]
 }
 
-// ISS-005: fallback FAQs are the block-default-content contract, shared with
+// Fallback FAQs are the block-default-content contract, shared with
 // the prop normalizer (was an inline literal, value-identical).
 const defaultFaqs = defaultFaqItems as FaqItem[]
 

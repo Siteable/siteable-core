@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
 import type { SiteConfig } from '../src/blocks/types'
 
-// SC-005 / NF-002: every BlockType must render real markup on export.
+// Every BlockType must render real markup on export.
 // One block per type, in the canonical order from src/blocks/types.ts.
 const coverageConfig: SiteConfig = {
   name: 'Coverage',
@@ -79,8 +79,8 @@ function videoConfig(variant: string, url: string): SiteConfig {
   }
 }
 
-describe('export video block embeds (SC-009 / SC-010)', () => {
-  it('SC-009: builds the YouTube iframe src from the extracted id, not the raw url', () => {
+describe('export video block embeds', () => {
+  it('builds the YouTube iframe src from the extracted id, not the raw url', () => {
     const out = exportSiteToHTML(
       videoConfig('youtube', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
     )
@@ -88,7 +88,7 @@ describe('export video block embeds (SC-009 / SC-010)', () => {
     expect(out).toContain('src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"')
   })
 
-  it('SC-009: builds the Vimeo iframe src from the extracted id, not the raw url', () => {
+  it('builds the Vimeo iframe src from the extracted id, not the raw url', () => {
     const out = exportSiteToHTML(
       videoConfig('vimeo', 'https://vimeo.com/123456789')
     )
@@ -96,7 +96,7 @@ describe('export video block embeds (SC-009 / SC-010)', () => {
     expect(out).toContain('src="https://player.vimeo.com/video/123456789"')
   })
 
-  it('SC-010: a YouTube variant url yielding no id emits no iframe', () => {
+  it('a YouTube variant url yielding no id emits no iframe', () => {
     const out = exportSiteToHTML(
       videoConfig('youtube', 'https://example.com/not-a-video')
     )
@@ -104,14 +104,14 @@ describe('export video block embeds (SC-009 / SC-010)', () => {
     expect(out).not.toContain('<iframe')
   })
 
-  it('SC-010: a Vimeo variant url yielding no id emits no iframe', () => {
+  it('a Vimeo variant url yielding no id emits no iframe', () => {
     const out = exportSiteToHTML(videoConfig('vimeo', 'https://example.com/x'))
 
     expect(out).not.toContain('<iframe')
   })
 })
 
-describe('export block coverage (SC-005 / NF-002)', () => {
+describe('export block coverage', () => {
   it('renders every block type with no unknown-block fallback', () => {
     expect(html).not.toContain('Unknown block type')
   })

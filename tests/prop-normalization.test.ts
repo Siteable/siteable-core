@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { normalizeBlockProps } from '../src/lib/prop-normalization'
 
-// ISS-005 contract source: shapes mirror src/lib/block-metadata defaultProps.
+// Contract source: shapes mirror src/lib/block-metadata defaultProps.
 const navbarDefaults = { logo: 'Brand', links: ['Features', 'Pricing', 'About'], ctaText: 'Get Started' }
 
 describe('normalizeBlockProps — string defaults', () => {
@@ -41,7 +41,7 @@ describe('normalizeBlockProps — string defaults', () => {
 })
 
 describe('normalizeBlockProps — string[] defaults', () => {
-  it('ISS-005 regression core: object links coerce to their label strings', () => {
+  it('regression core: object links coerce to their label strings', () => {
     const raw = { links: [{ label: 'Home', href: '#' }, { label: 'Pricing', href: '#p' }] }
     expect(normalizeBlockProps(raw, navbarDefaults).links).toEqual(['Home', 'Pricing'])
   })
@@ -142,7 +142,7 @@ describe('normalizeBlockProps — other primitives and pass-through', () => {
   })
 })
 
-describe('normalizeBlockProps — declared linkArrays (phase 04)', () => {
+describe('normalizeBlockProps — declared linkArrays', () => {
   it('a declared link path preserves {label,href} objects', () => {
     expect(normalizeBlockProps({ links: [{ label: 'Home', href: '#' }] }, navbarDefaults, ['links']).links)
       .toEqual([{ label: 'Home', href: '#' }])

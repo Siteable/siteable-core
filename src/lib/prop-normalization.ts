@@ -1,5 +1,5 @@
 /**
- * ISS-005 — prop normalization at the generation chokepoint.
+ * Prop normalization at the generation chokepoint.
  *
  * AI generators (Gemini, host /api/generate) return block props that violate the
  * declared contracts in block-metadata (e.g. a navigation block's `links` given
@@ -11,12 +11,13 @@
  * This module coerces raw prop values against the SHAPE of the block's
  * defaultProps — fully generic, zero block-name hardcoding.
  *
- * Phase 04 adds a declared LINK-ARRAY pass. A block may name prop PATHS whose
- * entries are links (`key`, `key[]`, `key[].sub`). That pass is SHAPE-PRESERVING
- * — a string entry stays a string, an object entry keeps its `{label, href}` —
- * and the shape pass SKIPS those paths so it can never re-collapse them.
+ * A declared LINK-ARRAY pass sits alongside it. A block may name prop PATHS
+ * whose entries are links (`key`, `key[]`, `key[].sub`). That pass is
+ * SHAPE-PRESERVING — a string entry stays a string, an object entry keeps its
+ * `{label, href}` — and the shape pass SKIPS those paths so it can never
+ * re-collapse them.
  *
- * POLICY (review item 2): an empty raw array (e.g. `links: []`) is replaced by
+ * POLICY: an empty raw array (e.g. `links: []`) is replaced by
  * the DEFAULT array — DELIBERATE, not an oversight. At this layer the config
  * is unvalidated AI/host output, so "empty" is indistinguishable from
  * "generator emitted nothing meaningful"; rendering a bar with zero links

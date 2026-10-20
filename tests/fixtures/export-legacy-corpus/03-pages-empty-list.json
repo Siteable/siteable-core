@@ -1,6 +1,6 @@
 {
   "slug": "03-pages-empty-list",
-  "note": "`pages: []` — present but empty. FR-001 routes this to a single `/` document rendered from top-level blocks, so the legacy output must still be the blocks-only document.",
+  "note": "`pages: []` — present but empty. This routes to a single `/` document rendered from top-level blocks, so the legacy output must still be the blocks-only document.",
   "config": {
     "name": "Corpus Three",
     "pages": [],

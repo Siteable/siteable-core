@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
  * Vite library-mode build for @siteable/core.
  *
  * - TWO ESM entries: `src/index.ts` (the barrel, `dist/index.js`) and
- *   `src/lib/worker-entry.ts` (`dist/worker.js`). FR-C1: the barrel re-exports
+ *   `src/lib/worker-entry.ts` (`dist/worker.js`). The barrel re-exports
  *   React components and zustand stores, and `preserveModules: false` flattens
  *   it into one artifact whose top-level imports force React into EVERY
  *   consumer. A Worker (for example a Cloudflare Worker) has no React runtime, so the
@@ -20,7 +20,7 @@ import { resolve } from 'node:path'
  * - `vite-plugin-dts` rolls up `.d.ts` declarations next to JS in dist/. It runs
  *   once per entry, so BOTH `index.d.ts` and `worker.d.ts` must be emitted —
  *   `tests/package-manifest.test.ts` and the build gate both check this.
- * - CSS extraction is forced OFF (NF-001: dist contains 0 CSS files). Consumers
+ * - CSS extraction is forced OFF (dist contains 0 CSS files). Consumers
  *   import the raw `src/styles.css` via Tailwind v4 `@source` + `@import`.
  */
 export default defineConfig({

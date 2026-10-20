@@ -1,5 +1,5 @@
 /**
- * ISS-005 (class fix) — single source of truth for block default CONTENT.
+ * Single source of truth for block default CONTENT.
  *
  * These literals were previously inline fallbacks inside block components
  * (or absent entirely), so the shape-driven prop normalizer had no contract
@@ -10,7 +10,7 @@
  * as render fallbacks (still needed for legacy persisted configs).
  */
 
-// ISS-005 (review item 1): logocloud logos were inline-only; LogoPlaceholder
+// Logocloud logos were inline-only; LogoPlaceholder
 // does name.charAt(0) + renders {name} → object entries crash exactly like
 // navbar links did.
 export const defaultLogos = ['Vercel', 'Stripe', 'GitHub', 'Figma', 'Notion', 'Linear']

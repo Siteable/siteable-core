@@ -7,7 +7,7 @@ import { videoEmbedUrl } from '@/lib/video-embed'
  *
  * The iframe `src` is built ONLY from the id extracted from `url` — never from
  * the raw stored value — so a malformed or hostile url can never reach the
- * attribute (SC-009). When no id is extracted, no `<iframe>` is emitted at all;
+ * attribute. When no id is extracted, no `<iframe>` is emitted at all;
  * the placeholder renders instead.
  */
 const PLAY_ICON =

@@ -1,18 +1,17 @@
 /**
- * SC-026 / NF-001 — whole-atom export performance and purity.
+ * Whole-export performance and purity.
  *
- * Spec: `specs/publish-fidelity/spec.md`.
- *   - SC-026: a 19-block config exported 100 times completes under the 500 ms
+ *   - a 19-block config exported 100 times completes under the 500 ms total
  *     budget.
- *   - NF-001 (export half): a 19-block config exports in < 500 ms.
+ *   - two consecutive exports of the same config are byte-identical (purity).
  *
- * Phase-07 of the publish-fidelity plan. This file is the perf gate the earlier
- * phases deferred; the URL-policy half of NF-001 lives in `tests/url-policy.test.ts`.
+ * This file is the perf gate; the URL-policy complexity half lives in
+ * `tests/url-policy.test.ts`.
  *
  * These are wall-clock assertions and are inherently sensitive to a loaded
  * machine. When one fails the message says so explicitly — re-run on an idle box
- * before treating a failure as a regression. The threshold is the spec's; it is
- * NOT relaxed here.
+ * before treating a failure as a regression. The threshold is the fixed
+ * 500 ms budget; it is NOT relaxed here.
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
@@ -51,7 +50,7 @@ const DENSE_CONFIG: SiteConfig = {
 const BUDGET_MS = 500
 const RUNS = 100
 
-describe('SC-026 / NF-001 — export performance', () => {
+describe('export performance', () => {
   it('renders all 19 block types (the benchmark is non-vacuous)', () => {
     const html = exportSiteToHTML(DENSE_CONFIG)
     expect(html).not.toContain('Unknown block type')
@@ -73,14 +72,14 @@ describe('SC-026 / NF-001 — export performance', () => {
     expect(
       total,
       `${RUNS} exports of a 19-block config took ${total.toFixed(1)} ms ` +
-        `(${perExport.toFixed(3)} ms/export); the spec budget is ${BUDGET_MS} ms total. ` +
+        `(${perExport.toFixed(3)} ms/export); the budget is ${BUDGET_MS} ms total. ` +
         'A failure here is usually a loaded machine, not a regression — re-run on an ' +
         'idle box before treating it as one.'
     ).toBeLessThan(BUDGET_MS)
   })
 
   it('is pure — two consecutive exports of the same config are byte-identical', () => {
-    // Phase-06 invariant (FR-005 id dedupe uses a per-call Set): a module-level
+    // The id-dedupe invariant (a per-call Set): a module-level
     // Set would leak across calls and make the second export drop ids.
     expect(exportSiteToHTML(DENSE_CONFIG)).toBe(exportSiteToHTML(DENSE_CONFIG))
   })

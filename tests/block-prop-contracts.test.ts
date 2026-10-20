@@ -3,7 +3,7 @@ import { validateSiteConfig } from '../src/lib/generate-site'
 import { defaultTeamMembers } from '../src/lib/block-default-content'
 import type { SiteConfig } from '../src/blocks/types'
 
-// ISS-005 class fix: every array/object block prop now has a defaultProps
+// Every array/object block prop now has a defaultProps
 // contract (src/lib/block-default-content.ts), so the generic normalizer
 // coerces AI drift on ALL blocks — not just navbar/footer/pricing.
 
@@ -87,7 +87,7 @@ describe('gallery + image images contract', () => {
   })
 })
 
-describe('logocloud logos contract (ISS-005 review item 1)', () => {
+describe('logocloud logos contract', () => {
   it('coerces object logo entries via name/text fields', () => {
     const props = blockProps(doc('logocloud', {
       logos: [{ name: 'Acme' }, { text: 'Beta' }, 'Plain', { href: '#' }],
@@ -101,7 +101,7 @@ describe('logocloud logos contract (ISS-005 review item 1)', () => {
   })
 })
 
-describe('hero badge contract (ISS-005 review item 1)', () => {
+describe('hero badge contract', () => {
   it('coerces object/number badge values against the string shape', () => {
     const props = blockProps(doc('hero', { badge: { text: 'Now in Beta' } }))
     expect(props.badge).toBe('Now in Beta')

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react'
 import type { BlockConfig } from '../types'
-// ISS-005: fallback testimonials are the block-default-content contract, shared
+// Fallback testimonials are the block-default-content contract, shared
 // with the prop normalizer (was an inline literal; avatar:'' additions are
 // falsy → initials branch renders byte-identically).
 import { defaultTestimonials } from '@/lib/block-default-content'

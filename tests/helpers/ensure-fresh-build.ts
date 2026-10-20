@@ -90,7 +90,7 @@ function artifactState(): { stale: boolean; missing: boolean } {
 
 /**
  * The staleness decision, pulled out so it can be tested WITHOUT a build.
- * vk-tester's M1c showed that forcing `ensureFreshBuild` to always report
+ * Forcing `ensureFreshBuild` to always report
  * "current" survived the suite whenever an artifact already existed: the
  * missing-artifact branch was covered, the STALE branch was not.
  */

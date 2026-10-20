@@ -1,8 +1,7 @@
 /**
- * SC-011 / SC-012 / NF-003 — the XSS corpus against the six new renderers.
+ * The XSS corpus against the six new renderers.
  *
- * Spec: `specs/publish-fidelity/spec.md` NF-003. Phase-03 of the
- * publish-fidelity plan. Modules under test: `src/lib/export-blocks/render-*`
+ * Modules under test: `src/lib/export-blocks/render-*`
  * and the `exportSiteToHTML` URL sinks.
  *
  * Assertion scoping (intentional): every injection is checked for a raw
@@ -34,7 +33,7 @@ const CORPUS = [
   '&#106;avascript:alert(1)',
   '"><svg/onload=alert(1)>',
   'data:text/html,<script>alert(1)</script>',
-  // Phase-07 widening — the plan's remaining payloads.
+  // Widening additions: quote breaks, a bare close bracket, a tab-split scheme.
   '" onerror="x',
   '">',
   'java\tscript:',
@@ -152,7 +151,7 @@ const RENDERERS: RendererCase[] = [
   },
 ]
 
-describe('SC-012 — corpus injected into every prop of every new renderer', () => {
+describe('corpus injected into every prop of every new renderer', () => {
   for (const rc of RENDERERS) {
     describe(rc.type, () => {
       for (const variant of rc.variants) {
@@ -178,7 +177,7 @@ describe('SC-012 — corpus injected into every prop of every new renderer', () 
   }
 })
 
-describe('SC-011 — rejected URL sinks across the page export', () => {
+describe('rejected URL sinks across the page export', () => {
   function exportBlocks(blocks: SiteConfig['blocks']): string {
     return exportSiteToHTML({ name: 'XSS Sinks', blocks })
   }
@@ -240,7 +239,7 @@ describe('SC-011 — rejected URL sinks across the page export', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Phase-07 widening (NF-003): the corpus across ALL 19 block types, through the
+// Widening: the corpus across ALL 19 block types, through the
 // real `exportSiteToHTML` path. The raw-renderer matrix above covers the six new
 // renderers prop-by-prop; the 13 pre-existing renderers are not individually
 // exported, so this section exercises them (and re-exercises the new ones) end
@@ -260,7 +259,7 @@ describe('SC-011 — rejected URL sinks across the page export', () => {
  * in tag position.
  */
 // The value may be single-, double-quoted, OR unquoted (`onerror=alert(1)`),
-// so the detector is no narrower than the phase-03 raw-renderer check.
+// so the detector is no narrower than the raw-renderer check.
 const HANDLER_ATTR_RE = /<[a-zA-Z][^>]*[^\w](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
 const LEGIT_HANDLER_ATTRS = new Set(['onsubmit="return false"'])
 const injectedHandlers = (html: string): string[] =>
@@ -298,7 +297,7 @@ interface SinkCase {
 const URL_SUFFIX = 'https://ok.example/x'
 const IMG_SUFFIX = 'https://ok.example/x.png'
 
-/** Every URL-emitting prop across the 19 block types (FR-001, NF-003). */
+/** Every URL-emitting prop across the 19 block types. */
 const URL_SINKS: SinkCase[] = [
   { type: 'navbar', variant: 'default', sink: 'ctaUrl', withValue: (v) => ({ logo: 'Acme', links: [], ctaText: 'Go', ctaUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
   { type: 'navbar', variant: 'default', sink: 'logoImage', withValue: (v) => ({ logo: 'Acme', links: [], logoImage: v }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
@@ -320,7 +319,7 @@ const URL_SINKS: SinkCase[] = [
   { type: 'banner', variant: 'ribbon', sink: 'linkUrl', withValue: (v) => ({ text: 'T', linkText: 'Go', linkUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
 ]
 
-describe('SC-012 (widened) / NF-003 — URL sinks across every renderer, via exportSiteToHTML', () => {
+describe('URL sinks across every renderer, via exportSiteToHTML', () => {
   const exportBlock = (sink: SinkCase, value: string): string =>
     exportSiteToHTML({
       name: 'XSS',
@@ -387,7 +386,7 @@ const TEXT_CASES: TextCase[] = [
   { type: 'content', variant: 'prose', prop: 'body', withValue: (v) => ({ body: v }) },
 ]
 
-describe('SC-012 (widened) / NF-003 — text/structural props of the remaining types', () => {
+describe('text/structural props of the remaining types', () => {
   for (const tc of TEXT_CASES) {
     for (const payload of CORPUS) {
       it(`${tc.type}/${tc.variant} — ${tc.prop} ← ${JSON.stringify(payload)}`, () => {
@@ -425,7 +424,7 @@ describe('SC-012 (widened) / NF-003 — text/structural props of the remaining t
  * `escapeLabel` is a test-local oracle: deriving the expectation from
  * `escapeHtml` would make the assertion move with the implementation.
  */
-describe('NF-003 — the features block label is escaped in both default variants', () => {
+describe('the features block label is escaped in both default variants', () => {
   const LABEL_DIV_RE = /<div class="text-\[11px\][^"]*">([\s\S]*?)<\/div>/
   const escapeLabel = (value: string): string =>
     value
@@ -467,11 +466,11 @@ describe('NF-003 — the features block label is escaped in both default variant
   }
 })
 
-describe('SC-012 (widened) / NF-003 — divider coerces, never emits', () => {
+describe('divider coerces, never emits', () => {
   // `divider` has no string prop that reaches output: `height` is coerced with
   // `Number(...) || 60` and `width` maps through a fixed allow-list. Its claim
   // is therefore coercion, asserted directly — an "inject and assert absent"
-  // case for this renderer would pass no matter the payload (review finding M1).
+  // case for this renderer would pass no matter the payload.
   const render = (props: Record<string, unknown>): string =>
     exportSiteToHTML({
       name: 'XSS',
@@ -502,7 +501,7 @@ describe('SC-012 (widened) / NF-003 — divider coerces, never emits', () => {
 describe('injectedHandlers detector — self-test (guards the guard)', () => {
   // The matrix is only as strong as this filter. If it regressed to ignoring
   // `onclick=`/`onsubmit=` by NAME, an injected instance would slip through
-  // every negative case while the suite stayed green (review finding M2).
+  // every negative case while the suite stayed green.
   it('ignores only the exporter\'s own form no-op handler literal', () => {
     expect(injectedHandlers('<form onsubmit="return false">')).toEqual([])
   })
@@ -533,9 +532,9 @@ describe('injectedHandlers detector — self-test (guards the guard)', () => {
     expect(injectedHandlers('<svg/onload="alert(1)">')).toEqual(['onload="alert(1)"'])
   })
 
-  it('flags unquoted handlers too (no narrowing vs the phase-03 raw check)', () => {
+  it('flags unquoted handlers too (no narrowing vs the raw check)', () => {
     // The value may be unquoted; a detector that only matched `="…"` would be
-    // narrower than the phase-03 HANDLER_RE and blind to this class.
+    // narrower than HANDLER_RE and blind to this class.
     expect(injectedHandlers('<img src=x onerror=alert(1)>')).toEqual(['onerror=alert(1)'])
   })
 })

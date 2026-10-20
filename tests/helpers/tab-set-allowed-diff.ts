@@ -7,7 +7,7 @@
  * literal-bounded region, and every strip reports its count so a no-op cannot
  * pass a test that expects a populated page.
  *
- * The three permitted differences (NF-002, as widened by the filed
+ * The three permitted differences (as widened by the filed
  * permitted-difference amendment):
  *   1. the tab-set markup of the affected block — masked by whole section;
  *   2. the tab rules inside the no-script style block;
@@ -158,7 +158,7 @@ export function hasLegacyNoScriptRules(html: string): boolean {
 }
 
 /**
- * Reduce a document to the bytes NF-002 requires a tab page to keep.
+ * Reduce a document to the bytes the permitted-difference rule requires a tab page to keep.
  *
  * Applied to BOTH sides of every comparison: the fresh export carries the tab
  * markup, the rules and (tabs-only) the wrappers; the frozen 0.4.0 document

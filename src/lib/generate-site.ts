@@ -38,7 +38,7 @@ export async function generateSiteConfig(
   if (onServerFallback) {
     try {
       const raw = await onServerFallback(prompt, signal)
-      // ISS-005: the host's result must go through the SAME validation as tier 1 —
+      // The host's result must go through the SAME validation as tier 1 —
       // previously it was returned unchecked (object props reached blocks → crash).
       // validateSiteConfig never throws (all inputs type-guarded), so an unexpected
       // throw would still be caught here and degrade to the template fallback.
@@ -158,7 +158,7 @@ function collectInlineProps(
 }
 
 function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig | null {
-  // ISS-005 hardening: blocks arrays may contain null/primitives from hostile or
+  // Hardening: blocks arrays may contain null/primitives from hostile or
   // malformed AI output — validateSiteConfig must never throw by design.
   if (!raw || typeof raw !== 'object') return null
   const type = raw.type as string
@@ -171,9 +171,9 @@ function validateBlock(raw: Record<string, unknown>, index: number): BlockConfig
   }
 
   const defaultProps = DEFAULT_PROPS_MAP[type] || {}
-  // ISS-005 root fix: raw prop VALUES are normalized against the defaultProps
+  // Root fix: raw prop VALUES are normalized against the defaultProps
   // shape (generic, no per-block guards) before merging over the defaults.
-  // Phase 04: the block's declared link-array paths keep {label,href} intact.
+  // The block's declared link-array paths keep {label,href} intact.
   const linkArrays = LINK_ARRAYS_MAP[type] || []
   // Accept both prop shapes — nested under `props`, or flattened onto the block.
   // Nested wins on conflict. An empty result still yields defaultProps, which is

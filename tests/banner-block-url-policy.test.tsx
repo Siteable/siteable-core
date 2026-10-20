@@ -1,11 +1,11 @@
 /**
- * ISS-005 — the editor-side `BannerBlock` anchor must be policy-gated.
+ * The editor-side `BannerBlock` anchor must be policy-gated.
  *
  * `BannerBlock` rendered `<a href={linkUrl}>` with no scheme check while its
  * siblings (navbar, footer, pricing) all routed hrefs through `isAllowedUrl`.
  * A `javascript:` value here executes on click inside the EDITOR's own
  * authenticated origin — a worse position than the exported site, and the same
- * defect class as ISS-001.
+ * defect class.
  *
  * Both variants are covered because the component emits the anchor twice.
  */
@@ -34,7 +34,7 @@ const DENIED = [
 
 const ALLOWED = ['https://example.com/read', '#pricing', '/about', 'mailto:a@b.com']
 
-describe('BannerBlock URL policy (ISS-005)', () => {
+describe('BannerBlock URL policy', () => {
   for (const variant of VARIANTS) {
     it(`[${variant}] never emits a denied scheme`, () => {
       for (const url of DENIED) {

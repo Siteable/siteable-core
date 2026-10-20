@@ -1,7 +1,5 @@
 /**
- * Block-root `id` attribute tests — FR-005.
- *
- * Covers: SC-020, SC-021, SC-023.
+ * Block-root `id` attribute tests.
  *
  * Each rendered block's EXISTING root element must carry `id="{block.id}"` when
  * `block.id` matches `^[a-z][a-z0-9-]{0,63}$`; otherwise the attribute is absent.
@@ -22,9 +20,9 @@ const hero = (id: string, headline: string): BlockConfig => ({
   props: { headline },
 })
 
-describe('FR-005 — block root id attributes', () => {
-  it('SC-020 — a valid block id is emitted on the block root exactly once', () => {
-    // SC-020 has two clauses: the target block's root carries the id, AND a link
+describe('block root id attributes', () => {
+  it('a valid block id is emitted on the block root exactly once', () => {
+    // The contract has two clauses: the target block's root carries the id, AND a link
     // to that anchor is emitted so `#pricing` actually resolves. The navbar link
     // renders through the policy-gated `renderLink` — a `#fragment` passes
     // `isAllowedUrl`, so it must publish as a real `<a href="#pricing">`, not a
@@ -54,7 +52,7 @@ describe('FR-005 — block root id attributes', () => {
     expect(html).toContain('href="#pricing"')
   })
 
-  it('SC-021 — invalid ids are dropped, the valid id is kept', () => {
+  it('invalid ids are dropped, the valid id is kept', () => {
     const config: SiteConfig = {
       name: 'x',
       blocks: [hero('A_B', 'Upper'), hero('1abc', 'Digit'), hero('block-123', 'Valid')],
@@ -66,7 +64,7 @@ describe('FR-005 — block root id attributes', () => {
     expect((html.match(/<section id="/g) || []).length).toBe(1)
   })
 
-  it('SC-023 — duplicate id: the first declaring block wins', () => {
+  it('duplicate id: the first declaring block wins', () => {
     const config: SiteConfig = {
       name: 'x',
       blocks: [hero('dup', 'FIRST_BLOCK'), hero('dup', 'SECOND_BLOCK')],
@@ -96,7 +94,7 @@ describe('FR-005 — block root id attributes', () => {
     expect((html.match(/<section /g) || []).length).toBe(2)
   })
 
-  it('SC-021 — a missing or non-string id omits the attribute entirely', () => {
+  it('a missing or non-string id omits the attribute entirely', () => {
     // A block whose id is `undefined` must not emit `id=""`.
     const noId = exportSiteToHTML({
       name: 'x',
@@ -127,11 +125,11 @@ describe('FR-005 — block root id attributes', () => {
   })
 })
 
-describe('FR-005 — id injection through exportSiteToHTML for the six new block types', () => {
+describe('id injection through exportSiteToHTML for the six new block types', () => {
   it('the dispatcher attaches each new renderer root id via the full export path', () => {
     // The golden tests (tests/export-blocks-golden.test.ts) call the raw
     // renderers directly, bypassing `renderBlock`/`withBlockId`. This exercises
-    // the real dispatcher so FR-005 is proven for every new type too. All six
+    // the real dispatcher so the contract is proven for every new type too. All six
     // renderers root on a `<div>`.
     const config: SiteConfig = {
       name: 'x',
@@ -159,10 +157,10 @@ describe('FR-005 — id injection through exportSiteToHTML for the six new block
   })
 })
 
-describe('FR-005 — id length boundary (`^[a-z][a-z0-9-]{0,63}$`)', () => {
+describe('id length boundary (`^[a-z][a-z0-9-]{0,63}$`)', () => {
   // The regex allows one leading letter plus up to 63 more chars — 64 total.
-  // Phase 06 handed this boundary to phase 07: off-by-one in the `{0,63}`
-  // quantifier is invisible to SC-021's short invalid ids (`A_B`, `1abc`).
+  // The boundary is easy to get wrong by one: off-by-one in the `{0,63}`
+  // quantifier is invisible to the short invalid ids (`A_B`, `1abc`).
   it('accepts a 64-character id (1 + 63) and rejects a 65-character id', () => {
     const atLimit = 'a' + 'a'.repeat(63) // 64 chars
     const overLimit = 'a' + 'a'.repeat(64) // 65 chars
@@ -192,7 +190,7 @@ describe('FR-005 — id length boundary (`^[a-z][a-z0-9-]{0,63}$`)', () => {
   })
 })
 
-describe('FR-005 — `withBlockId` skips output with no leading root open tag', () => {
+describe('`withBlockId` skips output with no leading root open tag', () => {
   // The `!match` branch: a valid id on markup that does not begin with a
   // `<tagname` (the unknown-block comment is the only reachable case) must be
   // left untouched — the helper never fabricates a wrapper to host the id.
@@ -221,7 +219,7 @@ describe('FR-005 — `withBlockId` skips output with no leading root open tag', 
   })
 })
 
-describe('FR-005 — export purity (phase-06 success criterion / SC-026 pre-check)', () => {
+describe('export purity (pre-check)', () => {
   it('two exports in one process are byte-identical and dedupe does not leak between calls', () => {
     // A config with a duplicate id proves the per-call `seen` Set is not
     // module-level: if it leaked, the second call would see `dup` as already

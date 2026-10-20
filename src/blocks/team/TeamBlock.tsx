@@ -13,7 +13,7 @@ interface TeamProps {
   members?: TeamMember[]
 }
 
-// ISS-005: fallback members are the block-default-content contract, shared with
+// Fallback members are the block-default-content contract, shared with
 // the prop normalizer (was an inline literal, value-identical).
 const defaultMembers = defaultTeamMembers as TeamMember[]
 
