@@ -1,0 +1,191 @@
+name: Leak scan
+
+# Guards the public surface of this repository. This repo is 100% public, so
+# nothing private may appear in code, comments, tests, commit messages, PR
+# titles/bodies, branch names or the npm tarball.
+#
+# DESIGN NOTES (each of these was a defect found in review, kept so the next
+# editor does not reintroduce it):
+#   * Private names are NOT written here — a banned-word list inside a public
+#     repo is itself the leak. They come from the PRIVATE_NAME_PATTERN secret.
+#     When that secret is absent on a same-repository PR the job FAILS; only a
+#     fork PR (which cannot read secrets) degrades to a warning. A missing
+#     secret must never look like a pass.
+#   * GitHub context values reach bash through `env:`, never interpolated into
+#     the script text — a branch name is attacker-controlled and
+#     `${{ github.head_ref }}` inline is a shell-injection sink.
+#   * Every check distinguishes "no match" (exit 1) from "the check broke"
+#     (exit 2+). A broken pattern, a bad ref or a failed install must fail the
+#     job, not pass it.
+#   * A self-test step proves the patterns actually match before they are
+#     trusted. This exists because a `\b` pattern silently matched nothing.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  # One pattern set, used on every surface. No `\b`: git grep -E does not
+  # honour it portably and a `\b` pattern matches nothing at all.
+  #   IDS  — internal tracking identifiers and absolute home paths
+  #   PATHS — umbrella planning directories, matched only as a whole path
+  #           segment so the legitimate `src/blocks/features/` does not match
+  IDS: '(^|[^A-Za-z0-9_-])(ISS-[0-9]+|FR-[0-9]+|NF-[0-9]+|SC-M?[0-9]+|AC-[0-9]+|E2E-[0-9]+-[0-9]+|Phase[[:space:]]+[0-9]+|/Users/[A-Za-z0-9._-]+|/home/[A-Za-z0-9._-]+)'
+  PATHS: '(^|[^/A-Za-z0-9_-])(plans|specs|issues|features)/'
+
+jobs:
+  leak-scan:
+    name: leak-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Self-test the patterns
+        run: |
+          set -euo pipefail
+          # Prove the patterns match before trusting them. A pattern that
+          # matches nothing would make every later step vacuous.
+          # The fixtures are ASSEMBLED from fragments rather than written as
+          # literals: this file is itself scanned, and hard-coded banned
+          # strings would force excluding it — turning the gate's own source
+          # into a blind spot.
+          tmp=$(mktemp -d)
+          I='ISS-'; P='Phase'; D='specs'; SL='/'
+          printf 'covers %s123 here\n'      "$I"        > "$tmp/bad1"
+          printf 'see %s%sthing.md\n'       "$D" "$SL"  > "$tmp/bad2"
+          printf '%s 04 did this\n'         "$P"        > "$tmp/bad3"
+          printf 'src/blocks/features/FeaturesBlock.tsx\n'    > "$tmp/good1"
+          printf 'the exported surface is clean\n'            > "$tmp/good2"
+          rc_of() { "$@" >/dev/null 2>&1; echo $?; }
+          for f in bad1 bad2 bad3; do
+            r=$(rc_of grep -EI "$IDS|$PATHS" "$tmp/$f")
+            if [ "$r" -ne 0 ]; then
+              echo "::error::self-test: pattern did not match $f (exit $r) — the gate would be vacuous"
+              exit 1
+            fi
+          done
+          for f in good1 good2; do
+            r=$(rc_of grep -EI "$IDS|$PATHS" "$tmp/$f")
+            if [ "$r" -ne 1 ]; then
+              echo "::error::self-test: pattern falsely matched $f (exit $r)"
+              exit 1
+            fi
+          done
+          echo "patterns are live"
+
+      - name: Scan tracked files and commit messages
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -uo pipefail
+          # 0 = matched (fail), 1 = no match (pass), 2+ = the check itself broke
+          # (fail). Collapsing those three into two is how a gate becomes
+          # unfailable.
+          judge() {
+            local label="$1" out="$2" rc="$3"
+            [ "$rc" -eq 1 ] && return 0
+            printf '%s\n' "$out"
+            if [ "$rc" -gt 1 ]; then
+              echo "::error::$label: the scan itself failed (exit $rc) — not reporting a pass"
+            else
+              echo "::error::$label matched the banned pattern"
+            fi
+            return 1
+          }
+
+          fail=0
+          tmp=$(mktemp -d)
+          git log --format=%B "origin/$BASE_REF..HEAD" > "$tmp/commits.txt" || {
+            echo "::error::could not read the commit range origin/$BASE_REF..HEAD"; exit 1; }
+
+          out=$(git grep -nEI "$IDS" -- . ':!package-lock.json' 2>&1); rc=$?
+          judge "tracked files: identifiers" "$out" "$rc" || fail=1
+
+          out=$(git grep -nEI "$PATHS" -- . ':!package-lock.json' 2>&1); rc=$?
+          judge "tracked files: planning paths" "$out" "$rc" || fail=1
+
+          out=$(grep -nEI "$IDS" "$tmp/commits.txt" 2>&1); rc=$?
+          judge "commit messages: identifiers" "$out" "$rc" || fail=1
+
+          out=$(grep -nEI "$PATHS" "$tmp/commits.txt" 2>&1); rc=$?
+          judge "commit messages: planning paths" "$out" "$rc" || fail=1
+
+          exit $fail
+
+      - name: Scan PR metadata
+        env:
+          PRIVATE_NAME_PATTERN: ${{ secrets.PRIVATE_NAME_PATTERN }}
+          SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          fail=0
+
+          # Titles, bodies and branch names are permanent public publications.
+          for field in PR_TITLE PR_BODY HEAD_REF; do
+            if printf '%s' "${!field}" | grep -EI "$IDS|$PATHS"; then
+              echo "::error::$field contains an internal identifier or planning path"
+              fail=1
+            fi
+          done
+
+          if [ -z "${PRIVATE_NAME_PATTERN:-}" ]; then
+            if [ "$SAME_REPO" = "true" ]; then
+              echo "::error::PRIVATE_NAME_PATTERN is not configured. The name scan cannot run, so this job must not report a pass. Set the repository secret."
+              exit 1
+            fi
+            echo "::warning::fork PR — secrets are unavailable, so the private-name scan is skipped. A maintainer must run it before merge."
+          else
+            for field in PR_TITLE PR_BODY HEAD_REF; do
+              if printf '%s' "${!field}" | grep -EI "$PRIVATE_NAME_PATTERN"; then
+                echo "::error::$field names a private repository or service"
+                fail=1
+              fi
+            done
+          fi
+          exit $fail
+
+      - name: Scan the published artifact
+        env:
+          PRIVATE_NAME_PATTERN: ${{ secrets.PRIVATE_NAME_PATTERN }}
+          SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          set -euo pipefail
+          # Build first: `npm pack` would otherwise ship src/ only, while the
+          # package npm actually receives is built from dist/.
+          npm ci
+          npm run build
+          rm -rf /tmp/pack && mkdir -p /tmp/pack
+          npm pack --pack-destination /tmp/pack
+          tar -xzf /tmp/pack/*.tgz -C /tmp/pack
+          pkg=/tmp/pack/package
+
+          fail=0
+          if grep -rInE "$IDS|$PATHS" "$pkg"; then
+            echo "::error::the published tarball contains an internal identifier or planning path"
+            fail=1
+          fi
+          if [ -n "${PRIVATE_NAME_PATTERN:-}" ]; then
+            if grep -rInE "$PRIVATE_NAME_PATTERN" "$pkg"; then
+              echo "::error::the published tarball names a private repository or service"
+              fail=1
+            fi
+          elif [ "$SAME_REPO" = "true" ]; then
+            echo "::error::PRIVATE_NAME_PATTERN is not configured; the tarball name scan cannot run"
+            fail=1
+          else
+            echo "::warning::fork PR — private-name tarball scan skipped"
+          fi
+          exit $fail
