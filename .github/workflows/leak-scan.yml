@@ -17,8 +17,16 @@ name: Leak scan
 #   * Every check distinguishes "no match" (exit 1) from "the check broke"
 #     (exit 2+). A broken pattern, a bad ref or a failed install must fail the
 #     job, not pass it.
+#   * The pattern is never exposed to a step that runs PR-controlled code:
+#     `npm ci` runs lifecycle scripts and `vite build` loads config from the
+#     pull request, so the build step carries no secrets.
+#   * Accepted trade-off: a fork PR cannot read the secret, so its name scan
+#     warns and the job still concludes success. This repo requires zero
+#     approving reviews, so the "maintainer runs it before merge" note has no
+#     enforcement behind it — it is a documented gap, not an oversight.
 #   * A self-test step proves the patterns actually match before they are
-#     trusted. This exists because a `\b` pattern silently matched nothing.
+#     trusted, with one fixture per alternative. This exists because a `\b`
+#     pattern silently matched nothing and the gate looked healthy.
 
 on:
   pull_request:
@@ -56,35 +64,49 @@ jobs:
       - name: Self-test the patterns
         run: |
           set +e -u -o pipefail
-          # Prove the patterns match before trusting them. A pattern that
+          # Prove the patterns match before trusting them: a pattern that
           # matches nothing would make every later step vacuous.
-          # The fixtures are ASSEMBLED from fragments rather than written as
-          # literals: this file is itself scanned, and hard-coded banned
-          # strings would force excluding it — turning the gate's own source
-          # into a blind spot.
+          # Fixtures are ASSEMBLED from fragments because this file is itself
+          # scanned — hard-coded banned strings would force excluding it and
+          # turn the gate's own source into a blind spot.
+          # Every alternative in IDS and PATHS gets a fixture, so deleting one
+          # from the pattern turns this step red instead of quietly widening
+          # the blind spot.
           tmp=$(mktemp -d)
-          I='ISS-'; P='Phase'; D='specs'; SL='/'
-          printf 'covers %s123 here\n'      "$I"        > "$tmp/bad1"
-          printf 'see %s%sthing.md\n'       "$D" "$SL"  > "$tmp/bad2"
-          printf '%s 04 did this\n'         "$P"        > "$tmp/bad3"
-          printf 'src/blocks/features/FeaturesBlock.tsx\n'    > "$tmp/good1"
-          printf 'the exported surface is clean\n'            > "$tmp/good2"
+          SL='/'
+          i1='ISS-'; i2='FR-'; i3='NF-'; i4='SC-M'; i5='AC-'
+          i6='E2E-0'; i7='Phase'; i8='/Users'; i9='/home'
+          p1='plans'; p2='specs'; p3='issues'; p4='features'
+          printf '%s123\n'          "$i1"            > "$tmp/b1"
+          printf '%s123\n'          "$i2"            > "$tmp/b2"
+          printf '%s123\n'          "$i3"            > "$tmp/b3"
+          printf '%s01\n'           "$i4"            > "$tmp/b4"
+          printf '%s123\n'          "$i5"            > "$tmp/b5"
+          printf '%s1-001\n'        "$i6"            > "$tmp/b6"
+          printf '%s 04 did it\n'   "$i7"            > "$tmp/b7"
+          printf '%s/alice/x\n'     "$i8"            > "$tmp/b8"
+          printf '%s/bob/y\n'       "$i9"            > "$tmp/b9"
+          printf 'see %s%sthing\n'  "$p1" "$SL"      > "$tmp/c1"
+          printf 'see %s%sthing\n'  "$p2" "$SL"      > "$tmp/c2"
+          printf 'see %s%sthing\n'  "$p3" "$SL"      > "$tmp/c3"
+          printf 'src/blocks/%s/FeaturesBlock.tsx\n' "$p4" > "$tmp/good1"
+          printf 'the exported surface is clean\n'   > "$tmp/good2"
           rc_of() { "$@" >/dev/null 2>&1; echo $?; }
-          for f in bad1 bad2 bad3; do
+          for f in b1 b2 b3 b4 b5 b6 b7 b8 b9 c1 c2 c3; do
             r=$(rc_of grep -EI "$IDS|$PATHS" "$tmp/$f")
             if [ "$r" -ne 0 ]; then
-              echo "::error::self-test: pattern did not match $f (exit $r) — the gate would be vacuous"
+              echo "::error::self-test: $f did not match (exit $r) — that alternative is dead"
               exit 1
             fi
           done
           for f in good1 good2; do
             r=$(rc_of grep -EI "$IDS|$PATHS" "$tmp/$f")
             if [ "$r" -ne 1 ]; then
-              echo "::error::self-test: pattern falsely matched $f (exit $r)"
+              echo "::error::self-test: $f falsely matched (exit $r)"
               exit 1
             fi
           done
-          echo "patterns are live"
+          echo "patterns are live: 12 banned fixtures matched, 2 clean fixtures did not"
 
       - name: Scan tracked files and commit messages
         env:
@@ -138,7 +160,12 @@ jobs:
 
           # Titles, bodies and branch names are permanent public publications.
           for field in PR_TITLE PR_BODY HEAD_REF; do
-            if printf '%s' "${!field}" | grep -EI "$IDS|$PATHS"; then
+            out=$(printf '%s' "${!field}" | grep -EI "$IDS|$PATHS" 2>&1); rc=$?
+            if [ "$rc" -gt 1 ]; then
+              echo "::error::$field: the scan itself failed (exit $rc)"
+              fail=1
+            elif [ "$rc" -eq 0 ]; then
+              printf '%s\n' "$out"
               echo "::error::$field contains an internal identifier or planning path"
               fail=1
             fi
@@ -172,36 +199,53 @@ jobs:
           fi
           exit $fail
 
+      # No secrets in this step. It runs PR-controlled code (npm lifecycle
+      # scripts, and `vite build` loads vite.config from the PR), so exposing
+      # the pattern here would let a contributor with write access read the
+      # very names this gate hides.
+      - name: Build the package
+        run: |
+          set +e -u -o pipefail
+          npm ci || { echo "::error::npm ci failed"; exit 1; }
+          npm run build || { echo "::error::build failed — refusing to scan an unbuilt package"; exit 1; }
+          [ -f dist/index.js ] || { echo "::error::build produced no dist/index.js"; exit 1; }
+
       - name: Scan the published artifact
         env:
           PRIVATE_NAME_PATTERN: ${{ secrets.PRIVATE_NAME_PATTERN }}
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set +e -u -o pipefail
-          # Build first: `npm pack` would otherwise ship src/ only, while the
-          # package npm actually receives is built from dist/.
-          npm ci
-          npm run build
+          # `npm pack` with a missing dist/ exits 0 and produces a three-file
+          # tarball, so every command here is checked and the payload is
+          # asserted before it is scanned. Scanning an unbuilt tarball would
+          # report a clean result over something npm never ships.
           rm -rf /tmp/pack && mkdir -p /tmp/pack
-          npm pack --pack-destination /tmp/pack
-          tar -xzf /tmp/pack/*.tgz -C /tmp/pack
+          npm pack --pack-destination /tmp/pack || { echo "::error::npm pack failed"; exit 1; }
+          tar -xzf /tmp/pack/*.tgz -C /tmp/pack || { echo "::error::could not extract the tarball"; exit 1; }
           pkg=/tmp/pack/package
+          [ -f "$pkg/package.json" ] || { echo "::error::tarball payload missing"; exit 1; }
+          [ -f "$pkg/dist/index.js" ] || { echo "::error::tarball has no dist/index.js — it is not what npm would publish"; exit 1; }
+
+          judge() {
+            local label="$1" out="$2" rc="$3"
+            [ "$rc" -eq 1 ] && return 0
+            printf '%s\n' "$out"
+            if [ "$rc" -gt 1 ]; then
+              echo "::error::$label: the scan itself failed (exit $rc) — not reporting a pass"
+            else
+              echo "::error::$label matched the banned pattern"
+            fi
+            return 1
+          }
 
           fail=0
-          if grep -rInE "$IDS|$PATHS" "$pkg"; then
-            echo "::error::the published tarball contains an internal identifier or planning path"
-            fail=1
-          fi
+          out=$(grep -rInE "$IDS|$PATHS" "$pkg" 2>&1); rc=$?
+          judge "published tarball: identifiers" "$out" "$rc" || fail=1
+
           if [ -n "${PRIVATE_NAME_PATTERN:-}" ]; then
             out=$(grep -rInE "$PRIVATE_NAME_PATTERN" "$pkg" 2>&1); rc=$?
-            if [ "$rc" -gt 1 ]; then
-              echo "::error::tarball: the name scan itself failed (exit $rc)"
-              fail=1
-            elif [ "$rc" -eq 0 ]; then
-              printf '%s\n' "$out"
-              echo "::error::the published tarball names a private repository or service"
-              fail=1
-            fi
+            judge "published tarball: private names" "$out" "$rc" || fail=1
           elif [ "$SAME_REPO" = "true" ]; then
             echo "::error::PRIVATE_NAME_PATTERN is not configured; the tarball name scan cannot run"
             fail=1
