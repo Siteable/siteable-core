@@ -7,17 +7,22 @@
  * `matchMedia`.
  */
 import { describe, it, expect, afterEach } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { RenderBlock } from '../src/blocks/registry'
 import type { BlockConfig } from '../src/blocks/types'
 import {
+  BEHAVIOR_CASES,
+  EDITOR_CASES,
   FIXTURE_BLOCKS,
   controlledPanel,
   isMenuOpen,
   runBehaviorTable,
   type BehaviorAdapter,
 } from './helpers/behavior-test-table'
+import { FILTER_CASES } from './helpers/behavior-test-table-filter'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -95,7 +100,7 @@ const adapter: BehaviorAdapter = {
 }
 
 describe('editor preview behavior', () => {
-  runBehaviorTable(adapter)
+  runBehaviorTable(adapter, EDITOR_CASES)
 
   // The table only sees the resulting state; these two assertions pin
   // contracts that are editor-specific (a window-level Escape already exists
@@ -231,5 +236,37 @@ describe('editor preview behavior', () => {
 
     expect(document.querySelector('[role="tablist"]')).toBeNull()
     expect(document.body.textContent).toContain('First feature')
+  })
+})
+
+describe('behavior table export-only marker', () => {
+  // Both directions and the count: a row cannot be silently dropped from the
+  // editor run unless it is a filter row, and a filter row cannot leak into it.
+  it('marks exactly the filter rows export-only', () => {
+    const exportOnly = BEHAVIOR_CASES.filter((behaviorCase) => behaviorCase.exportOnly)
+    expect(exportOnly.length).toBeGreaterThan(0)
+    expect(exportOnly.every((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(true)
+    expect(
+      BEHAVIOR_CASES.filter((behaviorCase) => behaviorCase.behavior === 'filter').every(
+        (behaviorCase) => behaviorCase.exportOnly,
+      ),
+    ).toBe(true)
+    expect(EDITOR_CASES.length).toBe(BEHAVIOR_CASES.length - FILTER_CASES.length)
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(true)
+    expect(EDITOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(false)
+  })
+
+  // The export run replays the DEFAULT list; this pins both that every filter
+  // row is on it and that the export call site has not been switched over.
+  it('keeps every filter row on the list the export run replays', () => {
+    expect(BEHAVIOR_CASES.map((behaviorCase) => behaviorCase.id)).toEqual(
+      expect.arrayContaining(FILTER_CASES.map((behaviorCase) => behaviorCase.id)),
+    )
+    const source = readFileSync(
+      resolve(import.meta.dirname, 'behavior-table-export.test.ts'),
+      'utf8',
+    )
+    expect(source).toMatch(/runBehaviorTable\(adapter\)/)
+    expect(source).not.toMatch(/runBehaviorTable\(adapter,\s*EDITOR_CASES\)/)
   })
 })

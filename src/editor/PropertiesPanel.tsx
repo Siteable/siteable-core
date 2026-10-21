@@ -34,6 +34,9 @@ const ITEM_KEY_LABELS: Record<string, string> = {
   src: 'Source',
   alt: 'Alt Text',
   caption: 'Caption',
+  image: 'Image URL',
+  category: 'Category',
+  ctaText: 'CTA Text',
 }
 
 const blockFields: Partial<Record<BlockType, { sections: { title: string; fields: FieldDef[] }[] }>> = {
@@ -205,6 +208,26 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
           { key: 'title', label: 'Title', type: 'text' },
           { key: 'subtitle', label: 'Subtitle', type: 'text' },
           { key: 'items', label: 'Questions', type: 'array-items' },
+        ],
+      },
+    ],
+  },
+  'card-grid': {
+    sections: [
+      {
+        title: 'Content',
+        fields: [
+          { key: 'title', label: 'Title', type: 'text' },
+          { key: 'subtitle', label: 'Subtitle', type: 'text' },
+          { key: 'items', label: 'Products', type: 'array-items' },
+        ],
+      },
+      {
+        title: 'Style',
+        fields: [
+          // The empty value is the plain grid; the key is unset rather than
+          // stored as `''` when the default layout is chosen.
+          { key: 'display', label: 'Display', type: 'select', options: ['', 'filter'], optionLabels: { '': 'Default layout', filter: 'Category filter' } },
         ],
       },
     ],
@@ -543,6 +566,20 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
 
       // Infer new item shape from existing items, or use sensible defaults per field key
       function createEmptyItem(): Record<string, unknown> {
+        // The product card has a fixed item contract: every added card carries
+        // all eight keys, even when the first stored item is sparse. Extra keys
+        // already present on the first item are carried over with their type.
+        if (block.type === 'card-grid') {
+          const template: Record<string, unknown> = {
+            image: '', alt: '', name: '', description: '',
+            price: '', category: '', ctaText: '', ctaUrl: '',
+          }
+          for (const [key, val] of Object.entries(items[0] ?? {})) {
+            if (key in template) continue
+            template[key] = Array.isArray(val) ? [] : typeof val === 'string' ? '' : val
+          }
+          return template
+        }
         if (items.length > 0) {
           const template: Record<string, unknown> = {}
           for (const [key, val] of Object.entries(items[0])) {

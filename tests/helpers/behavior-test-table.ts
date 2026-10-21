@@ -3,10 +3,15 @@
  *
  * Menu and faq rows live here; tab rows live beside their helpers in
  * `behavior-test-table-tabs.ts`, carousel rows in
- * `behavior-test-table-carousel.ts`; all are appended to one array and replayed
+ * `behavior-test-table-carousel.ts` and filter rows in
+ * `behavior-test-table-filter.ts`; all are appended to one array and replayed
  * through `runCase` against an adapter that mounts one environment (an exported
  * page or the React editor preview). Expected values are identical for both, so
  * a divergence fails one of the two runs. Fixtures live in `behavior-fixtures.ts`.
+ *
+ * Filter rows are the exception: the editor canvas shows every card and renders
+ * no filter control, so those rows carry `exportOnly` and the editor run and the
+ * parity loops replay `EDITOR_CASES`.
  */
 import { it, expect } from 'vitest'
 import { FIXTURE_BLOCKS, type Fixture } from './behavior-fixtures'
@@ -18,6 +23,9 @@ import {
   CAROUSEL_CASES, applyCarouselStep, observeCarousels,
   type CarouselStep, type CarouselView,
 } from './behavior-test-table-carousel'
+import {
+  FILTER_CASES, applyFilterStep, observeFilters, type FilterStep, type FilterView,
+} from './behavior-test-table-filter'
 
 export { FIXTURE_BLOCKS }
 export type { Fixture }
@@ -49,6 +57,7 @@ export type Step =
   | { kind: 'reducedMotion'; on: boolean }
   | TabStep
   | CarouselStep
+  | FilterStep
 
 /** What one menu button and the panel it controls must look like. */
 export interface MenuView {
@@ -84,14 +93,23 @@ export interface ExpectedView {
   carousels?: CarouselView[]
   /** Focused carousel control as [region index, control]; null when none. */
   focusCarousel?: [number, 'prev' | 'next'] | null
+  /** One view per filter grid, in document order. */
+  filters?: FilterView[]
+  /** Button label text per filter grid, per grid. */
+  filterLabels?: string[][]
 }
 
 export interface BehaviorCase {
   id: string
-  behavior: 'menu' | 'faq' | 'tabs' | 'carousel'
+  behavior: 'menu' | 'faq' | 'tabs' | 'carousel' | 'filter'
   fixture: Fixture
   steps: Step[]
   expect: ExpectedView
+  /**
+   * True for rows only an exported page can run. A guard asserts that exactly
+   * the filter rows carry it and that none leak into `EDITOR_CASES`.
+   */
+  exportOnly?: true
 }
 
 const menuState = (open: boolean): MenuView => ({ expanded: open, hidden: !open, open, reference: true, label: true, noTransition: true })
@@ -113,7 +131,13 @@ export const BEHAVIOR_CASES: BehaviorCase[] = [
   { id: 'F4', behavior: 'faq', fixture: 'faq', steps: [clickFaq(2), clickFaq(2)], expect: { faq: [false, false, false] } },
   ...TAB_CASES,
   ...CAROUSEL_CASES,
+  ...FILTER_CASES,
 ]
+
+/** The full list minus the export-only rows; the export run keeps the full list. */
+export const EDITOR_CASES: BehaviorCase[] = BEHAVIOR_CASES.filter(
+  (behaviorCase) => !behaviorCase.exportOnly,
+)
 
 /** Panel element named by a button's `aria-controls`, when it exists. */
 export function controlledPanel(button: HTMLButtonElement): HTMLElement | null {
@@ -167,6 +191,10 @@ function applyStep(adapter: BehaviorAdapter, step: Step): void {
     case 'focusCarousel':
       applyCarouselStep(adapter, step)
       return
+    case 'clickFilter':
+    case 'focusFilter':
+      applyFilterStep(adapter, step)
+      return
     default: {
       const unhandled: never = step
       throw new Error(`unhandled step kind: ${JSON.stringify(unhandled)}`)
@@ -185,7 +213,7 @@ function observe(adapter: BehaviorAdapter, expected: ExpectedView): Record<strin
     view.distinctPanels = ids.length === new Set(ids).size && ids.every((id) => !!document.getElementById(id))
   }
   if (expected.faq) view.faq = adapter.faqButtons().map(isFaqOpen)
-  return { ...view, ...observeTabs(expected), ...observeCarousels(expected) }
+  return { ...view, ...observeTabs(expected), ...observeCarousels(expected), ...observeFilters(expected) }
 }
 
 /** Mount, drive and observe one case. Shared with the cross-environment parity runner. */

@@ -23,6 +23,11 @@ export type Fixture =
   | 'carousels-shared-id'
   | 'carousel-and-tabs'
   | 'carousel-scroller-variant'
+  | 'card-grid-filter'
+  | 'two-card-grids'
+  | 'card-grids-shared-id'
+  | 'card-grid-case-merge'
+  | 'card-grid-many-categories'
 
 const navbarBlock = (id: string, variant: string): BlockConfig => ({
   id,
@@ -121,6 +126,72 @@ const carouselGalleryBlock = (id: string, count: number): BlockConfig => ({
   },
 })
 
+/** A filter grid: two Shoes, one Hats, one Bags and one uncategorised card. */
+const cardGridFilterBlock = (): BlockConfig => ({
+  id: 'cg-1',
+  type: 'card-grid',
+  variant: 'product',
+  props: {
+    title: 'Products',
+    subtitle: 'Browse the range',
+    display: 'filter',
+    items: [
+      { name: 'Runner', category: 'Shoes', price: '$40' },
+      { name: 'Trail', category: 'Shoes', price: '$50' },
+      { name: 'Cap', category: 'Hats', price: '$20' },
+      { name: 'Tote', category: 'Bags', price: '$30' },
+      { name: 'Gift card' },
+    ],
+  },
+})
+
+/** A shorter filter grid (two Shoes, one Hats) used when two grids share a page. */
+const cardGridShortBlock = (id: string): BlockConfig => ({
+  id,
+  type: 'card-grid',
+  variant: 'product',
+  props: {
+    title: 'More products',
+    display: 'filter',
+    items: [
+      { name: 'Runner', category: 'Shoes' },
+      { name: 'Trail', category: 'Shoes' },
+      { name: 'Cap', category: 'Hats' },
+    ],
+  },
+})
+
+/** One category spelled three ways; trimming and lower-casing must merge them. */
+const cardGridCaseMergeBlock = (): BlockConfig => ({
+  id: 'cg-merge',
+  type: 'card-grid',
+  variant: 'product',
+  props: {
+    title: 'Sizes',
+    display: 'filter',
+    items: [
+      { name: 'Runner', category: 'Shoes' },
+      { name: 'Trail', category: ' shoes ' },
+      { name: 'Court', category: 'SHOES' },
+      { name: 'Cap', category: 'Hats' },
+    ],
+  },
+})
+
+/** Eight distinct categories, so a narrow viewport has a button row to wrap. */
+const cardGridManyCategoriesBlock = (): BlockConfig => ({
+  id: 'cg-many',
+  type: 'card-grid',
+  variant: 'product',
+  props: {
+    title: 'Departments',
+    display: 'filter',
+    items: ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'].map(
+      (category, index) => ({ name: `Item ${index + 1}`, category }),
+    ),
+  },
+})
+
 /** Block configs are the single source of markup for both environments. */
 export const FIXTURE_BLOCKS: Record<Fixture, BlockConfig[]> = { navbar: [navbarBlock('nav-1', 'default')],
   'two-navbars': [navbarBlock('nav-1', 'default'), navbarBlock('nav-2', 'centered')],
@@ -139,4 +210,9 @@ export const FIXTURE_BLOCKS: Record<Fixture, BlockConfig[]> = { navbar: [navbarB
   'carousels-shared-id': [carouselGalleryBlock('gal-1', 3), carouselGalleryBlock('gal-1', 3)],
   'carousel-and-tabs': [tabsBlock('feat-1', 'grid'), carouselTestimonialsBlock('test-1', 'cards', 3)],
   'carousel-scroller-variant': [carouselTestimonialsBlock('test-1', 'scroller', 2)],
+  'card-grid-filter': [cardGridFilterBlock()],
+  'two-card-grids': [cardGridShortBlock('cg-a'), cardGridShortBlock('cg-b')],
+  'card-grids-shared-id': [cardGridShortBlock('cg-1'), cardGridShortBlock('cg-1')],
+  'card-grid-case-merge': [cardGridCaseMergeBlock()],
+  'card-grid-many-categories': [cardGridManyCategoriesBlock()],
 }

@@ -23,6 +23,7 @@ import { BEHAVIOR_RUNTIME_SOURCE } from '../../src/lib/export-behavior-runtime'
 import { RenderBlock } from '../../src/blocks/registry'
 import {
   BEHAVIOR_CASES,
+  EDITOR_CASES,
   FIXTURE_BLOCKS,
   isFaqOpen,
   runCase,
@@ -383,7 +384,10 @@ describe('editor parity', () => {
     // The loop below can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'carousel')).toBe(true)
-    const rows = BEHAVIOR_CASES.map((behaviorCase) => ({
+    // Filter rows exist and are export-only, so the replay loop skips them.
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(true)
+    expect(EDITOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(false)
+    const rows = EDITOR_CASES.map((behaviorCase) => ({
       behaviorCase,
       editor: runCase(editorAdapter, behaviorCase),
       exported: runCase(exportAdapter, behaviorCase),
