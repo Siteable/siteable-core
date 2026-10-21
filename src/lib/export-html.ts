@@ -11,6 +11,7 @@ import { renderContent } from './export-blocks/render-content'
 import { renderImage } from './export-blocks/render-image'
 import { renderVideo } from './export-blocks/render-video'
 import { renderGallery } from './export-blocks/render-gallery'
+import { renderCardGrid } from './export-blocks/render-card-grid'
 import { renderDivider } from './export-blocks/render-divider'
 import { renderBanner } from './export-blocks/render-banner'
 import { renderFeaturesTabs, tabSetId } from './export-blocks/render-features-tabs'
@@ -1253,6 +1254,8 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
       return isCarouselBlock(block)
         ? renderGalleryCarousel(block, carouselRegionId(++ids.carousels))
         : renderGallery(block)
+    case 'card-grid':
+      return renderCardGrid(block)
     case 'divider':
       return renderDivider(block)
     case 'banner':

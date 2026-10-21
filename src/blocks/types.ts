@@ -18,6 +18,7 @@ export type BlockType =
   | 'image'
   | 'video'
   | 'gallery'
+  | 'card-grid'
 
 export type BlockVariant = string
 

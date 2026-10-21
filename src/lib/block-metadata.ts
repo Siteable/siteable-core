@@ -174,6 +174,16 @@ export const blockMetadata: BlockMeta[] = [
     defaultProps: { title: 'Gallery', images: defaultGalleryImages },
   },
   {
+    type: 'card-grid',
+    label: 'Card Grid',
+    description: 'Product cards in a grid with an optional category filter',
+    category: 'Commerce',
+    variants: ['product'],
+    // The empty item list is load-bearing: validated and imported configs must
+    // never gain sample products, so the block starts empty and renders nothing.
+    defaultProps: { title: '', subtitle: '', display: '', items: [] },
+  },
+  {
     type: 'divider',
     label: 'Divider',
     description: 'Visual separator between sections',

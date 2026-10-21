@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { validateSiteConfig, generateSiteConfig } from '../src/lib/generate-site'
 import { GENERATION_PROMPT } from '../src/lib/generation-prompt'
 import type { SiteConfig } from '../src/blocks/types'
@@ -411,5 +413,56 @@ describe('the carousel display option survives validation in both prop shapes', 
     // option render at all.
     const clauses = GENERATION_PROMPT.match(/display\?: "carousel"[^\n]*\d+\+/g) ?? []
     expect(clauses).toHaveLength(2)
+  })
+})
+
+describe('the card grid block contract', () => {
+  const items = [{ name: 'One', category: 'Shoes', price: '$1', ctaText: 'View', ctaUrl: 'https://x/i' }]
+
+  it('registers the block with the product variant and empty defaults', () => {
+    const config = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'card-grid', props: {} }] })
+    expect(config.pages![0].blocks[0].variant).toBe('product')
+    expect(firstBlockProps(config)).toEqual({ title: '', subtitle: '', display: '', items: [] })
+  })
+
+  it('maps an unknown variant to product', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'card-grid', variant: 'mystery', props: { items } }],
+    })
+    expect(config.pages![0].blocks[0].variant).toBe('product')
+  })
+
+  it('keeps a flattened display and items on the block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'card-grid', title: 'Products', display: 'filter', items }],
+    })
+    const props = firstBlockProps(config)
+    expect(props.display).toBe('filter')
+    expect(props.items).toEqual(items)
+  })
+
+  it('adds no sample products after two validation passes', () => {
+    // The import path runs validateSiteConfig over an already validated config.
+    const once = validateSiteConfig({ name: 'Sample', blocks: [{ type: 'card-grid', props: { items: [] } }] })
+    const twice = validateSiteConfig(JSON.parse(JSON.stringify(once)))
+    expect(firstBlockProps(twice)).toEqual({ title: '', subtitle: '', display: '', items: [] })
+  })
+
+  it('documents the block and its option in the generation prompt', () => {
+    expect(GENERATION_PROMPT).toContain('card-grid (variants: product)')
+    // The precondition keeps a generator from emitting the option where it can
+    // never render (fewer than two distinct categories).
+    expect(GENERATION_PROMPT).toMatch(/display\?: "filter"[^\n]*\d+\+/)
+  })
+
+  it('adds no sample card or product constant to the default-content module', () => {
+    const source = readFileSync(
+      join(import.meta.dirname, '..', 'src', 'lib', 'block-default-content.ts'),
+      'utf8',
+    )
+    const exportedNames = [...source.matchAll(/export const (\w+)/g)].map((match) => match[1])
+    expect(exportedNames.filter((name) => /card|product/i.test(name))).toEqual([])
   })
 })

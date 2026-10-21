@@ -1,5 +1,5 @@
 /**
- * Golden markup fixtures for the six new renderers, per variant.
+ * Golden markup fixtures for the export-block renderers, per variant.
  *
  * The fixtures under `tests/fixtures/export-blocks-golden/` are committed
  * reviewed output, NOT opaque `toMatchSnapshot()` blobs — each was read line by
@@ -17,6 +17,7 @@ import { renderContent } from '../src/lib/export-blocks/render-content'
 import { renderImage } from '../src/lib/export-blocks/render-image'
 import { renderVideo } from '../src/lib/export-blocks/render-video'
 import { renderGallery } from '../src/lib/export-blocks/render-gallery'
+import { renderCardGrid } from '../src/lib/export-blocks/render-card-grid'
 import { renderDivider } from '../src/lib/export-blocks/render-divider'
 import { renderBanner } from '../src/lib/export-blocks/render-banner'
 
@@ -133,6 +134,44 @@ const CASES: GoldenCase[] = [
     render: renderBanner,
     props: { text: 'Bar text', linkText: 'Go', linkUrl: 'https://example.com' },
   },
+  {
+    type: 'card-grid',
+    variant: 'product',
+    render: renderCardGrid,
+    props: {
+      title: 'Products',
+      subtitle: 'Pick a category',
+      display: 'filter',
+      items: [
+        {
+          image: 'https://cdn.example.com/shoe.png',
+          alt: 'A running shoe',
+          name: 'Shoe one',
+          description: 'A first product',
+          price: '$10',
+          category: 'Running',
+          ctaText: 'View',
+          ctaUrl: 'https://example.com/item-1',
+        },
+        {
+          name: 'Bag two',
+          description: 'A second product',
+          price: '$20',
+          category: 'Bags',
+        },
+        {
+          image: 'https://cdn.example.com/cap.png',
+          alt: '',
+          name: 'Cap three',
+          description: 'A third product',
+          price: '$30',
+          category: 'Running',
+          ctaText: 'View',
+          ctaUrl: 'javascript:alert(1)',
+        },
+      ],
+    },
+  },
 ]
 
 const FIXTURE_DIR = resolve(import.meta.dirname, 'fixtures/export-blocks-golden')
@@ -151,7 +190,7 @@ if (UPDATE && process.env.CI) {
   )
 }
 
-describe('golden markup for the six new renderers', () => {
+describe('golden markup for the export-block renderers', () => {
   for (const c of CASES) {
     it(`${c.type}-${c.variant}`, () => {
       const actual = c.render({ id: 'b', type: c.type, variant: c.variant, props: c.props })

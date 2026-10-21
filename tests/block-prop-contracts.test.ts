@@ -118,3 +118,28 @@ describe('banner string contract', () => {
     expect(props.linkUrl).toBe('#') // string default is '#' from defaultProps
   })
 })
+
+describe('card grid items contract', () => {
+  it('defaults every prop, with an empty item list and no sample products', () => {
+    expect(blockProps(doc('card-grid', {}))).toEqual({
+      title: '',
+      subtitle: '',
+      display: '',
+      items: [],
+    })
+  })
+
+  it('keeps raw item objects unchanged', () => {
+    const items = [{ name: 'One', category: 'Shoes', price: '$1' }]
+    expect(blockProps(doc('card-grid', { items })).items).toEqual(items)
+  })
+
+  it('keeps a garbage item array raw instead of replacing it with samples', () => {
+    expect(blockProps(doc('card-grid', { items: ['junk', 1, null] })).items).toEqual(['junk', 1, null])
+  })
+
+  it('keeps the display option', () => {
+    const props = blockProps(doc('card-grid', { display: 'filter', items: [{ name: 'One' }] }))
+    expect(props.display).toBe('filter')
+  })
+})
