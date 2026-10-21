@@ -55,6 +55,9 @@ export function FeaturesTabs({ props }: { props: FeaturesTabsProps }) {
   // from the event target — not from React state, which a programmatic focus
   // does not move.
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // Browser and OS shortcuts that use these keys (Alt+Left = Back, Cmd+Left/Right,
+    // Ctrl+Home, Shift+Arrow) are not ours to cancel.
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
     const index = buttons.current.indexOf(event.target as HTMLButtonElement)
     if (index < 0 || count === 0) return
     const next =
