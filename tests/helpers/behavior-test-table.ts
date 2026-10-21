@@ -30,14 +30,22 @@ export interface BehaviorAdapter {
   /** Activate an element, flushing framework updates before returning. */
   click(el: Element): void
   /** Dispatch a keyboard event on an element (it must bubble). */
-  key(el: Element, key: string): void
+  key(el: Element, key: string, mods?: KeyMods): void
   setReducedMotion(on: boolean): void
+}
+
+/** Modifier keys held during a `key` step; absent means none. */
+export interface KeyMods {
+  alt?: boolean
+  ctrl?: boolean
+  meta?: boolean
+  shift?: boolean
 }
 
 export type Step =
   | { kind: 'click'; target: 'menu' | 'faq'; index: number }
   | { kind: 'focusFirstPanelLink'; menu: number }
-  | { kind: 'key'; key: string }
+  | { kind: 'key'; key: string; mods?: KeyMods }
   | { kind: 'reducedMotion'; on: boolean }
   | TabStep
   | CarouselStep
@@ -146,7 +154,7 @@ function applyStep(adapter: BehaviorAdapter, step: Step): void {
       return
     }
     case 'key':
-      adapter.key(document.activeElement ?? document.body, step.key)
+      adapter.key(document.activeElement ?? document.body, step.key, step.mods)
       return
     case 'reducedMotion':
       adapter.setReducedMotion(step.on)

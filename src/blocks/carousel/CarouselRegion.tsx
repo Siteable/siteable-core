@@ -56,6 +56,9 @@ export function CarouselRegion({ title, subtitle, slides }: CarouselRegionProps)
     if (disabled) (which === 'prev' ? nextRef : prevRef).current?.focus()
   }
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    // Browser and OS shortcuts that use an arrow (Alt+Left = Back, Cmd+Left/Right, Ctrl+Arrow,
+    // Shift+Arrow) are not ours to cancel.
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     const to = current + (event.key === 'ArrowRight' ? 1 : -1)
     if (to < 0 || to > count - 1) return

@@ -346,9 +346,9 @@ describe('editor parity', () => {
     click(element) {
       act(() => (element as HTMLElement).click())
     },
-    key(element, key) {
+    key(element, key, mods) {
       act(() => {
-        element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+        element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, altKey: !!mods?.alt, ctrlKey: !!mods?.ctrl, metaKey: !!mods?.meta, shiftKey: !!mods?.shift }))
       })
     },
     setReducedMotion(on) {
@@ -367,8 +367,8 @@ describe('editor parity', () => {
     click(element) {
       ;(element as HTMLElement).click()
     },
-    key(element, key) {
-      element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    key(element, key, mods) {
+      element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, altKey: !!mods?.alt, ctrlKey: !!mods?.ctrl, metaKey: !!mods?.meta, shiftKey: !!mods?.shift }))
     },
     setReducedMotion(on) {
       ;(window as unknown as { matchMedia: (q: string) => MediaQueryList }).matchMedia = () =>

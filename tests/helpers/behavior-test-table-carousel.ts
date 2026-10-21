@@ -7,7 +7,7 @@
  * adapter method. The editor carries no `data-sb-*` hook: the export runtime
  * ignores a carousel it cannot find that way.
  */
-import type { BehaviorAdapter, BehaviorCase, ExpectedView } from './behavior-test-table'
+import type { BehaviorAdapter, BehaviorCase, ExpectedView, KeyMods } from './behavior-test-table'
 import { panelHasTransition, type TabSetView, type TabStep } from './behavior-test-table-tabs'
 
 /** The two control names are a frozen contract in both environments. */
@@ -142,7 +142,7 @@ const clickCarousel = (carousel: number, which: 'prev' | 'next'): CarouselStep =
 const focusCarousel = (carousel: number, which: 'prev' | 'next'): CarouselStep =>
   ({ kind: 'focusCarousel', carousel, which })
 const focusTab = (set: number, index: number): TabStep => ({ kind: 'focusTab', set, index })
-const key = (value: string) => ({ kind: 'key' as const, key: value })
+const key = (value: string, mods?: KeyMods) => ({ kind: 'key' as const, key: value, ...(mods ? { mods } : {}) })
 export const CAROUSEL_CASES: BehaviorCase[] = [
   { id: 'C1', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [], expect: { carousels: [carouselState(0, 3)] } },
   { id: 'C2', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [clickCarousel(0, 'next')], expect: { carousels: [carouselState(1, 3)] } },
@@ -166,4 +166,10 @@ export const CAROUSEL_CASES: BehaviorCase[] = [
   { id: 'C15', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [clickCarousel(0, 'next'), clickCarousel(0, 'prev')], expect: { carousels: [carouselState(0, 3)] } },
   // Focus recovery at an end: the activated control is disabled, so focus must move to the other one.
   { id: 'C16', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [clickCarousel(0, 'next'), clickCarousel(0, 'next')], expect: { carousels: [carouselState(2, 3)], focusCarousel: [0, 'prev'] } },
+  // A browser or OS shortcut that happens to use an arrow (Alt+Left = Back, Cmd+Left/Right = history,
+  // Ctrl+Arrow = word jump, Shift+Arrow = selection) must pass through untouched: no paging.
+  { id: 'C17', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [focusCarousel(0, 'next'), key('ArrowRight', { alt: true })], expect: { carousels: [carouselState(0, 3)] } },
+  { id: 'C18', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [focusCarousel(0, 'next'), key('ArrowRight', { meta: true })], expect: { carousels: [carouselState(0, 3)] } },
+  { id: 'C19', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [focusCarousel(0, 'next'), key('ArrowRight', { ctrl: true })], expect: { carousels: [carouselState(0, 3)] } },
+  { id: 'C20', behavior: 'carousel', fixture: 'carousel-testimonials', steps: [clickCarousel(0, 'next'), focusCarousel(0, 'prev'), key('ArrowLeft', { shift: true })], expect: { carousels: [carouselState(1, 3)] } },
 ]
