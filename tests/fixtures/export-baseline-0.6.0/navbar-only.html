@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Site</title>
+  <meta property="og:title" content="Site" />
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" />
+
+  <!-- Tailwind CSS (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-0': '#09090b',
+            'bg-1': '#0f0f12',
+            'bg-2': '#18181b',
+            'bg-3': '#1e1e23',
+            'bg-4': '#27272a',
+            'bg-5': '#303036',
+            'text-0': '#fafafa',
+            'text-1': '#a1a1aa',
+            'text-2': '#71717a',
+            'text-3': '#52525b',
+            'green': {
+              DEFAULT: '#22c55e',
+              dim: '#16a34a',
+            },
+            'border-default': '#2a2a2f',
+            'border-subtle': '#1f1f24',
+            'border-hover': '#3a3a3f',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', '-apple-system', 'system-ui', 'sans-serif'],
+            display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          borderRadius: {
+            DEFAULT: '8px',
+            lg: '12px',
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Theme CSS Custom Properties -->
+  <style>
+    :root {
+      --color-bg-0: #09090b;
+      --color-bg-1: #0f0f12;
+      --color-bg-2: #18181b;
+      --color-bg-3: #1e1e23;
+      --color-bg-4: #27272a;
+      --color-bg-5: #303036;
+      --color-text-0: #fafafa;
+      --color-text-1: #a1a1aa;
+      --color-text-2: #71717a;
+      --color-text-3: #52525b;
+      --color-green: #22c55e;
+      --color-green-dim: #16a34a;
+      --color-border-default: #2a2a2f;
+      --color-border-subtle: #1f1f24;
+      --color-border-hover: #3a3a3f;
+      --font-sans: "DM Sans", -apple-system, system-ui, sans-serif;
+      --font-display: "Space Grotesk", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+      --radius-default: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: "DM Sans", -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    .faq-content {
+      transition: max-height 0.2s ease, padding-bottom 0.2s ease;
+    }
+
+    .faq-chevron {
+      transition: transform 0.2s ease;
+    }
+  </style>
+
+
+  <noscript><style>[data-sb-menu-toggle]{display:none!important}
+@media (max-width:1023.98px){[data-sb-menu-panel]{display:block!important}}
+.faq-content{max-height:none!important;padding-bottom:1rem!important}
+.faq-chevron{display:none!important}</style></noscript>
+</head>
+<body>
+
+  <nav id="nav-1" class="px-6 md:px-10 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-green/10 flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-green"></div></div>
+      <span class="font-semibold text-[15px] text-text-0 tracking-tight">Acme</span>
+    </div>
+    <div class="hidden lg:flex items-center gap-6">
+          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">Product</span>
+          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">Features</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 rounded-lg bg-green text-black text-[13px] font-semibold hover:bg-green-dim transition-colors">Get Started</button>
+      <button type="button" data-sb-menu-toggle aria-label="Toggle menu" aria-expanded="false" aria-controls="sb_menu_1" class="lg:hidden w-9 h-9 rounded-lg border border-border-default flex items-center justify-center text-text-2 hover:text-text-0 hover:bg-bg-3 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </button>
+    </div>
+  </nav>
+  <div id="sb_menu_1" data-sb-menu-panel hidden class="lg:hidden px-6 md:px-10 pb-4">
+    <div class="flex flex-col gap-3 [&>a]:py-2 [&>a]:leading-6">
+          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">Product</span>
+          <span class="text-[13px] text-text-2 hover:text-text-0 transition-colors cursor-pointer">Features</span>
+    </div>
+  </div>
+
+    <script data-sb-runtime>(function(d,w){
+function rm(){return !!(w.matchMedia&&w.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function panelOf(b){return d.getElementById(b.getAttribute('aria-controls')||'')}
+function setMenu(b,open){var p=panelOf(b);if(!p)return;
+b.setAttribute('aria-expanded',open?'true':'false');p.hidden=!open}
+function faq(btn){
+var content=btn.nextElementSibling,chevron=btn.querySelector('.faq-chevron');
+var isOpen=btn.getAttribute('aria-expanded')==='true';
+var section=btn.closest('section');
+var items=section?section.querySelectorAll('[aria-expanded]'):[];
+for(var i=0;i<items.length;i++){
+var b=items[i],n=b.nextElementSibling,c=b.querySelector('.faq-chevron');
+b.setAttribute('aria-expanded','false');
+if(n){n.style.maxHeight='0';n.style.paddingBottom='0';if(rm())n.style.transition='none'}
+if(c){c.style.transform='';c.classList.remove('text-green');
+c.classList.remove('rotate-180');c.classList.add('text-text-3');
+if(rm())c.style.transition='none'}
+}
+if(!isOpen){
+btn.setAttribute('aria-expanded','true');
+if(content){content.style.maxHeight='500px';content.style.paddingBottom='1rem';
+if(rm())content.style.transition='none'}
+if(chevron){chevron.style.transform='rotate(180deg)';chevron.classList.add('text-green');
+chevron.classList.remove('text-text-3');if(rm())chevron.style.transition='none'}
+}
+}
+d.addEventListener('click',function(e){
+var t=e.target;if(!t||!t.closest)return;
+var b=t.closest('[data-sb-menu-toggle]');
+if(b){setMenu(b,b.getAttribute('aria-expanded')!=='true');return}
+b=t.closest('button');var n=b&&b.nextElementSibling;
+if(n&&n.classList.contains('faq-content'))faq(b);
+});
+d.addEventListener('keydown',function(e){
+if(e.key!=='Escape')return;
+var list=d.querySelectorAll('[data-sb-menu-toggle][aria-expanded="true"]');
+if(!list.length)return;
+var active=d.activeElement,focus=null,i,p;
+for(i=0;i<list.length;i++){
+p=panelOf(list[i]);
+if(active&&(list[i]===active||(p&&p.contains(active))))focus=list[i];
+}
+if(focus){setMenu(focus,false);focus.focus();return}
+// The editor only receives Escape from inside its own nav, so it never
+// reaches this close-all fallback. It is a superset, not a divergence.
+for(i=0;i<list.length;i++)setMenu(list[i],false);
+list[0].focus();
+});
+function tabsOf(t){var l=t.closest('[data-sb-tablist]');
+return l?l.querySelectorAll('[data-sb-tab]'):[]}
+function selectTab(t,move){var l=tabsOf(t),i,x,p,on;
+for(i=0;i<l.length;i++){
+x=l[i];on=x===t;
+x.setAttribute('aria-selected',on?'true':'false');x.tabIndex=on?0:-1;
+p=d.getElementById(x.getAttribute('aria-controls')||'');if(p)p.hidden=!on}
+if(move)t.focus()}
+d.addEventListener('click',function(e){
+var t=e.target,b=t&&t.closest&&t.closest('[data-sb-tab]');
+if(b)selectTab(b,false)});
+d.addEventListener('keydown',function(e){
+if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;var t=e.target,b=t&&t.closest&&t.closest('[data-sb-tab]');if(!b)return;
+var l=tabsOf(b),n=l.length,i=Array.prototype.indexOf.call(l,b),k=e.key,j=-1;
+if(!n)return;
+if(k==='ArrowRight')j=(i+1)%n;else if(k==='ArrowLeft')j=(i-1+n)%n;
+else if(k==='Home')j=0;else if(k==='End')j=n-1;
+if(j<0)return;e.preventDefault();selectTab(l[j],true)});
+function slidesOf(c){return c?c.querySelectorAll('[data-sb-carousel-slide]'):[]}function shown(s){var i;for(i=0;i<s.length;i++)if(!s[i].hidden)return i;return 0}
+function showSlide(c,to,b){var s=slidesOf(c),i,n=s.length,p,x,o;if(!n)return;to=to<0?0:(to>n-1?n-1:to);for(i=0;i<n;i++)s[i].hidden=i!==to;p=c.querySelector('[data-sb-carousel-prev]');x=c.querySelector('[data-sb-carousel-next]');if(p)p.disabled=to===0;if(x)x.disabled=to===n-1;if(b&&b.disabled){o=b===p?x:p;if(o)o.focus()}}
+d.addEventListener('click',function(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'),c;if(!b)return;c=b.closest('[data-sb-carousel]');if(!c)return;showSlide(c,shown(slidesOf(c))+(b.hasAttribute('data-sb-carousel-next')?1:-1),b)});
+d.addEventListener('keydown',function(e){var k=e.key,t=e.target,c;if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||(k!=='ArrowLeft'&&k!=='ArrowRight'))return;c=t&&t.closest&&t.closest('[data-sb-carousel]');if(!c)return;var s=slidesOf(c),to=shown(s)+(k==='ArrowRight'?1:-1);if(to<0||to>s.length-1)return;e.preventDefault();showSlide(c,to,t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'))});
+})(document,window);</script>
+</body>
+</html>
