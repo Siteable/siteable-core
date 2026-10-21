@@ -382,6 +382,7 @@ describe('editor parity', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
     // The loop below can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'carousel')).toBe(true)
     const rows = BEHAVIOR_CASES.map((behaviorCase) => ({
       behaviorCase,
       editor: runCase(editorAdapter, behaviorCase),

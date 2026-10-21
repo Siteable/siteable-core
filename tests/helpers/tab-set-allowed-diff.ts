@@ -62,7 +62,7 @@ function removeAll(html: string, literal: string): { html: string; count: number
  * sibling, so the comparison fails. A document with no terminator at all leaves
  * the remainder compared rather than truncated.
  */
-function maskSection(html: string, blockId: string): { html: string; count: number } {
+export function maskSection(html: string, blockId: string): { html: string; count: number } {
   const open = `<section id="${blockId}"`
   const CLOSE = '\n  </section>'
 

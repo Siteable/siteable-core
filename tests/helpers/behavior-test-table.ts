@@ -1,29 +1,23 @@
 /**
  * One behavior table, two environments.
  *
- * Menu and faq interactions are described in this module as `BEHAVIOR_CASES`;
- * the tab rows live beside their own observation helpers in
- * `behavior-test-table-tabs.ts` and are appended to the same array. Then the
- * rows are replayed against an adapter that mounts and drives one environment
- * (an exported page in a DOM document, or the React editor preview). Nothing here
- * knows which one it is running in: expected values are identical for both, so
- * a divergence fails one of the two runs. Later behaviors append a case — and,
- * where needed, a fixture.
- *
- * Fixtures live in `behavior-fixtures.ts`; the cases are replayed through
- * `runCase`, which the cross-environment parity runner reuses so a row cannot
- * be interpreted two different ways.
+ * Menu and faq rows live here; tab rows live beside their helpers in
+ * `behavior-test-table-tabs.ts`, carousel rows in
+ * `behavior-test-table-carousel.ts`; all are appended to one array and replayed
+ * through `runCase` against an adapter that mounts one environment (an exported
+ * page or the React editor preview). Expected values are identical for both, so
+ * a divergence fails one of the two runs. Fixtures live in `behavior-fixtures.ts`.
  */
 import { it, expect } from 'vitest'
 import { FIXTURE_BLOCKS, type Fixture } from './behavior-fixtures'
 import {
-  TAB_CASES,
-  applyTabStep,
-  observeTabs,
-  panelHasTransition,
-  type TabSetView,
-  type TabStep,
+  TAB_CASES, applyTabStep, observeTabs, panelHasTransition,
+  type TabSetView, type TabStep,
 } from './behavior-test-table-tabs'
+import {
+  CAROUSEL_CASES, applyCarouselStep, observeCarousels,
+  type CarouselStep, type CarouselView,
+} from './behavior-test-table-carousel'
 
 export { FIXTURE_BLOCKS }
 export type { Fixture }
@@ -46,6 +40,7 @@ export type Step =
   | { kind: 'key'; key: string }
   | { kind: 'reducedMotion'; on: boolean }
   | TabStep
+  | CarouselStep
 
 /** What one menu button and the panel it controls must look like. */
 export interface MenuView {
@@ -77,11 +72,15 @@ export interface ExpectedView {
   labels?: string[][]
   /** Description text per tab's panel, per set. */
   descriptions?: string[][]
+  /** One view per carousel region, in document order. */
+  carousels?: CarouselView[]
+  /** Focused carousel control as [region index, control]; null when none. */
+  focusCarousel?: [number, 'prev' | 'next'] | null
 }
 
 export interface BehaviorCase {
   id: string
-  behavior: 'menu' | 'faq' | 'tabs'
+  behavior: 'menu' | 'faq' | 'tabs' | 'carousel'
   fixture: Fixture
   steps: Step[]
   expect: ExpectedView
@@ -105,6 +104,7 @@ export const BEHAVIOR_CASES: BehaviorCase[] = [
   { id: 'F3', behavior: 'faq', fixture: 'faq', steps: [clickFaq(0)], expect: { faq: [false, false, false] } },
   { id: 'F4', behavior: 'faq', fixture: 'faq', steps: [clickFaq(2), clickFaq(2)], expect: { faq: [false, false, false] } },
   ...TAB_CASES,
+  ...CAROUSEL_CASES,
 ]
 
 /** Panel element named by a button's `aria-controls`, when it exists. */
@@ -127,6 +127,7 @@ function menuView(button: HTMLButtonElement): MenuView {
     label: (button.getAttribute('aria-label') ?? '').trim().length > 0, noTransition: !panelHasTransition(panel) }
 }
 
+/** Dispatch one step to the module that owns its kind; every kind is explicit. */
 function applyStep(adapter: BehaviorAdapter, step: Step): void {
   switch (step.kind) {
     case 'click': {
@@ -150,9 +151,18 @@ function applyStep(adapter: BehaviorAdapter, step: Step): void {
     case 'reducedMotion':
       adapter.setReducedMotion(step.on)
       return
-    default:
+    case 'clickTab':
+    case 'focusTab':
       applyTabStep(adapter, step)
       return
+    case 'clickCarousel':
+    case 'focusCarousel':
+      applyCarouselStep(adapter, step)
+      return
+    default: {
+      const unhandled: never = step
+      throw new Error(`unhandled step kind: ${JSON.stringify(unhandled)}`)
+    }
   }
 }
 
@@ -167,7 +177,7 @@ function observe(adapter: BehaviorAdapter, expected: ExpectedView): Record<strin
     view.distinctPanels = ids.length === new Set(ids).size && ids.every((id) => !!document.getElementById(id))
   }
   if (expected.faq) view.faq = adapter.faqButtons().map(isFaqOpen)
-  return { ...view, ...observeTabs(expected) }
+  return { ...view, ...observeTabs(expected), ...observeCarousels(expected) }
 }
 
 /** Mount, drive and observe one case. Shared with the cross-environment parity runner. */

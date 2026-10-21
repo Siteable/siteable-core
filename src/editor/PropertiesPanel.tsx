@@ -175,6 +175,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         title: 'Style',
         fields: [
           { key: 'variant', label: 'Variant', type: 'select', options: ['cards', 'scroller', 'spotlight'] },
+          { key: 'display', label: 'Display', type: 'select', options: ['', 'carousel'], optionLabels: { '': 'Default layout', carousel: 'Carousel' } },
         ],
       },
     ],
@@ -327,6 +328,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         title: 'Style',
         fields: [
           { key: 'variant', label: 'Variant', type: 'select', options: ['grid', 'masonry'] },
+          { key: 'display', label: 'Display', type: 'select', options: ['', 'carousel'], optionLabels: { '': 'Default layout', carousel: 'Carousel' } },
         ],
       },
     ],

@@ -14,7 +14,11 @@ import { renderGallery } from './export-blocks/render-gallery'
 import { renderDivider } from './export-blocks/render-divider'
 import { renderBanner } from './export-blocks/render-banner'
 import { renderFeaturesTabs, tabSetId } from './export-blocks/render-features-tabs'
+import { renderTestimonialsCarousel } from './export-blocks/render-testimonials-carousel'
+import { renderGalleryCarousel } from './export-blocks/render-gallery-carousel'
 import {
+  carouselRegionId,
+  isCarouselBlock,
   isFeaturesTabSet,
   MENU_PANEL_ID_PREFIX,
   needsBehaviorRuntime,
@@ -1180,13 +1184,16 @@ ${logosHtml}
 // ---------------------------------------------------------------------------
 
 /**
- * Per-document id counters. A navbar panel and a tab set each need a suffix that
- * is unique on the PAGE, and a block id cannot supply one: it may be absent, and
- * two blocks may share it. Separate counters keep the two id families disjoint.
+ * Per-document id counters. A navbar panel, a tab set and a carousel region each
+ * need a suffix that is unique on the PAGE, and a block id cannot supply one: it
+ * may be absent, and two blocks may share it. Separate counters keep the three id
+ * families disjoint; the carousel counter numbers the region and the heading its
+ * `aria-labelledby` points at (`sb_carousel_{n}title`).
  */
 interface EmitIds {
   menu: number
   tabs: number
+  carousels: number
 }
 
 function renderBlock(
@@ -1219,7 +1226,11 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
     case 'footer':
       return renderFooter(block)
     case 'testimonials':
-      return renderTestimonials(block)
+      // The opt-in carousel diverges here and nowhere else, so a block without
+      // the option keeps the default renderer's bytes exactly.
+      return isCarouselBlock(block)
+        ? renderTestimonialsCarousel(block, carouselRegionId(++ids.carousels))
+        : renderTestimonials(block)
     case 'stats':
       return renderStats(block)
     case 'faq':
@@ -1239,7 +1250,9 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
     case 'video':
       return renderVideo(block)
     case 'gallery':
-      return renderGallery(block)
+      return isCarouselBlock(block)
+        ? renderGalleryCarousel(block, carouselRegionId(++ids.carousels))
+        : renderGallery(block)
     case 'divider':
       return renderDivider(block)
     case 'banner':
@@ -1339,7 +1352,7 @@ export function renderDocument(
   const needs = needsBehaviorRuntime(body)
 
   const seenIds = new Set<string>()
-  const emitIds: EmitIds = { menu: 0, tabs: 0 }
+  const emitIds: EmitIds = { menu: 0, tabs: 0, carousels: 0 }
   const blocksHtml = body.map((b) => renderBlock(b, seenIds, emitIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()

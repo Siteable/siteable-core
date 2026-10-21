@@ -343,3 +343,73 @@ describe('the features display option survives validation in both prop shapes', 
     expect(GENERATION_PROMPT).toMatch(/display\?: "tabs"[^\n]*\d+\+/)
   })
 })
+
+describe('the carousel display option survives validation in both prop shapes', () => {
+  const items = [
+    { name: 'One', role: 'Role', quote: 'First' },
+    { name: 'Two', role: 'Role', quote: 'Second' },
+  ]
+  const images = [
+    { src: '', alt: 'Image 1', caption: 'First' },
+    { src: '', alt: 'Image 2', caption: 'Second' },
+  ]
+
+  it('a flattened display is kept on a testimonials block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'testimonials', title: 'Stories', display: 'carousel', items }],
+    })
+    expect(firstBlockProps(config).display).toBe('carousel')
+  })
+
+  it('a flattened display is kept on a gallery block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'gallery', title: 'Gallery', display: 'carousel', images }],
+    })
+    expect(firstBlockProps(config).display).toBe('carousel')
+  })
+
+  it('a nested display is kept on either block', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        { type: 'testimonials', props: { title: 'Stories', display: 'carousel', items } },
+        { type: 'gallery', props: { title: 'Gallery', display: 'carousel', images } },
+      ],
+    })
+    expect(config.pages![0].blocks.map((block) => block.props.display)).toEqual([
+      'carousel',
+      'carousel',
+    ])
+  })
+
+  it('display stays absent when the option is not set', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [
+        { type: 'testimonials', title: 'Stories', items },
+        { type: 'gallery', title: 'Gallery', images },
+      ],
+    })
+    for (const block of config.pages![0].blocks) {
+      expect(block.props).not.toHaveProperty('display')
+    }
+  })
+
+  it('a flattened display on another block type is still dropped', () => {
+    const config = validateSiteConfig({
+      name: 'Sample',
+      blocks: [{ type: 'hero', headline: 'h', display: 'carousel' }],
+    })
+    expect(firstBlockProps(config)).not.toHaveProperty('display')
+  })
+
+  it('the generation prompt documents the option for both blocks with its precondition', () => {
+    expect(GENERATION_PROMPT).toContain('display?: "carousel"')
+    // One clause per block, each tied to the two-item threshold that makes the
+    // option render at all.
+    const clauses = GENERATION_PROMPT.match(/display\?: "carousel"[^\n]*\d+\+/g) ?? []
+    expect(clauses).toHaveLength(2)
+  })
+})

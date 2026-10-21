@@ -27,13 +27,22 @@ export type TabStep =
   | { kind: 'clickTab'; set: number; index: number }
   | { kind: 'focusTab'; set: number; index: number }
 
-/** Shared with the menu observation: a panel must not animate its state change. */
+/**
+ * Shared with the menu observation: a panel must not animate its state change.
+ *
+ * The utility name is taken AFTER any variant prefix, so a responsive or
+ * motion-gated class (`md:transition-all`, `motion-safe:transition-opacity`)
+ * counts as an animation. Matching the raw token would let every prefixed
+ * transition pass this check unnoticed, which is the same prefix hole the
+ * display-token check beside it already guards against.
+ */
 export function panelHasTransition(panel: HTMLElement | null): boolean {
   if (!panel) return false
-  const hasTransition = panel.className.split(/\s+/).some(
-    (name) => (name.startsWith('transition') && name !== 'transition-none') ||
-      (name.startsWith('animate') && name !== 'animate-none'),
-  )
+  const hasTransition = panel.className.split(/\s+/).some((token) => {
+    const name = token.split(':').pop() ?? ''
+    return (name.startsWith('transition') && name !== 'transition-none') ||
+      (name.startsWith('animate') && name !== 'animate-none')
+  })
   return hasTransition || panel.style.transition !== ''
 }
 

@@ -13,6 +13,7 @@
  * pass a test that expects a populated page.
  */
 import {
+  carouselRules,
   renderBehaviorNoscript,
   renderBehaviorScript,
 } from '../../src/lib/export-behavior-runtime'
@@ -157,4 +158,20 @@ export function stripRuntimeScriptText(html: string): StripResult<{ scripts: num
   }
 
   return { html: out + rest, counts: { scripts } }
+}
+
+/**
+ * Remove the carousel rules from a no-script block, counting the strip.
+ *
+ * A page that renders a carousel gains these rules on their own line, after the
+ * menu/faq rules the released export already emitted. They are the ONLY addition
+ * this rule tolerates: the frozen document has no carousel, so everything else in
+ * it stays compared. Bounded by the literal emitted string rather than a regex —
+ * the runtime source quotes the same two selectors but not their declarations, so
+ * the bare literal cannot match there.
+ */
+export function stripCarouselRules(html: string): StripResult<{ carouselRules: number }> {
+  const lines = removeAll(html, '\n' + carouselRules)
+  const bare = removeAll(lines.html, carouselRules)
+  return { html: bare.html, counts: { carouselRules: lines.count + bare.count } }
 }
