@@ -7,7 +7,7 @@
  * `data-sb-*` hook: the export runtime ignores a tab it cannot find that way,
  * so the two environments can share one document without double handling.
  */
-import type { BehaviorAdapter, BehaviorCase, ExpectedView } from './behavior-test-table'
+import type { BehaviorAdapter, BehaviorCase, ExpectedView, KeyMods } from './behavior-test-table'
 
 /** What one tab set must look like, observed per tab in document order. */
 export interface TabSetView {
@@ -156,7 +156,7 @@ const tabState = (selected: number, count = 3): TabSetView => ({
 
 const clickTab = (set: number, index: number): TabStep => ({ kind: 'clickTab', set, index })
 const focusTab = (set: number, index: number): TabStep => ({ kind: 'focusTab', set, index })
-const key = (value: string) => ({ kind: 'key' as const, key: value })
+const key = (value: string, mods?: KeyMods) => ({ kind: 'key' as const, key: value, ...(mods ? { mods } : {}) })
 
 export const TAB_CASES: BehaviorCase[] = [
   { id: 'T1', behavior: 'tabs', fixture: 'tabs', steps: [], expect: { tabs: [tabState(0)] } },
@@ -176,4 +176,10 @@ export const TAB_CASES: BehaviorCase[] = [
   // focused tab, not from the selected one. Reading React state (or the
   // selection index) instead of the event target resolves Right from tab 1 here.
   { id: 'T13', behavior: 'tabs', fixture: 'tabs', steps: [focusTab(0, 2), key('ArrowRight')], expect: { tabs: [tabState(0)], focusTab: [0, 0] } },
+  // A browser or OS shortcut that uses one of these keys (Alt+Left = Back, Cmd+Left/Right = history,
+  // Ctrl+Home = scroll to top, Shift+Arrow = selection) must pass through untouched: no tab moves.
+  { id: 'T14', behavior: 'tabs', fixture: 'tabs', steps: [focusTab(0, 0), key('ArrowRight', { alt: true })], expect: { tabs: [tabState(0)], focusTab: [0, 0] } },
+  { id: 'T15', behavior: 'tabs', fixture: 'tabs', steps: [focusTab(0, 0), key('ArrowLeft', { meta: true })], expect: { tabs: [tabState(0)], focusTab: [0, 0] } },
+  { id: 'T16', behavior: 'tabs', fixture: 'tabs', steps: [clickTab(0, 2), focusTab(0, 2), key('Home', { ctrl: true })], expect: { tabs: [tabState(2)], focusTab: [0, 2] } },
+  { id: 'T17', behavior: 'tabs', fixture: 'tabs', steps: [focusTab(0, 0), key('End', { shift: true })], expect: { tabs: [tabState(0)], focusTab: [0, 0] } },
 ]

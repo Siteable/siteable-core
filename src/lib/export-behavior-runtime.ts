@@ -90,7 +90,7 @@ export const BEHAVIOR_RUNTIME_SOURCE = [
   'var t=e.target,b=t&&t.closest&&t.closest(\'[data-sb-tab]\');',
   'if(b)selectTab(b,false)});',
   "d.addEventListener('keydown',function(e){",
-  'var t=e.target,b=t&&t.closest&&t.closest(\'[data-sb-tab]\');if(!b)return;',
+  'if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;var t=e.target,b=t&&t.closest&&t.closest(\'[data-sb-tab]\');if(!b)return;',
   'var l=tabsOf(b),n=l.length,i=Array.prototype.indexOf.call(l,b),k=e.key,j=-1;',
   'if(!n)return;',
   "if(k==='ArrowRight')j=(i+1)%n;else if(k==='ArrowLeft')j=(i-1+n)%n;",
