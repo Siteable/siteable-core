@@ -74,9 +74,18 @@ const adapter: BehaviorAdapter = {
   click(el) {
     act(() => (el as HTMLElement).click())
   },
-  key(el, key) {
+  key(el, key, mods) {
     act(() => {
-      el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+      el.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key,
+          bubbles: true,
+          altKey: !!mods?.alt,
+          ctrlKey: !!mods?.ctrl,
+          metaKey: !!mods?.meta,
+          shiftKey: !!mods?.shift,
+        }),
+      )
     })
   },
   setReducedMotion(on) {

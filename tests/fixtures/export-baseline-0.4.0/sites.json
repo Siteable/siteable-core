@@ -384,6 +384,430 @@
         ]
       },
       "options": null
+    },
+    {
+      "slug": "testimonials-no-display",
+      "note": "Three testimonials with no `display` prop. The default rendering every opted-in testimonials site must stay byte-identical to.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "What people say",
+              "items": [
+                { "name": "First Person", "role": "Role One", "quote": "First quote", "rating": 5 },
+                { "name": "Second Person", "role": "Role Two", "quote": "Second quote", "rating": 4 },
+                { "name": "Third Person", "role": "Role Three", "quote": "Third quote" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "gallery-no-display",
+      "note": "Four gallery images with no `display` prop. The default rendering every opted-in gallery site must stay byte-identical to.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Gallery",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third caption" },
+                { "src": "", "alt": "Image 4", "caption": "Fourth caption" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "carousels-one-item",
+      "note": "A one-item testimonials block and a one-image gallery block, both asking for a carousel. Below the two-item threshold, so the default rendering is the frozen reference.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "One quote",
+              "display": "carousel",
+              "items": [{ "name": "Only Person", "role": "Role One", "quote": "Only quote" }]
+            }
+          },
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "One image",
+              "display": "carousel",
+              "images": [{ "src": "", "alt": "Image 1", "caption": "Only caption" }]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "carousels-hostile-display",
+      "note": "Seven blocks whose `display` value is a wrong-case string, a padded string, a near-miss string, a number, an object, an array and an injection-shaped string. 0.4.0 ignores `display` entirely, so every block renders as its variant default; that is exactly what this file freezes.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-upper",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Uppercase",
+              "display": "CAROUSEL",
+              "items": [
+                { "name": "Alpha One", "role": "Role One", "quote": "First uppercase quote" },
+                { "name": "Alpha Two", "role": "Role Two", "quote": "Second uppercase quote" },
+                { "name": "Alpha Three", "role": "Role Three", "quote": "Third uppercase quote" }
+              ]
+            }
+          },
+          {
+            "id": "g-padded",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Padded",
+              "display": " carousel",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First padded caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second padded caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third padded caption" }
+              ]
+            }
+          },
+          {
+            "id": "t-singular",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Plural",
+              "display": "carousels",
+              "items": [
+                { "name": "Beta One", "role": "Role One", "quote": "First plural quote" },
+                { "name": "Beta Two", "role": "Role Two", "quote": "Second plural quote" },
+                { "name": "Beta Three", "role": "Role Three", "quote": "Third plural quote" }
+              ]
+            }
+          },
+          {
+            "id": "g-number",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Number",
+              "display": 1,
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First numeric caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second numeric caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third numeric caption" }
+              ]
+            }
+          },
+          {
+            "id": "t-object",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Object",
+              "display": {},
+              "items": [
+                { "name": "Gamma One", "role": "Role One", "quote": "First object quote" },
+                { "name": "Gamma Two", "role": "Role Two", "quote": "Second object quote" },
+                { "name": "Gamma Three", "role": "Role Three", "quote": "Third object quote" }
+              ]
+            }
+          },
+          {
+            "id": "g-array",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Array",
+              "display": ["carousel"],
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First array caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second array caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third array caption" }
+              ]
+            }
+          },
+          {
+            "id": "t-injection",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Injection",
+              "display": "\"><script>alert(1)</script>",
+              "items": [
+                { "name": "Delta One", "role": "Role One", "quote": "First injection quote" },
+                { "name": "Delta Two", "role": "Role Two", "quote": "Second injection quote" },
+                { "name": "Delta Three", "role": "Role Three", "quote": "Third injection quote" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "carousel-testimonials",
+      "note": "A three-item testimonials block asking for a carousel. Captured from 0.4.0, where the option does not exist yet, so the frozen document is the default rendering.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Customer stories",
+              "display": "carousel",
+              "items": [
+                { "name": "First Person", "role": "Role One", "quote": "First quote" },
+                { "name": "Second Person", "role": "Role Two", "quote": "Second quote" },
+                { "name": "Third Person", "role": "Role Three", "quote": "Third quote" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "carousel-gallery",
+      "note": "A four-image gallery block asking for a carousel. Captured from 0.4.0, where the option does not exist yet, so the frozen document is the default rendering.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Image gallery",
+              "display": "carousel",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third caption" },
+                { "src": "", "alt": "Image 4", "caption": "Fourth caption" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "carousel-variants",
+      "note": "Five blocks asking for a carousel, one per variant: testimonials cards, scroller and spotlight, gallery grid and masonry. Captured from 0.4.0, where the option does not exist yet.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-cards",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Cards",
+              "display": "carousel",
+              "items": [
+                { "name": "Cards One", "role": "Role One", "quote": "Cards quote one" },
+                { "name": "Cards Two", "role": "Role Two", "quote": "Cards quote two" },
+                { "name": "Cards Three", "role": "Role Three", "quote": "Cards quote three" }
+              ]
+            }
+          },
+          {
+            "id": "t-scroller",
+            "type": "testimonials",
+            "variant": "scroller",
+            "props": {
+              "title": "Scroller",
+              "display": "carousel",
+              "items": [
+                { "name": "Scroller One", "role": "Role One", "quote": "Scroller quote one" },
+                { "name": "Scroller Two", "role": "Role Two", "quote": "Scroller quote two" },
+                { "name": "Scroller Three", "role": "Role Three", "quote": "Scroller quote three" }
+              ]
+            }
+          },
+          {
+            "id": "t-spotlight",
+            "type": "testimonials",
+            "variant": "spotlight",
+            "props": {
+              "title": "Spotlight",
+              "display": "carousel",
+              "items": [
+                { "name": "Spotlight One", "role": "Role One", "quote": "Spotlight quote one" },
+                { "name": "Spotlight Two", "role": "Role Two", "quote": "Spotlight quote two" },
+                { "name": "Spotlight Three", "role": "Role Three", "quote": "Spotlight quote three" }
+              ]
+            }
+          },
+          {
+            "id": "g-grid",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Grid",
+              "display": "carousel",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First grid caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second grid caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third grid caption" }
+              ]
+            }
+          },
+          {
+            "id": "g-masonry",
+            "type": "gallery",
+            "variant": "masonry",
+            "props": {
+              "title": "Masonry",
+              "display": "carousel",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First masonry caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second masonry caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third masonry caption" },
+                { "src": "", "alt": "Image 4", "caption": "Fourth masonry caption" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "navbar-faq-carousel",
+      "note": "Navbar plus FAQ plus a three-item testimonials block asking for a carousel. This page carries the behavior runtime, so it is compared with the script-element text emptied on both sides rather than byte-for-byte.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": ["Product", "Features"],
+              "ctaText": "Get Started"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "FAQ",
+              "items": [{ "question": "What is this?", "answer": "A carousel page with a runtime" }]
+            }
+          },
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Customer stories",
+              "display": "carousel",
+              "items": [
+                { "name": "First Person", "role": "Role One", "quote": "First quote" },
+                { "name": "Second Person", "role": "Role Two", "quote": "Second quote" },
+                { "name": "Third Person", "role": "Role Three", "quote": "Third quote" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "two-page-carousel",
+      "note": "Two pages: page 1 is a three-item testimonials block asking for a carousel, page 2 is a hero only. Captured as `two-page-carousel--1.html` and `two-page-carousel--2.html`.",
+      "multipage": true,
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Customer stories",
+              "display": "carousel",
+              "items": [
+                { "name": "First Person", "role": "Role One", "quote": "First quote" },
+                { "name": "Second Person", "role": "Role Two", "quote": "Second quote" },
+                { "name": "Third Person", "role": "Role Three", "quote": "Third quote" }
+              ]
+            }
+          }
+        ],
+        "pages": [
+          {
+            "id": "page-carousel",
+            "name": "Carousel",
+            "path": "/",
+            "blocks": [
+              {
+                "id": "t-1",
+                "type": "testimonials",
+                "variant": "cards",
+                "props": {
+                  "title": "Customer stories",
+                  "display": "carousel",
+                  "items": [
+                    { "name": "First Person", "role": "Role One", "quote": "First quote" },
+                    { "name": "Second Person", "role": "Role Two", "quote": "Second quote" },
+                    { "name": "Third Person", "role": "Role Three", "quote": "Third quote" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "page-plain",
+            "name": "Plain",
+            "path": "/plain/",
+            "blocks": [
+              {
+                "id": "h-1",
+                "type": "hero",
+                "variant": "gradient",
+                "props": {
+                  "headline": "Plain page",
+                  "subheadline": "No display prop anywhere",
+                  "primaryCta": "Start",
+                  "primaryCtaUrl": "https://example.com/start"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": null
     }
   ]
 }

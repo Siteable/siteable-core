@@ -133,10 +133,11 @@ const FLAT_EXTRA_PROPS: Record<string, readonly string[]> = {
   features: ['label', 'display'],
   cta: ['buttonUrl'],
   footer: ['logoImage'],
-  testimonials: ['subtitle'],
+  testimonials: ['subtitle', 'display'],
   faq: ['subtitle'],
   newsletter: ['socialProof'],
   image: ['src', 'alt'],
+  gallery: ['display'],
 }
 
 // Generators routinely emit props flattened onto the block object instead of

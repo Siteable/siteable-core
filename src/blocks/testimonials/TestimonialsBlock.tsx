@@ -5,6 +5,8 @@ import type { BlockConfig } from '../types'
 // with the prop normalizer (was an inline literal; avatar:'' additions are
 // falsy → initials branch renders byte-identically).
 import { defaultTestimonials } from '@/lib/block-default-content'
+import { isCarouselBlock } from '@/lib/export-behavior-runtime'
+import { TestimonialsCarousel } from './TestimonialsCarousel'
 
 interface Testimonial {
   name: string
@@ -17,6 +19,7 @@ interface Testimonial {
 interface TestimonialsProps {
   title?: string
   subtitle?: string
+  display?: string
   items?: Testimonial[]
 }
 
@@ -189,6 +192,11 @@ function TestimonialsSpotlight({ props }: { props: TestimonialsProps }) {
 
 export function TestimonialsBlock({ block }: { block: BlockConfig }) {
   const props = block.props as unknown as TestimonialsProps
+
+  // The opt-in layout shares its predicate with the exporter, so an unknown
+  // `display` value (or fewer than two items) falls through to the default
+  // layout in both places.
+  if (isCarouselBlock(block)) return <TestimonialsCarousel props={props} />
 
   switch (block.variant) {
     // 'carousel' was this variant's name before it was renamed. Projects

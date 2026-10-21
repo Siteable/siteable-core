@@ -1,40 +1,33 @@
 /**
  * Behavior runtime for exported pages.
  *
- * Every exported page that contains a navbar, faq or tabs block gets ONE inline
- * script (never a separate asset) that wires the behaviors through delegated
- * document listeners, so it performs no initialization work of its own:
+ * Every page with a navbar, faq, tabs or carousel block gets ONE inline script
+ * (never a separate asset) that wires the behaviors through delegated document
+ * listeners and performs no initialization work of its own:
+ *  - menu: `data-sb-menu-toggle` toggles the element its `aria-controls` names
+ *    through `hidden`, so nothing animates, with `aria-expanded` mirroring it;
+ *    Escape closes the panel owning focus (else every open panel) and focuses it.
+ *  - faq: a `button` followed by `.faq-content` keeps the legacy accordion — one
+ *    open item per section, the open item closes, inline sizing.
+ *  - tabs: `data-sb-tab` in a `data-sb-tablist` selects itself and shows the panel
+ *    its `aria-controls` names, every tab mirrors it; arrows and Home/End move both.
+ *  - carousel: `data-sb-carousel` pages one `data-sb-carousel-slide` at a time via
+ *    prev/next; the ends do not loop (that control is `disabled`), Left/Right act
+ *    only inside it, and no timer runs.
  *
- *  - menu: a button carrying `data-sb-menu-toggle` toggles the element named by
- *    its `aria-controls` id. The panel is hidden through the `hidden`
- *    attribute, so nothing animates; `aria-expanded` mirrors the state. Escape
- *    closes the panel that owns focus and returns focus to its button; when no
- *    open panel owns focus it closes every open panel and focuses the first.
- *  - faq: a `button` whose next sibling is `.faq-content` keeps the legacy
- *    accordion semantics — one item open per section, clicking the open item
- *    closes it, `aria-expanded` per button, inline max-height and padding.
- *  - tabs: a button carrying `data-sb-tab` inside a `data-sb-tablist` selects
- *    itself and shows the panel its `aria-controls` names. Arrow keys and
- *    Home/End move the selection and the focus together; every tab of the set
- *    mirrors the state, so a tab list never depends on a class or a CSS rule to
- *    show which panel is open.
- *
- * The script is held as a plain string rather than a TypeScript function so the
- * emitted bytes never depend on the build toolchain: exported pages are
- * compared byte-for-byte against frozen baselines, and a test gzips this
- * constant against a hard cap. Keep it hand-compact and ES2017.
- *
- * Classes toggled at runtime (`text-green`, `text-text-3`, `rotate-180`) live
- * in this file on purpose: a future CSS build scans this one module for the
- * class names it must preserve.
- *
- * This module imports nothing. It reaches the worker bundle through the
- * exporter, so any import — even a relative one — would drag the editor layer
- * into a framework-free build.
+ * The script is a plain string, not a TS function, so the emitted bytes never depend on
+ * the build toolchain: pages are compared byte-for-byte against frozen baselines and a
+ * test gzips this constant against a hard cap. Keep it compact and ES2017, keep the
+ * runtime-toggled classes (`text-green`, `text-text-3`, `rotate-180`) here so a CSS scan
+ * sees them, and import nothing so the worker bundle stays free of the editor layer.
  */
 
 export const MENU_PANEL_ID_PREFIX = 'sb_menu_'
 export const TAB_ID_PREFIX = 'sb_tabs_'
+export const CAROUSEL_ID_PREFIX = 'sb_carousel_'
+
+/** Per-document carousel region id — `_` never appears in a generated anchor id. */
+export const carouselRegionId = (n: number): string => CAROUSEL_ID_PREFIX + n
 
 export const BEHAVIOR_RUNTIME_SOURCE = [
   '(function(d,w){',
@@ -103,6 +96,10 @@ export const BEHAVIOR_RUNTIME_SOURCE = [
   "if(k==='ArrowRight')j=(i+1)%n;else if(k==='ArrowLeft')j=(i-1+n)%n;",
   "else if(k==='Home')j=0;else if(k==='End')j=n-1;",
   'if(j<0)return;e.preventDefault();selectTab(l[j],true)});',
+  'function slidesOf(c){return c?c.querySelectorAll(\'[data-sb-carousel-slide]\'):[]}function shown(s){var i;for(i=0;i<s.length;i++)if(!s[i].hidden)return i;return 0}',
+  'function showSlide(c,to,b){var s=slidesOf(c),i,n=s.length,p,x,o;if(!n)return;to=to<0?0:(to>n-1?n-1:to);for(i=0;i<n;i++)s[i].hidden=i!==to;p=c.querySelector(\'[data-sb-carousel-prev]\');x=c.querySelector(\'[data-sb-carousel-next]\');if(p)p.disabled=to===0;if(x)x.disabled=to===n-1;if(b&&b.disabled){o=b===p?x:p;if(o)o.focus()}}',
+  "d.addEventListener('click',function(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'),c;if(!b)return;c=b.closest('[data-sb-carousel]');if(!c)return;showSlide(c,shown(slidesOf(c))+(b.hasAttribute('data-sb-carousel-next')?1:-1),b)});",
+  "d.addEventListener('keydown',function(e){var k=e.key,t=e.target,c;if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||(k!=='ArrowLeft'&&k!=='ArrowRight'))return;c=t&&t.closest&&t.closest('[data-sb-carousel]');if(!c)return;var s=slidesOf(c),to=shown(s)+(k==='ArrowRight'?1:-1);if(to<0||to>s.length-1)return;e.preventDefault();showSlide(c,to,t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'))});",
   '})(document,window);',
 ].join('\n')
 
@@ -125,6 +122,14 @@ export const TABS_NOSCRIPT_CSS = [
   '[data-sb-tab-panel],[data-sb-tab-title]{display:block!important}',
 ].join('\n')
 
+/** Script-less carousel: controls dropped, every slide a block; `!important` beats `hidden`. */
+export const CAROUSEL_NOSCRIPT_CSS = [
+  '[data-sb-carousel-prev],[data-sb-carousel-next]{display:none!important}',
+  '[data-sb-carousel-slide]{display:block!important}',
+].join('\n')
+
+export const carouselRules = CAROUSEL_NOSCRIPT_CSS // same literal, for the normalizers
+
 /** True for a navbar or faq block — the two widgets the runtime shipped with. */
 function isMenuOrFaq(block: unknown): boolean {
   if (!block || typeof block !== 'object') return false
@@ -133,10 +138,9 @@ function isMenuOrFaq(block: unknown): boolean {
 }
 
 /**
- * True for a features block that renders as a tab set: `display` must be the
- * exact string `tabs` and the block must carry at least two items, because a
- * single item has nothing to switch between. Exported so the exporter markup
- * and this predicate can never disagree about what counts as a tab set.
+ * True for a features block that renders as a tab set: `display` must be exactly
+ * `tabs` and the block must carry at least two items, because a single item has
+ * nothing to switch between — exported so markup and predicate cannot disagree.
  */
 export function isFeaturesTabSet(block: unknown): boolean {
   if (!block || typeof block !== 'object') return false
@@ -147,35 +151,49 @@ export function isFeaturesTabSet(block: unknown): boolean {
   return props.display === 'tabs' && Array.isArray(props.items) && props.items.length >= 2
 }
 
+/**
+ * True for a testimonials or gallery block that renders as a carousel: `display` must
+ * be exactly `carousel` and the list must hold at least two items, because a single
+ * item has nothing to page between — exported so markup and predicate share one rule.
+ */
+export function isCarouselBlock(block: unknown): boolean {
+  if (!block || typeof block !== 'object') return false
+  const { type, props } = block as { type?: unknown; props?: unknown }
+  if (type !== 'testimonials' && type !== 'gallery') return false
+  if (!props || typeof props !== 'object') return false
+  const candidate = props as { display?: unknown; items?: unknown; images?: unknown }
+  if (candidate.display !== 'carousel') return false
+  const list = type === 'testimonials' ? candidate.items : candidate.images
+  return Array.isArray(list) && list.length >= 2
+}
+
 /** True when a page document contains at least one behavior-owning block. */
 export function needsBehaviorRuntime(blocks: unknown): boolean {
   if (!Array.isArray(blocks)) return false
-  return blocks.some((block) => isMenuOrFaq(block) || isFeaturesTabSet(block))
+  return blocks.some((block) => isMenuOrFaq(block) || isFeaturesTabSet(block) || isCarouselBlock(block))
 }
 
 /**
- * Inline script tag carrying the runtime, or an empty string when unused.
- * Call at most once per exported document: the source installs delegated
- * listeners and is not idempotent.
+ * Inline script tag carrying the runtime, or an empty string when unused. Call at
+ * most once per exported document: the source installs delegated listeners and is
+ * not idempotent.
  */
 export function renderBehaviorScript(): string {
   return '\n    <script data-sb-runtime>' + BEHAVIOR_RUNTIME_SOURCE + '</script>'
 }
 
 /**
- * No-script fallback stylesheet, holding the rules only for the widgets the
- * page actually renders. Called without a block list it emits the menu and faq
- * rules unconditionally, which is the exact byte string the frozen 0.4.0
- * baselines were captured with.
+ * No-script fallback stylesheet, holding the rules only for the widgets the page
+ * actually renders, in a fixed order (menu/faq, tabs, carousel). Called without a
+ * block list it emits the menu and faq rules unconditionally — the exact 0.4.0 bytes.
  */
 export function renderBehaviorNoscript(blocks?: unknown): string {
-  if (blocks === undefined) {
-    return '\n  <noscript><style>' + BEHAVIOR_NOSCRIPT_CSS + '</style></noscript>'
-  }
+  if (blocks === undefined) return '\n  <noscript><style>' + BEHAVIOR_NOSCRIPT_CSS + '</style></noscript>'
   if (!Array.isArray(blocks)) return ''
   const rules: string[] = []
   if (blocks.some((block) => isMenuOrFaq(block))) rules.push(BEHAVIOR_NOSCRIPT_CSS)
   if (blocks.some((block) => isFeaturesTabSet(block))) rules.push(TABS_NOSCRIPT_CSS)
+  if (blocks.some((block) => isCarouselBlock(block))) rules.push(carouselRules)
   if (rules.length === 0) return ''
   return '\n  <noscript><style>' + rules.join('\n') + '</style></noscript>'
 }

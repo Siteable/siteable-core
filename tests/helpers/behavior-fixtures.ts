@@ -17,6 +17,12 @@ export type Fixture =
   | 'two-tab-sets'
   | 'tab-sets-shared-id'
   | 'tabs-blank-titles'
+  | 'carousel-testimonials'
+  | 'carousel-gallery'
+  | 'two-carousels'
+  | 'carousels-shared-id'
+  | 'carousel-and-tabs'
+  | 'carousel-scroller-variant'
 
 const navbarBlock = (id: string, variant: string): BlockConfig => ({
   id,
@@ -80,6 +86,41 @@ const blankTitleTabsBlock = (): BlockConfig => ({
   },
 })
 
+/** A testimonials block opting into the carousel. Distinct text per slide, so a
+ * slide bound to the wrong item is observable. */
+const carouselTestimonialsBlock = (id: string, variant: string, count: number): BlockConfig => ({
+  id,
+  type: 'testimonials',
+  variant,
+  props: {
+    title: 'Customer stories',
+    display: 'carousel',
+    items: Array.from({ length: count }, (_, index) => ({
+      name: `Person ${index + 1}`,
+      role: `Role ${index + 1}`,
+      quote: `Quote ${index + 1}`,
+      rating: (index % 5) + 1,
+    })),
+  },
+})
+
+/** A gallery block opting into the carousel. Empty sources render the gradient
+ * placeholder, so the browser lane makes no network request. */
+const carouselGalleryBlock = (id: string, count: number): BlockConfig => ({
+  id,
+  type: 'gallery',
+  variant: 'grid',
+  props: {
+    title: 'Gallery picks',
+    display: 'carousel',
+    images: Array.from({ length: count }, (_, index) => ({
+      src: '',
+      alt: `Picture ${index + 1}`,
+      caption: `Caption ${index + 1}`,
+    })),
+  },
+})
+
 /** Block configs are the single source of markup for both environments. */
 export const FIXTURE_BLOCKS: Record<Fixture, BlockConfig[]> = { navbar: [navbarBlock('nav-1', 'default')],
   'two-navbars': [navbarBlock('nav-1', 'default'), navbarBlock('nav-2', 'centered')],
@@ -89,4 +130,13 @@ export const FIXTURE_BLOCKS: Record<Fixture, BlockConfig[]> = { navbar: [navbarB
   'two-tab-sets': [tabsBlock('feat-1', 'list'), tabsBlock('feat-2', 'alternating')],
   'tab-sets-shared-id': [tabsBlock('feat-1', 'grid'), tabsBlock('feat-1', 'list')],
   'tabs-blank-titles': [blankTitleTabsBlock()],
+  'carousel-testimonials': [carouselTestimonialsBlock('test-1', 'cards', 3)],
+  'carousel-gallery': [carouselGalleryBlock('gal-1', 4)],
+  'two-carousels': [
+    carouselTestimonialsBlock('test-1', 'cards', 3),
+    carouselGalleryBlock('gal-1', 4),
+  ],
+  'carousels-shared-id': [carouselGalleryBlock('gal-1', 3), carouselGalleryBlock('gal-1', 3)],
+  'carousel-and-tabs': [tabsBlock('feat-1', 'grid'), carouselTestimonialsBlock('test-1', 'cards', 3)],
+  'carousel-scroller-variant': [carouselTestimonialsBlock('test-1', 'scroller', 2)],
 }

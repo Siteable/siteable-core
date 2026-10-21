@@ -4,6 +4,8 @@ import type { BlockConfig } from '../types'
 // the prop normalizer (was an inline literal; src/caption:'' additions are
 // falsy → placeholder icon + no caption div, byte-identical render).
 import { defaultGalleryImages } from '@/lib/block-default-content'
+import { isCarouselBlock } from '@/lib/export-behavior-runtime'
+import { GalleryCarousel } from './GalleryCarousel'
 
 interface GalleryImage {
   src?: string
@@ -34,6 +36,11 @@ export function GalleryBlock({ block }: { block: BlockConfig }) {
   const images = ((props.images as GalleryImage[]) || []).length > 0
     ? (props.images as GalleryImage[])
     : defaultGalleryImages
+
+  // The opt-in layout shares its predicate with the exporter, so an unknown
+  // `display` value (or fewer than two images) falls through to the variant
+  // switch below in both places.
+  if (isCarouselBlock(block)) return <GalleryCarousel title={title} images={images} />
 
   if (variant === 'masonry') {
     return (

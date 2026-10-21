@@ -125,6 +125,38 @@ menu and the FAQ accordion, one `<script>` per page, no external asset. With
 JavaScript disabled the tab strip is hidden and every panel is shown stacked
 in item order, each preceded by its title.
 
+### `testimonials` and `gallery` blocks: opt-in carousel layout
+
+A `testimonials` or `gallery` block takes an optional `display` prop. With
+`display: 'carousel'` and at least two items, it renders as one accessible
+carousel in both the editor preview and the exported HTML: one slide per item
+in item order, the first slide shown, a previous and a next control, and one
+slide at a time. The controls stop at the ends of the list instead of looping,
+and nothing advances on its own — no autoplay timer runs. Click a control, or
+press Left/Right while focus is inside the carousel, to move one slide.
+
+The carousel is exposed as a `region` named by the block's visible heading, or
+`Carousel` when the block renders no heading at all; each slide is a `group`
+named by its position out of the total (`"2 of 3"`), and each control is a
+button named `Previous slide` / `Next slide`. A control is `disabled` at its end of the
+list, so the state is exposed rather than only drawn; when the control the
+visitor just used becomes disabled, focus moves to the other control so the
+keyboard path keeps working. Two carousels on one page move independently.
+
+Every variant of both blocks renders this same carousel, so `variant` does not
+change the layout. Without the option, the testimonials `scroller` variant is
+unchanged and stays a separate static look.
+
+The option is additive and opt-in. Any other `display` value, no `display`, or
+fewer than two items renders the block exactly as before. The editor exposes it
+as a Display select on the block (Default layout / Carousel); an unknown value
+falls back to the default layout.
+
+Exported pages that contain a rendered carousel carry the same shared inline
+behaviour runtime as the navbar menu, the FAQ accordion and the tab set — one
+`<script>` per page, no external asset. With JavaScript disabled the controls
+are hidden and every slide is shown stacked in item order.
+
 ### Server / worker usage (`@siteable/core/worker`)
 
 The main entry re-exports the editor components and the zustand stores, so it

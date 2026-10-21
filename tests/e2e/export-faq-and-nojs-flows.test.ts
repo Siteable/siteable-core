@@ -346,9 +346,9 @@ describe('editor parity', () => {
     click(element) {
       act(() => (element as HTMLElement).click())
     },
-    key(element, key) {
+    key(element, key, mods) {
       act(() => {
-        element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+        element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, altKey: !!mods?.alt, ctrlKey: !!mods?.ctrl, metaKey: !!mods?.meta, shiftKey: !!mods?.shift }))
       })
     },
     setReducedMotion(on) {
@@ -367,8 +367,8 @@ describe('editor parity', () => {
     click(element) {
       ;(element as HTMLElement).click()
     },
-    key(element, key) {
-      element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+    key(element, key, mods) {
+      element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, altKey: !!mods?.alt, ctrlKey: !!mods?.ctrl, metaKey: !!mods?.meta, shiftKey: !!mods?.shift }))
     },
     setReducedMotion(on) {
       ;(window as unknown as { matchMedia: (q: string) => MediaQueryList }).matchMedia = () =>
@@ -382,6 +382,7 @@ describe('editor parity', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
     // The loop below can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'carousel')).toBe(true)
     const rows = BEHAVIOR_CASES.map((behaviorCase) => ({
       behaviorCase,
       editor: runCase(editorAdapter, behaviorCase),
