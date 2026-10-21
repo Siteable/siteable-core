@@ -93,6 +93,43 @@ test.describe('carousel on a phone-width viewport', () => {
     expect(shownIndices, 'with no input the shown slide must never change').toEqual([0])
   })
 
+  for (const preference of ['reduce', 'no-preference'] as const) {
+    test(`nothing animates when the visitor prefers ${preference} motion`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: preference })
+      await openExportedPage(page, 'carousel-testimonials')
+
+      // Prove the preference really reached the page, so a silently ignored
+      // emulation cannot make this row pass for the wrong reason.
+      const applied = await page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      expect(applied, 'the emulated preference must be visible to the page').toBe(preference === 'reduce')
+
+      const region = page.getByRole('region', { name: STORIES.title })
+      const next = region.locator(NEXT)
+
+      // Walk the whole list: a slide change that animated would show up as a
+      // non-zero duration or a named animation on whatever just appeared.
+      for (let index = 0; index < STORIES.markers.length; index += 1) {
+        const motion = await region.evaluate((root, selectors) => {
+          const targets = [root, ...Array.from(root.querySelectorAll<HTMLElement>(selectors))]
+          return targets.map((element) => {
+            const style = getComputedStyle(element)
+            return {
+              tag: element.tagName,
+              duration: style.transitionDuration,
+              animation: style.animationName,
+            }
+          })
+        }, `${SLIDE}, ${PREV}, ${NEXT}`)
+        for (const entry of motion) {
+          expect(entry.duration, `${entry.tag} must not transition (step ${index})`).toMatch(/^(0s)(, 0s)*$/)
+          expect(entry.animation, `${entry.tag} must not animate (step ${index})`).toBe('none')
+        }
+        await assertOnlySlide(region, index, STORIES.markers.length)
+        if (index < STORIES.markers.length - 1) await next.click()
+      }
+    })
+  }
+
   test('focus is not dropped when the control in use becomes disabled', async ({ page }) => {
     await openExportedPage(page, 'carousel-testimonials')
     const region = page.getByRole('region', { name: STORIES.title })
