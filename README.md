@@ -211,8 +211,9 @@ library. The hook takes no arguments and returns one image per call.
   image URL policy as a typed URL.
 - `null`, an empty string or a whitespace-only string means nothing was chosen:
   nothing changes and no message is shown.
-- A rejection or a throw leaves the field unchanged and shows one generic error
-  notice.
+- A rejection, a throw, or any other non-string result (including `undefined`
+  from a hook that forgets to return) leaves the field unchanged and shows one
+  generic error notice.
 
 Covered fields: the navbar and footer logo image, the hero image and the image
 block source; list rows that carry a string `src`, `image`, `avatar` or `photo`
