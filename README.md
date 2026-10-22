@@ -220,12 +220,12 @@ avatars, feature images); and every card-grid item image. Rows without such a
 key (pricing tiers, stats, FAQ) get no control, and plain string lists such as
 `logos` are not covered. Without the hook the URL inputs behave as before.
 
-While a pick is pending the field or row is locked. If the content changed in
-the meantime (the configuration was replaced with `setConfig`, or an undo or redo
-happened, the active page changed, the block was removed, or the row was
-replaced), the result is discarded with a notice. Changes made through other
-writers to the same field are not detected. The
-hook must settle: a promise that never resolves keeps the field locked.
+While a pick is pending the field or row is locked. The result is discarded with
+a notice if the configuration was replaced with `setConfig`, an undo or redo
+happened, the pick targets a page that is no longer active when it settles, the
+block was removed, or the row was replaced. Changes made through other writers to
+the same field are not detected. The hook must settle: a promise that never
+resolves keeps the field locked.
 
 Notices use `sonner`, so mount `<Toaster />` in the host app. Hosts replace
 content with `setConfig`; `useConfigStore` exposes `configGeneration`, a counter
