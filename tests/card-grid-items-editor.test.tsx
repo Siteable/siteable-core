@@ -177,6 +177,41 @@ describe('search and grouping', () => {
     for (const r of rows()) expect(btn(r, 'Move down').disabled).toBe(true)
   })
 
+  it('keeps the same input mounted and focused while its category is edited under grouping', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = () => rows()[0].querySelectorAll('input')[5]
+    const first = input()
+    act(() => first.focus())
+    typeInto(first, 'Bags')
+    expect(stored()[0].category).toBe('Bags')
+    expect(input()).toBe(first)
+    expect(first.isConnected).toBe(true)
+    expect(document.activeElement).toBe(first)
+    typeInto(first, 'Bagsx')
+    expect(input()).toBe(first)
+    expect(document.activeElement).toBe(first)
+    act(() => first.blur())
+    // After focus leaves, the row joins its new group.
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Bagsx', 'Bags'])
+  })
+
+  it('keeps an edited row visible while its input has focus even if it stops matching the search', () => {
+    seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }] })
+    mount()
+    typeInto(search(), 'shoe')
+    expect(names()).toEqual(['Red Shoe'])
+    const input = rows()[0].querySelectorAll('input')[2]
+    act(() => input.focus())
+    typeInto(input, 'Red Boot')
+    expect(names()).toEqual(['Red Boot'])
+    expect(rows()[0].querySelectorAll('input')[2]).toBe(input)
+    expect(document.activeElement).toBe(input)
+    act(() => input.blur())
+    expect(names()).toEqual([])
+  })
+
   it('add with a search active clears it and shows the new row', () => {
     seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }] })
     mount()

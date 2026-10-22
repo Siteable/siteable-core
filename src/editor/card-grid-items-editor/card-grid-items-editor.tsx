@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, type FocusEvent } from 'react'
 import { Search } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 import type { BlockConfig } from '@/blocks/types'
@@ -14,6 +14,13 @@ import {
   type ItemRow,
 } from './card-grid-items-ops'
 import { filterItemRows, groupItemRows } from './card-grid-items-view'
+
+/** One visible section of rows, as raw indexes; `key`/`label` are null when ungrouped. */
+interface LayoutSection {
+  key: string | null
+  label: string | null
+  indexes: number[]
+}
 
 const LABEL_CLASS = 'block text-[11.5px] text-text-2 mb-1 font-medium'
 
@@ -49,24 +56,42 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
 
   const rows = toItemRows(items)
   const shown = filterItemRows(rows, query)
-  const view = grouped ? groupItemRows(shown, items) : null
   const reorderEnabled = !grouped && query.trim() === ''
-  const numberOf = new Map(rows.map((r, n) => [r.rawIndex, n + 1]))
+  const positionOf = new Map(rows.map((r, n) => [r.rawIndex, n]))
+
+  // While a text input in a row has focus the row layout (which rows are
+  // visible and in which group) is frozen, so editing the category or the
+  // searched text neither moves the row nor remounts the input. It is
+  // recomputed as soon as focus leaves the rows.
+  const computed: LayoutSection[] = grouped
+    ? groupItemRows(shown, items).map((g) => ({ key: g.key, label: g.label, indexes: g.rows.map((r) => r.rawIndex) }))
+    : [{ key: null, label: null, indexes: shown.map((r) => r.rawIndex) }]
+  const [frozen, setFrozen] = useState<LayoutSection[] | null>(null)
+  const layout = frozen ?? computed
+  const rowByIndex = new Map(rows.map((r) => [r.rawIndex, r]))
 
   const renderRow = (row: ItemRow) => {
-    const position = rows.indexOf(row)
+    const position = positionOf.get(row.rawIndex) ?? -1
     return (
       <CardGridItemRow
         key={row.rawIndex}
         item={row.item}
         rawIndex={row.rawIndex}
-        number={numberOf.get(row.rawIndex) ?? 0}
+        number={position + 1}
         canMoveUp={position > 0}
         canMoveDown={position >= 0 && position < rows.length - 1}
         reorderEnabled={reorderEnabled}
         actions={actions}
       />
     )
+  }
+
+  const renderSection = (section: LayoutSection) =>
+    section.indexes.map((i) => rowByIndex.get(i)).filter((r): r is ItemRow => r !== undefined).map(renderRow)
+
+  const onRowsFocus = (e: FocusEvent<HTMLDivElement>) => {
+    const tag = (e.target as HTMLElement).tagName
+    if (frozen === null && (tag === 'INPUT' || tag === 'TEXTAREA')) setFrozen(computed)
   }
 
   return (
@@ -97,14 +122,16 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
         <p className="text-[10px] text-text-3 mb-1.5">Reorder is off while searching or grouping.</p>
       )}
       {rows.length === 0 && <p className="text-[11px] text-text-3 mb-1.5">No products yet.</p>}
-      {view
-        ? view.map((group) => (
-            <section key={group.key} data-card-grid-group={group.key}>
-              <h4 className="text-[10px] font-semibold text-text-2 mb-1">{group.label}</h4>
-              {group.rows.map(renderRow)}
-            </section>
-          ))
-        : shown.map(renderRow)}
+      <div onFocus={onRowsFocus} onBlur={() => setFrozen(null)}>
+        {grouped
+          ? layout.map((section) => (
+              <section key={section.key} data-card-grid-group={section.key}>
+                <h4 className="text-[10px] font-semibold text-text-2 mb-1">{section.label}</h4>
+                {renderSection(section)}
+              </section>
+            ))
+          : layout.map((section) => renderSection(section))}
+      </div>
       <button
         type="button"
         onClick={() => {

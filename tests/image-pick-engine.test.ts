@@ -152,6 +152,18 @@ describe.each<Kind>(['field', 'row'])('stale results (%s)', (kind) => {
   })
 })
 
+describe.each<Kind>(['field', 'row'])('page round trip (%s)', (kind) => {
+  it('writes to the original target when the user leaves the page and returns before the result', async () => {
+    const d = deferred<string | null>()
+    const run = runImagePick(() => d.promise, createImagePickRegistry(), capture(kind))
+    store().setActivePage('page-two')
+    store().setActivePage('page-home')
+    d.resolve('late.png')
+    expect(await run).toBe('written')
+    expect(read(kind)).toBe('late.png')
+  })
+})
+
 describe('row targets', () => {
   it('writes to the captured row after other rows are edited', async () => {
     const d = deferred<string | null>()

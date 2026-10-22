@@ -181,21 +181,21 @@ export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject
 
   return (
     <ImagePickProvider onPickImage={onPickImage}>
-    <div className="h-full flex flex-col relative">
-      <div className="flex-1 flex overflow-hidden">
-        {!previewMode && <LeftSidebar />}
-        <div className="flex-1 flex flex-col min-w-0 relative">
-          <CanvasToolbar activeProject={activeProject} onExit={onExit} />
-          <div className="flex-1 flex flex-col overflow-hidden relative">
-            <Canvas />
-            <JsonDrawer />
-            <GenerationOverlay />
+      <div className="h-full flex flex-col relative">
+        <div className="flex-1 flex overflow-hidden">
+          {!previewMode && <LeftSidebar />}
+          <div className="flex-1 flex flex-col min-w-0 relative">
+            <CanvasToolbar activeProject={activeProject} onExit={onExit} />
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              <Canvas />
+              <JsonDrawer />
+              <GenerationOverlay />
+            </div>
           </div>
+          {!previewMode && <RightSidebar />}
         </div>
-        {!previewMode && <RightSidebar />}
+        <VersionHistory />
       </div>
-      <VersionHistory />
-    </div>
     </ImagePickProvider>
   )
 }
