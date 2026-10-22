@@ -470,7 +470,7 @@ describe('empty and malformed items', () => {
   it('renders one placeholder card for an empty item object', () => {
     // An object is an item shape: one card per object, so a blank row is a
     // placeholder card rather than being silently dropped. Pinned here because
-    // an operator-added empty row (the next editor atom) exports this artifact.
+    // a freshly added empty row exports this artifact.
     const doc = parse(rendered({ items: [{}] }))
     const cards = [...doc.querySelectorAll('article')]
     expect(cards).toHaveLength(1)
