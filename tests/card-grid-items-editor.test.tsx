@@ -197,6 +197,47 @@ describe('search and grouping', () => {
     expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Bagsx', 'Bags'])
   })
 
+  it('keeps the freeze when focus moves to a button in the same row, then releases it', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = rows()[0].querySelectorAll('input')[5]
+    act(() => input.focus())
+    typeInto(input, 'Bags')
+    const dup = btn(rows()[0], 'Duplicate')
+    act(() => dup.focus())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Hats', 'Bags'])
+    expect(dup.isConnected).toBe(true)
+    expect(document.activeElement).toBe(dup)
+    act(() => dup.blur())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Bags'])
+  })
+
+  it('keeps the freeze when focus moves to a sibling input in the same row', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const inputs = rows()[0].querySelectorAll('input')
+    const category = inputs[5]
+    const next = inputs[6]
+    act(() => category.focus())
+    typeInto(category, 'Bags')
+    act(() => next.focus())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Hats', 'Bags'])
+    expect(next.isConnected).toBe(true)
+    expect(document.activeElement).toBe(next)
+  })
+
+  it('drops a stale freeze when the configuration is replaced while an input is focused', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    act(() => rows()[0].querySelectorAll('input')[2].focus())
+    act(() => seed({ items: [{ name: 'x', category: 'A' }, { name: 'y', category: 'B' }, { name: 'z', category: 'C' }] }))
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['A', 'B', 'C'])
+    expect(rows()).toHaveLength(3)
+  })
+
   it('keeps an edited row visible while its input has focus even if it stops matching the search', () => {
     seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }] })
     mount()

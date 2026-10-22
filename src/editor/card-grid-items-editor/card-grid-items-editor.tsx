@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type FocusEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent } from 'react'
 import { Search } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 import type { BlockConfig } from '@/blocks/types'
@@ -66,8 +66,20 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   const computed: LayoutSection[] = grouped
     ? groupItemRows(shown, items).map((g) => ({ key: g.key, label: g.label, indexes: g.rows.map((r) => r.rawIndex) }))
     : [{ key: null, label: null, indexes: shown.map((r) => r.rawIndex) }]
-  const [frozen, setFrozen] = useState<LayoutSection[] | null>(null)
+  const generation = useConfigStore((s) => s.configGeneration)
+  const [frozenState, setFrozen] = useState<{ sections: LayoutSection[]; generation: number } | null>(null)
+  // A freeze from before a whole-configuration replacement, undo or redo is stale.
+  const frozen = frozenState !== null && frozenState.generation === generation ? frozenState.sections : null
   const layout = frozen ?? computed
+  const rowsRef = useRef<HTMLDivElement>(null)
+
+  // Release the freeze if the focused input went away (unmounted or disabled),
+  // since the browser fires no blur in that case.
+  useEffect(() => {
+    if (frozenState === null) return
+    const active = document.activeElement
+    if (!rowsRef.current || !active || !rowsRef.current.contains(active)) setFrozen(null)
+  })
   const rowByIndex = new Map(rows.map((r) => [r.rawIndex, r]))
 
   const renderRow = (row: ItemRow) => {
@@ -89,9 +101,14 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   const renderSection = (section: LayoutSection) =>
     section.indexes.map((i) => rowByIndex.get(i)).filter((r): r is ItemRow => r !== undefined).map(renderRow)
 
+  // Focus moving to another control inside the rows keeps the freeze.
+  const onRowsBlur = (e: FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFrozen(null)
+  }
+
   const onRowsFocus = (e: FocusEvent<HTMLDivElement>) => {
     const tag = (e.target as HTMLElement).tagName
-    if (frozen === null && (tag === 'INPUT' || tag === 'TEXTAREA')) setFrozen(computed)
+    if (frozen === null && (tag === 'INPUT' || tag === 'TEXTAREA')) setFrozen({ sections: computed, generation })
   }
 
   return (
@@ -122,7 +139,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
         <p className="text-[10px] text-text-3 mb-1.5">Reorder is off while searching or grouping.</p>
       )}
       {rows.length === 0 && <p className="text-[11px] text-text-3 mb-1.5">No products yet.</p>}
-      <div onFocus={onRowsFocus} onBlur={() => setFrozen(null)}>
+      <div ref={rowsRef} onFocus={onRowsFocus} onBlur={onRowsBlur}>
         {grouped
           ? layout.map((section) => (
               <section key={section.key} data-card-grid-group={section.key}>
