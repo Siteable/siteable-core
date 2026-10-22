@@ -57,7 +57,12 @@ function mount(hook?: () => Promise<string | null>) {
 
 const rows = () => Array.from(host!.querySelectorAll<HTMLElement>('[data-card-grid-item]'))
 const click = (el: Element) => act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
-const btn = (row: HTMLElement, label: string) => row.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
+/** Finds a row action by its generic name ("Move up", "Remove"); the real name carries the item number. */
+const btn = (row: HTMLElement, label: string) => {
+  const [verb, ...rest] = label.split(' ')
+  const pattern = new RegExp(`^${verb} item \\d+${rest.length ? ` ${rest.join(' ')}` : ''}$`)
+  return Array.from(row.querySelectorAll<HTMLButtonElement>('button')).find((b) => pattern.test(b.getAttribute('aria-label') ?? ''))!
+}
 const byText = (text: string) =>
   Array.from(host!.querySelectorAll('button')).find((b) => (b.textContent ?? '').includes(text))!
 const search = () => host!.querySelector<HTMLInputElement>('input[type="search"]')!
@@ -149,6 +154,38 @@ describe('rows', () => {
     mount()
     typeInto(rows()[0].querySelectorAll('input')[2], 'A2')
     expect(stored()[1]).toBe(items[1])
+  })
+})
+
+describe('accessible names', () => {
+  it('gives every input a unique id and a label, and each action an item-specific name', () => {
+    seed({ items: [{ name: 'a' }, { name: 'b' }, { name: 'c' }] })
+    mount(() => Promise.resolve(null))
+    const inputs = Array.from(host!.querySelectorAll<HTMLInputElement>('[data-card-grid-item] input'))
+    expect(inputs).toHaveLength(24)
+    const ids = inputs.map((i) => i.id)
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(24)
+    for (const input of inputs) expect(input.labels?.length).toBe(1)
+    expect(rows()[2].querySelectorAll('input')[2].labels![0].textContent).toBe('Name')
+    const names = Array.from(rows()[2].querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))
+    expect(names).toEqual([
+      'Move item 3 up', 'Move item 3 down', 'Duplicate item 3', 'Remove item 3', 'Choose image for item 3',
+    ])
+  })
+
+  it('labels each group section by its heading', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const sections = Array.from(host!.querySelectorAll('section'))
+    expect(sections).toHaveLength(2)
+    const ids = sections.map((sec) => sec.getAttribute('aria-labelledby'))
+    expect(new Set(ids).size).toBe(2)
+    sections.forEach((sec, n) => {
+      const heading = host!.ownerDocument.getElementById(ids[n]!)
+      expect(heading).toBe(sec.querySelector('h4'))
+    })
   })
 })
 

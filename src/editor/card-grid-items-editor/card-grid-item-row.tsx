@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useId } from 'react'
 import { ChevronDown, ChevronUp, Copy, Image as ImageIcon, X } from 'lucide-react'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { ImagePickButton } from '../image-pick/image-pick-button'
@@ -64,6 +64,7 @@ interface RowProps {
 function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, reorderEnabled, actions }: RowProps) {
   const { enabled, isPending } = useImagePick()
   const pending = enabled && isPending(item)
+  const idBase = useId()
   // A locked row disables its inputs, which can leave a stale frozen layout behind.
   useEffect(() => {
     if (pending) actions.releaseLayout()
@@ -80,7 +81,7 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
         <span className="text-[10px] text-text-3 font-medium flex-1">Item {number}</span>
         <button
           type="button"
-          aria-label="Move up"
+          aria-label={`Move item ${number} up`}
           disabled={pending || !reorderEnabled || !canMoveUp}
           onClick={() => actions.move(rawIndex, -1)}
           className={ICON_BUTTON_CLASS}
@@ -89,7 +90,7 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
         </button>
         <button
           type="button"
-          aria-label="Move down"
+          aria-label={`Move item ${number} down`}
           disabled={pending || !reorderEnabled || !canMoveDown}
           onClick={() => actions.move(rawIndex, 1)}
           className={ICON_BUTTON_CLASS}
@@ -98,7 +99,7 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
         </button>
         <button
           type="button"
-          aria-label="Duplicate"
+          aria-label={`Duplicate item ${number}`}
           disabled={pending}
           onClick={() => actions.duplicate(rawIndex)}
           className={ICON_BUTTON_CLASS}
@@ -107,7 +108,7 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
         </button>
         <button
           type="button"
-          aria-label="Remove"
+          aria-label={`Remove item ${number}`}
           disabled={pending}
           onClick={() => actions.remove(rawIndex)}
           className={`${ICON_BUTTON_CLASS} hover:text-status-red`}
@@ -120,9 +121,10 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
         const editable = value === undefined || value === null || typeof value === 'string'
         return (
           <div key={key} className="mb-1">
-            <label className="block text-[10px] text-text-3 mb-0.5">{label}</label>
+            <label htmlFor={`${idBase}-${key}`} className="block text-[10px] text-text-3 mb-0.5">{label}</label>
             <div className="flex items-center gap-1.5">
               <input
+                id={`${idBase}-${key}`}
                 type="text"
                 value={displayValue(value)}
                 onChange={(e) => editable && actions.setField(rawIndex, key, e.target.value)}
@@ -133,7 +135,7 @@ function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, r
               />
               {key === 'image' && enabled && (
                 <ImagePickButton
-                  label="Image URL"
+                  label={`item ${number}`}
                   pending={pending}
                   disabled={pending}
                   onClick={() => actions.pick(item)}

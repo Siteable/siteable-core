@@ -71,7 +71,7 @@ test('reorder (Move down on row 1) on 50 items completes and reports its timing'
   const m = await medianOf(
     page,
     'reorder',
-    () => `() => document.querySelector('[data-card-grid-item] button[aria-label="Move down"]').click()`,
+    () => `() => document.querySelector('[data-card-grid-item] button[aria-label="Move item 1 down"]').click()`,
   )
   expect(Number.isFinite(m)).toBe(true)
   await expect(page.locator('[data-card-grid-item]')).toHaveCount(50)

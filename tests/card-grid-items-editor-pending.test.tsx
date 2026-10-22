@@ -52,7 +52,12 @@ function setup(hook: () => Promise<string | null>) {
 const rows = () => Array.from(host!.querySelectorAll<HTMLElement>('[data-card-grid-item]'))
 const stored = () => useConfigStore.getState().config.pages![0].blocks[0].props.items as Array<Record<string, unknown>>
 const click = (el: Element) => act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
-const btn = (row: HTMLElement, label: string) => row.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
+/** Finds a row action by its generic name ("Move up", "Remove"); the real name carries the item number. */
+const btn = (row: HTMLElement, label: string) => {
+  const [verb, ...rest] = label.split(' ')
+  const pattern = new RegExp(`^${verb} item \\d+${rest.length ? ` ${rest.join(' ')}` : ''}$`)
+  return Array.from(row.querySelectorAll<HTMLButtonElement>('button')).find((b) => pattern.test(b.getAttribute('aria-label') ?? ''))!
+}
 const pick = (row: HTMLElement) => row.querySelector<HTMLButtonElement>('[data-image-pick]')!
 const flush = () => act(async () => { await Promise.resolve() })
 

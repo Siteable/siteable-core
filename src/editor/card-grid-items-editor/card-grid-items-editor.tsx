@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FocusEvent, type MouseEvent } from 'react'
 import { Search } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 import type { BlockConfig } from '@/blocks/types'
@@ -72,6 +72,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   // A freeze from before a whole-configuration replacement, undo or redo is stale.
   const frozen = frozenState !== null && frozenState.generation === generation ? frozenState.sections : null
   const layout = frozen ?? computed
+  const groupIdBase = useId()
   const rowsRef = useRef<HTMLDivElement>(null)
 
   // Release the freeze if the focused input went away (unmounted or disabled),
@@ -152,9 +153,9 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
       {rows.length === 0 && <p className="text-[11px] text-text-3 mb-1.5">No products yet.</p>}
       <div ref={rowsRef} onFocus={onRowsFocus} onBlur={onRowsBlur} onMouseDown={onRowsMouseDown}>
         {grouped
-          ? layout.map((section) => (
-              <section key={section.key} data-card-grid-group={section.key}>
-                <h4 className="text-[10px] font-semibold text-text-2 mb-1">{section.label}</h4>
+          ? layout.map((section, n) => (
+              <section key={section.key} data-card-grid-group={section.key} aria-labelledby={`${groupIdBase}-g${n}`}>
+                <h4 id={`${groupIdBase}-g${n}`} className="text-[10px] font-semibold text-text-2 mb-1">{section.label}</h4>
                 {renderSection(section)}
               </section>
             ))
