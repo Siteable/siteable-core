@@ -27,6 +27,12 @@ interface ConfigState {
   activePageId: string
   undoStack: UndoEntry[]
   redoStack: UndoEntry[]
+  /**
+   * Changes whenever the whole configuration is replaced (setConfig, undo, redo),
+   * so an edit that resolves later can tell it was started against a different
+   * configuration. In memory only.
+   */
+  configGeneration: number
   setConfig: (config: SiteConfig) => void
   setActivePage: (id: string) => void
   getActivePageBlocks: () => BlockConfig[]
@@ -158,10 +164,17 @@ export const useConfigStore = create<ConfigState>()(
       activePageId: 'page-home',
       undoStack: [],
       redoStack: [],
+      configGeneration: 0,
 
       setConfig: (config) => {
         const pages = ensurePages(config)
-        set({ config: { ...config, pages }, activePageId: pages[0]?.id ?? 'page-home', undoStack: [], redoStack: [] })
+        set({
+          config: { ...config, pages },
+          activePageId: pages[0]?.id ?? 'page-home',
+          undoStack: [],
+          redoStack: [],
+          configGeneration: get().configGeneration + 1,
+        })
       },
 
       setActivePage: (id) => set({ activePageId: id }),
@@ -303,6 +316,7 @@ export const useConfigStore = create<ConfigState>()(
           return {
             undoStack: state.undoStack.slice(0, -1),
             redoStack: [...state.redoStack, { ...snap, label: prev.label, timestamp: Date.now() }],
+            configGeneration: state.configGeneration + 1,
             config: { ...state.config, pages: prev.pages, blocks: prev.blocks, theme: prev.theme },
           }
         }),
@@ -315,6 +329,7 @@ export const useConfigStore = create<ConfigState>()(
           return {
             redoStack: state.redoStack.slice(0, -1),
             undoStack: [...state.undoStack, { ...snap, label: next.label, timestamp: Date.now() }],
+            configGeneration: state.configGeneration + 1,
             config: { ...state.config, pages: next.pages, blocks: next.blocks, theme: next.theme },
           }
         }),
