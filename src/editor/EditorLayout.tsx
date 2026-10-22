@@ -5,6 +5,7 @@ import { CanvasToolbar } from './CanvasToolbar'
 import { LeftSidebar } from './LeftSidebar'
 import { Canvas } from './Canvas'
 import { RightSidebar } from './RightSidebar'
+import { ImagePickProvider } from './image-pick/image-pick-context'
 import { JsonDrawer } from './JsonDrawer'
 import { VersionHistory } from './VersionHistory'
 import { GenerationOverlay } from './GenerationOverlay'
@@ -27,6 +28,8 @@ export interface EditorLayoutProps {
   activeProject?: { name: string; settings?: ExportSiteSettings }
   onExit?: () => void
   onServerFallback?: (prompt: string, signal?: AbortSignal) => Promise<SiteConfig>
+  /** Host picker for one image; resolves to its URL, or null when nothing was chosen. */
+  onPickImage?: () => Promise<string | null>
 }
 
 function useAutoSaveToProject(onConfigChange?: EditorLayoutProps['onConfigChange']) {
@@ -166,7 +169,7 @@ function EditorEmptyState({ onCreate, onExit }: Pick<EditorLayoutProps, 'onCreat
   )
 }
 
-export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject, onExit, onServerFallback }: EditorLayoutProps = {}) {
+export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject, onExit, onServerFallback, onPickImage }: EditorLayoutProps = {}) {
   useAutoSaveToProject(onConfigChange)
   useGenerationOrchestration(onConfigChange, onRename, onServerFallback)
   const previewMode = useEditorStore((s) => s.previewMode)
@@ -177,6 +180,7 @@ export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject
   }
 
   return (
+    <ImagePickProvider onPickImage={onPickImage}>
     <div className="h-full flex flex-col relative">
       <div className="flex-1 flex overflow-hidden">
         {!previewMode && <LeftSidebar />}
@@ -192,5 +196,6 @@ export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject
       </div>
       <VersionHistory />
     </div>
+    </ImagePickProvider>
   )
 }
