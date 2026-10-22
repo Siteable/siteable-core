@@ -209,7 +209,8 @@ library. The hook takes no arguments and returns one image per call.
 
 - A string result is stored exactly as returned. The export applies the same
   image URL policy as a typed URL.
-- `null` changes nothing and shows no message.
+- `null`, an empty string or a whitespace-only string means nothing was chosen:
+  nothing changes and no message is shown.
 - A rejection or a throw leaves the field unchanged and shows one generic error
   notice.
 
