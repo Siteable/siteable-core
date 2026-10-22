@@ -191,12 +191,43 @@ every card and no buttons.
 The option is additive and opt-in. Any other `display` value, no `display`, or
 fewer than two distinct categories renders a plain grid with no buttons. The
 editor exposes it as a Display select on the block (Default layout / Category
-filter), and products are edited as a list on the block.
+filter). Products are edited in a dedicated items editor with thumbnails, add,
+remove, all eight fields, move up/down, duplicate, search (name, description,
+category) and group by category (uncategorised last); reordering is off while
+searching or grouping.
 
 Exported pages that contain a filter grid carry the same shared inline
 behaviour runtime as the navbar menu, the FAQ accordion, the tab set and the
 carousel — one `<script>` per page, no external asset. With JavaScript disabled
 the filter buttons are hidden and every card is shown.
+
+### Image picking in the editor (`onPickImage`)
+
+`<EditorLayout onPickImage={() => Promise<string | null>} />` is an optional
+hook that lets the host app supply images, for example from its own media
+library. The hook takes no arguments and returns one image per call.
+
+- A string result is stored exactly as returned. The export applies the same
+  image URL policy as a typed URL.
+- `null` changes nothing and shows no message.
+- A rejection or a throw leaves the field unchanged and shows one generic error
+  notice.
+
+Covered fields: the navbar and footer logo image, the hero image and the image
+block source; list rows that carry a string `src`, `image`, `avatar` or `photo`
+key (for example gallery and image block images, testimonial and team member
+avatars, feature images); and every card-grid item image. Rows without such a
+key (pricing tiers, stats, FAQ) get no control, and plain string lists such as
+`logos` are not covered. Without the hook the URL inputs behave as before.
+
+While a pick is pending the field or row is locked. If the content changed in
+the meantime (the block, page or item is gone, an undo or redo happened, or the
+whole configuration was replaced), the result is discarded with a notice. The
+hook must settle: a promise that never resolves keeps the field locked.
+
+Notices use `sonner`, so mount `<Toaster />` in the host app. Hosts replace
+content with `setConfig`; `useConfigStore` exposes `configGeneration`, a counter
+that changes on every whole-configuration replacement.
 
 ### Server / worker usage (`@siteable/core/worker`)
 
