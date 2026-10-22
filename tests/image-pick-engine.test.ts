@@ -87,6 +87,23 @@ describe.each<Kind>(['field', 'row'])('outcomes (%s)', (kind) => {
     expect(read(kind)).toBe('later.png')
   })
 
+  it.each([['an empty string', ''], ['a whitespace-only string', '  \t\n ']])(
+    'treats %s as a silent dismissal',
+    async (_name, value) => {
+      const before = structuredClone(store().config)
+      const undo = store().undoStack.length
+      const t = toastCount()
+      const registry = createImagePickRegistry()
+      const outcome = await runImagePick(() => value, registry, capture(kind))
+      expect(outcome).toBe('dismissed')
+      expect(store().config).toEqual(before)
+      expect(store().undoStack.length).toBe(undo)
+      expect(toastCount()).toBe(t)
+      // the lock is released
+      expect(await runImagePick(() => 'again.png', registry, capture(kind))).toBe('written')
+    },
+  )
+
   it('treats null as a silent dismissal', async () => {
     const before = structuredClone(store().config)
     const undo = store().undoStack.length

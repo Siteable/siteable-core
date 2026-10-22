@@ -35,6 +35,8 @@ export async function runImagePick(
       toast.error(IMAGE_PICK_FAILED_MESSAGE)
       return 'failed'
     }
+    // An empty or whitespace-only string means nothing was chosen, like null.
+    if (result.trim() === '') return 'dismissed'
 
     const outcome = writePickedImage(target, result)
     if (outcome === 'discarded') toast(IMAGE_PICK_DISCARDED_MESSAGE)
