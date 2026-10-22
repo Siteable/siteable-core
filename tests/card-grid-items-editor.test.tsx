@@ -1,7 +1,7 @@
 /**
  * The card grid items editor, rendered against the config store.
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { CardGridItemsEditor } from '../src/editor/card-grid-items-editor/card-grid-items-editor'
@@ -19,7 +19,13 @@ const LABELS = ['Image URL', 'Alt Text', 'Name', 'Description', 'Price', 'Catego
 let root: Root | undefined
 let host: HTMLElement | undefined
 
+// jsdom reports no document focus; a real user session has it.
+beforeEach(() => {
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+})
+
 afterEach(() => {
+  vi.restoreAllMocks()
   act(() => root?.unmount())
   root = undefined
   host?.remove()
@@ -236,6 +242,66 @@ describe('search and grouping', () => {
     act(() => seed({ items: [{ name: 'x', category: 'A' }, { name: 'y', category: 'B' }, { name: 'z', category: 'C' }] }))
     expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['A', 'B', 'C'])
     expect(rows()).toHaveLength(3)
+  })
+
+  const headings = () => Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)
+
+  it('keeps the freeze when the window loses focus (blur with no related target)', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = rows()[0].querySelectorAll('input')[5]
+    act(() => input.focus())
+    typeInto(input, 'Bags')
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+    act(() => input.blur())
+    expect(headings()).toEqual(['Hats', 'Bags'])
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+    act(() => input.focus())
+    act(() => input.blur())
+    expect(headings()).toEqual(['Bags'])
+  })
+
+  it('prevents the default of mousedown on row buttons so the input keeps focus', () => {
+    seed({ items: [{ name: 'a' }, { name: 'b' }] })
+    mount(() => Promise.resolve(null))
+    const targets = [
+      btn(rows()[0], 'Duplicate'),
+      btn(rows()[0], 'Remove'),
+      btn(rows()[0], 'Move down'),
+      rows()[0].querySelector<HTMLButtonElement>('[data-image-pick]')!,
+    ]
+    for (const el of targets) {
+      const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      act(() => { el.dispatchEvent(event) })
+      expect(event.defaultPrevented).toBe(true)
+    }
+    const field = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    act(() => { rows()[0].querySelectorAll('input')[2].dispatchEvent(field) })
+    expect(field.defaultPrevented).toBe(false)
+  })
+
+  it('releases the freeze when the focused row is removed', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    act(() => rows()[1].querySelectorAll('input')[2].focus())
+    act(() => useConfigStore.getState().updateBlockProps('cg-1', { items: [{ name: 'a', category: 'Hats' }] }))
+    expect(headings()).toEqual(['Hats'])
+  })
+
+  it('releases the freeze when a pending pick disables the focused row', async () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount(() => new Promise<string | null>(() => {}))
+    click(byText('Group by category'))
+    const category = rows()[0].querySelectorAll('input')[5]
+    act(() => category.focus())
+    typeInto(category, 'Bags')
+    expect(headings()).toEqual(['Hats', 'Bags'])
+    click(rows()[0].querySelector<HTMLButtonElement>('[data-image-pick]')!)
+    await act(async () => { await Promise.resolve() })
+    expect(rows()[0].getAttribute('aria-busy')).toBe('true')
+    expect(headings()).toEqual(['Bags'])
   })
 
   it('keeps an edited row visible while its input has focus even if it stops matching the search', () => {

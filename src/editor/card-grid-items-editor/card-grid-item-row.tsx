@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Copy, Image as ImageIcon, X } from 'lucide-react'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { ImagePickButton } from '../image-pick/image-pick-button'
@@ -14,6 +14,8 @@ export interface ItemRowActions {
   remove(rawIndex: number): void
   /** Picks an image for the row's `image` field. */
   pick(item: ItemRecord): void
+  /** Ends the frozen layout; called when the row locks for a pending pick. */
+  releaseLayout(): void
 }
 
 const INPUT_CLASS =
@@ -62,6 +64,10 @@ interface RowProps {
 function CardGridItemRowView({ item, rawIndex, number, canMoveUp, canMoveDown, reorderEnabled, actions }: RowProps) {
   const { enabled, isPending } = useImagePick()
   const pending = enabled && isPending(item)
+  // A locked row disables its inputs, which can leave a stale frozen layout behind.
+  useEffect(() => {
+    if (pending) actions.releaseLayout()
+  }, [pending, actions])
 
   return (
     <div

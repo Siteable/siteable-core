@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent, type MouseEvent } from 'react'
 import { Search } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 import type { BlockConfig } from '@/blocks/types'
@@ -34,6 +34,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   const items = block.props.items
   const [query, setQuery] = useState('')
   const [grouped, setGrouped] = useState(false)
+  const [frozenState, setFrozen] = useState<{ sections: LayoutSection[]; generation: number } | null>(null)
 
   // Callbacks read the latest list through a ref so rows can stay memoised.
   const itemsRef = useRef<unknown>(items)
@@ -50,6 +51,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
       duplicate: (i) => write(duplicateItemAt(itemsRef.current, i)),
       remove: (i) => write(removeItemAt(itemsRef.current, i)),
       pick: (item) => pickRow(blockId, 'items', item, 'image'),
+      releaseLayout: () => setFrozen(null),
     }),
     [write, pickRow, blockId],
   )
@@ -67,7 +69,6 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
     ? groupItemRows(shown, items).map((g) => ({ key: g.key, label: g.label, indexes: g.rows.map((r) => r.rawIndex) }))
     : [{ key: null, label: null, indexes: shown.map((r) => r.rawIndex) }]
   const generation = useConfigStore((s) => s.configGeneration)
-  const [frozenState, setFrozen] = useState<{ sections: LayoutSection[]; generation: number } | null>(null)
   // A freeze from before a whole-configuration replacement, undo or redo is stale.
   const frozen = frozenState !== null && frozenState.generation === generation ? frozenState.sections : null
   const layout = frozen ?? computed
@@ -101,9 +102,19 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   const renderSection = (section: LayoutSection) =>
     section.indexes.map((i) => rowByIndex.get(i)).filter((r): r is ItemRow => r !== undefined).map(renderRow)
 
+  // Keep focus in the input when a row button is pressed (some browsers blur
+  // the input on mousedown), so the layout does not jump under the pointer.
+  const onRowsMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button')) e.preventDefault()
+  }
+
   // Focus moving to another control inside the rows keeps the freeze.
   const onRowsBlur = (e: FocusEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFrozen(null)
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    // A blur with no target while the document lost focus is the window being
+    // left, not the user leaving the rows.
+    if (e.relatedTarget === null && !document.hasFocus()) return
+    setFrozen(null)
   }
 
   const onRowsFocus = (e: FocusEvent<HTMLDivElement>) => {
@@ -139,7 +150,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
         <p className="text-[10px] text-text-3 mb-1.5">Reorder is off while searching or grouping.</p>
       )}
       {rows.length === 0 && <p className="text-[11px] text-text-3 mb-1.5">No products yet.</p>}
-      <div ref={rowsRef} onFocus={onRowsFocus} onBlur={onRowsBlur}>
+      <div ref={rowsRef} onFocus={onRowsFocus} onBlur={onRowsBlur} onMouseDown={onRowsMouseDown}>
         {grouped
           ? layout.map((section) => (
               <section key={section.key} data-card-grid-group={section.key}>
