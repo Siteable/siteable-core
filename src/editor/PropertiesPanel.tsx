@@ -4,11 +4,16 @@ import type { BlockConfig, BlockType } from '@/blocks/types'
 import type { LinkItem } from '@/lib/block-metadata'
 import { toLinkItem } from '@/lib/link-item'
 import { useConfigStore } from '@/store/configStore'
+import { ImageUrlField } from './image-pick/image-url-field'
+import { ImagePickButton } from './image-pick/image-pick-button'
+import { useImagePick } from './image-pick/image-pick-context'
+import { isImageRowKey } from './image-pick/image-row-keys'
+import { CardGridItemsEditor } from './card-grid-items-editor/card-grid-items-editor'
 
 interface FieldDef {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links'
+  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links' | 'image' | 'card-grid-items'
   options?: string[]
   /** Display text per option value; a missing value renders the value itself. */
   optionLabels?: Record<string, string>
@@ -46,7 +51,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         title: 'Content',
         fields: [
           { key: 'logo', label: 'Logo Text', type: 'text' },
-          { key: 'logoImage', label: 'Logo Image URL', type: 'text' },
+          { key: 'logoImage', label: 'Logo Image URL', type: 'image' },
           { key: 'ctaText', label: 'CTA Button', type: 'text' },
           { key: 'ctaUrl', label: 'CTA URL', type: 'text' },
           { key: 'links', label: 'Nav Links', type: 'array-links' },
@@ -72,7 +77,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
           { key: 'primaryCtaUrl', label: 'Primary CTA URL', type: 'text' },
           { key: 'secondaryCta', label: 'Secondary CTA', type: 'text' },
           { key: 'secondaryCtaUrl', label: 'Secondary CTA URL', type: 'text' },
-          { key: 'heroImage', label: 'Hero Image URL', type: 'text' },
+          { key: 'heroImage', label: 'Hero Image URL', type: 'image' },
         ],
       },
       {
@@ -151,7 +156,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         title: 'Content',
         fields: [
           { key: 'logo', label: 'Logo Text', type: 'text' },
-          { key: 'logoImage', label: 'Logo Image URL', type: 'text' },
+          { key: 'logoImage', label: 'Logo Image URL', type: 'image' },
           { key: 'copyright', label: 'Copyright', type: 'text' },
           { key: 'links', label: 'Links', type: 'array-links' },
         ],
@@ -219,7 +224,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
         fields: [
           { key: 'title', label: 'Title', type: 'text' },
           { key: 'subtitle', label: 'Subtitle', type: 'text' },
-          { key: 'items', label: 'Products', type: 'array-items' },
+          { key: 'items', label: 'Products', type: 'card-grid-items' },
         ],
       },
       {
@@ -300,7 +305,7 @@ const blockFields: Partial<Record<BlockType, { sections: { title: string; fields
       {
         title: 'Content',
         fields: [
-          { key: 'src', label: 'Image URL', type: 'text' },
+          { key: 'src', label: 'Image URL', type: 'image' },
           { key: 'alt', label: 'Alt Text', type: 'text' },
           { key: 'title', label: 'Title', type: 'text' },
           { key: 'subtitle', label: 'Subtitle', type: 'text' },
@@ -398,6 +403,7 @@ function withoutKey(props: Record<string, unknown>, key: string): Record<string,
 function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }) {
   const updateBlockProps = useConfigStore((s) => s.updateBlockProps)
   const updateBlock = useConfigStore((s) => s.updateBlock)
+  const imagePick = useImagePick()
 
   // For variant field, it's on the block itself
   const value = field.key === 'variant'
@@ -561,25 +567,17 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
       )
     }
 
+    case 'image':
+      return <ImageUrlField block={block} fieldKey={field.key} label={field.label} value={value} onChange={onChange} />
+
+    case 'card-grid-items':
+      return <CardGridItemsEditor block={block} label={field.label} />
+
     case 'array-items': {
       const items = (Array.isArray(value) ? value : []) as Array<Record<string, unknown>>
 
       // Infer new item shape from existing items, or use sensible defaults per field key
       function createEmptyItem(): Record<string, unknown> {
-        // The product card has a fixed item contract: every added card carries
-        // all eight keys, even when the first stored item is sparse. Extra keys
-        // already present on the first item are carried over with their type.
-        if (block.type === 'card-grid') {
-          const template: Record<string, unknown> = {
-            image: '', alt: '', name: '', description: '',
-            price: '', category: '', ctaText: '', ctaUrl: '',
-          }
-          for (const [key, val] of Object.entries(items[0] ?? {})) {
-            if (key in template) continue
-            template[key] = Array.isArray(val) ? [] : typeof val === 'string' ? '' : val
-          }
-          return template
-        }
         if (items.length > 0) {
           const template: Record<string, unknown> = {}
           for (const [key, val] of Object.entries(items[0])) {
@@ -609,12 +607,15 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
       return (
         <div className="mb-2.5">
           <label className="block text-[11.5px] text-text-2 mb-1 font-medium">{field.label}</label>
-          {items.map((item, i) => (
+          {items.map((item, i) => {
+            const rowPending = imagePick.isPending(item)
+            return (
             <div key={i} className="bg-bg-2 border border-border-default rounded p-2 mb-1.5">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-text-3 font-medium">Item {i + 1}</span>
                 <button
                   onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                  disabled={rowPending}
                   className="text-[10px] text-text-3 hover:text-status-red transition-colors"
                 >
                   Remove
@@ -626,9 +627,8 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
                 // a text input — `String(['a'])` → 'a,b' and writing that back
                 // breaks the block's `.map`. Non-strings render read-only.
                 const editable = typeof val === 'string'
-                return (
-                  <div key={key} className="mb-1">
-                    <label className="block text-[10px] text-text-3 mb-0.5">{ITEM_KEY_LABELS[key] ?? key}</label>
+                const showPick = imagePick.enabled && editable && isImageRowKey(key)
+                const input = (
                     <input
                       type="text"
                       value={Array.isArray(val) ? val.join(', ') : String(val ?? '')}
@@ -639,15 +639,30 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
                         onChange(updated)
                       }}
                       readOnly={!editable}
-                      disabled={!editable}
+                      disabled={!editable || rowPending}
                       title={editable ? undefined : 'Complex value — edit in the JSON panel'}
                       className="w-full px-1.5 py-1 rounded border border-border-subtle bg-bg-3 text-text-0 text-[11px] outline-none focus:border-green disabled:opacity-60"
                     />
+                )
+                return (
+                  <div key={key} className="mb-1">
+                    <label className="block text-[10px] text-text-3 mb-0.5">{ITEM_KEY_LABELS[key] ?? key}</label>
+                    {showPick ? (
+                      <div className="flex items-center gap-1.5">
+                        {input}
+                        <ImagePickButton
+                          label={ITEM_KEY_LABELS[key] ?? key}
+                          pending={rowPending}
+                          onClick={() => imagePick.pickRow(block.id, field.key, item, key)}
+                        />
+                      </div>
+                    ) : input}
                   </div>
                 )
               })}
             </div>
-          ))}
+            )
+          })}
           <button
             onClick={() => onChange([...items, createEmptyItem()])}
             className="text-[10px] text-green hover:text-green-dim transition-colors"

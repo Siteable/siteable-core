@@ -191,12 +191,47 @@ every card and no buttons.
 The option is additive and opt-in. Any other `display` value, no `display`, or
 fewer than two distinct categories renders a plain grid with no buttons. The
 editor exposes it as a Display select on the block (Default layout / Category
-filter), and products are edited as a list on the block.
+filter). Products are edited in a dedicated items editor with thumbnails, add,
+remove, all eight fields, move up/down, duplicate, search (name, description,
+category) and group by category (uncategorised last); reordering is off while
+searching or grouping.
 
 Exported pages that contain a filter grid carry the same shared inline
 behaviour runtime as the navbar menu, the FAQ accordion, the tab set and the
 carousel — one `<script>` per page, no external asset. With JavaScript disabled
 the filter buttons are hidden and every card is shown.
+
+### Image picking in the editor (`onPickImage`)
+
+`<EditorLayout onPickImage={() => Promise<string | null>} />` is an optional
+hook that lets the host app supply images, for example from its own media
+library. The hook takes no arguments and returns one image per call.
+
+- A string result is stored exactly as returned. The export applies the same
+  image URL policy as a typed URL.
+- `null`, an empty string or a whitespace-only string means nothing was chosen:
+  nothing changes and no message is shown.
+- A rejection, a throw, or any other non-string result (including `undefined`
+  from a hook that forgets to return) leaves the field unchanged and shows one
+  generic error notice.
+
+Covered fields: the navbar and footer logo image, the hero image and the image
+block source; list rows that carry a string `src`, `image`, `avatar` or `photo`
+key (for example gallery and image block images, testimonial and team member
+avatars, feature images); and every card-grid item image. Rows without such a
+key (pricing tiers, stats, FAQ) get no control, and plain string lists such as
+`logos` are not covered. Without the hook the URL inputs behave as before.
+
+While a pick is pending the field or row is locked. The result is discarded with
+a notice if the configuration was replaced with `setConfig`, an undo or redo
+happened, the pick targets a page that is no longer active when it settles, the
+block was removed, or the row was replaced. Changes made through other writers to
+the same field are not detected. The hook must settle: a promise that never
+resolves keeps the field locked.
+
+Notices use `sonner`, so mount `<Toaster />` in the host app. Hosts replace
+content with `setConfig`; `useConfigStore` exposes `configGeneration`, a counter
+that changes on `setConfig`, undo and redo.
 
 ### Server / worker usage (`@siteable/core/worker`)
 

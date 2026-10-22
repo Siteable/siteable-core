@@ -17,6 +17,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
+import { EXPORT_XSS_CORPUS } from './helpers/injection-corpus'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
 import type { BlockConfig, BlockType, SiteConfig } from '../src/blocks/types'
 import { renderContent } from '../src/lib/export-blocks/render-content'
@@ -27,19 +28,7 @@ import { renderCardGrid } from '../src/lib/export-blocks/render-card-grid'
 import { renderDivider } from '../src/lib/export-blocks/render-divider'
 import { renderBanner } from '../src/lib/export-blocks/render-banner'
 
-const CORPUS = [
-  '<script>alert(1)</script>',
-  '"><img src=x onerror=alert(1)>',
-  'javascript:alert(1)',
-  '&#106;avascript:alert(1)',
-  '"><svg/onload=alert(1)>',
-  'data:text/html,<script>alert(1)</script>',
-  // Widening additions: quote breaks, a bare close bracket, a tab-split scheme.
-  '" onerror="x',
-  '">',
-  'java\tscript:',
-  '//evil.example',
-]
+const CORPUS = EXPORT_XSS_CORPUS
 
 /**
  * An `on*=` HANDLER inside a real open tag — not the escaped `onerror=` text an

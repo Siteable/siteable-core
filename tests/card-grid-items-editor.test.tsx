@@ -1,0 +1,434 @@
+/**
+ * The card grid items editor, rendered against the config store.
+ */
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { CardGridItemsEditor } from '../src/editor/card-grid-items-editor/card-grid-items-editor'
+import { ImagePickProvider } from '../src/editor/image-pick/image-pick-context'
+import { useConfigStore } from '../src/store/configStore'
+import { validateSiteConfig } from '../src/lib/generate-site'
+import { exportSiteToHTML } from '../src/lib/export-html'
+import type { BlockConfig } from '../src/blocks/types'
+import { makeFiftyItems } from './helpers/card-grid-items-fixtures'
+
+;(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+const LABELS = ['Image URL', 'Alt Text', 'Name', 'Description', 'Price', 'Category', 'CTA Text', 'CTA URL']
+
+let root: Root | undefined
+let host: HTMLElement | undefined
+
+// jsdom reports no document focus; a real user session has it.
+beforeEach(() => {
+  vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  act(() => root?.unmount())
+  root = undefined
+  host?.remove()
+  host = undefined
+})
+
+function seed(props: Record<string, unknown>) {
+  const block: BlockConfig = { id: 'cg-1', type: 'card-grid', variant: 'product', props }
+  useConfigStore.getState().setConfig({
+    name: 'X',
+    pages: [{ id: 'page-home', name: 'Home', path: '/', blocks: [block] }],
+    blocks: [block],
+  })
+}
+
+const stored = () => useConfigStore.getState().config.pages![0].blocks[0].props.items as Array<Record<string, unknown>>
+
+function Harness() {
+  const block = useConfigStore((s) => s.config.pages![0].blocks[0])
+  return <CardGridItemsEditor block={block} label="Products" />
+}
+
+function mount(hook?: () => Promise<string | null>) {
+  host = document.createElement('div')
+  document.body.appendChild(host)
+  root = createRoot(host)
+  act(() => root!.render(<ImagePickProvider onPickImage={hook}><Harness /></ImagePickProvider>))
+}
+
+const rows = () => Array.from(host!.querySelectorAll<HTMLElement>('[data-card-grid-item]'))
+const click = (el: Element) => act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+/** Finds a row action by its generic name ("Move up", "Remove"); the real name carries the item number. */
+const btn = (row: HTMLElement, label: string) => {
+  const [verb, ...rest] = label.split(' ')
+  const pattern = new RegExp(`^${verb} item \\d+${rest.length ? ` ${rest.join(' ')}` : ''}$`)
+  return Array.from(row.querySelectorAll<HTMLButtonElement>('button')).find((b) => pattern.test(b.getAttribute('aria-label') ?? ''))!
+}
+const byText = (text: string) =>
+  Array.from(host!.querySelectorAll('button')).find((b) => (b.textContent ?? '').includes(text))!
+const search = () => host!.querySelector<HTMLInputElement>('input[type="search"]')!
+const names = () => rows().map((r) => r.querySelectorAll('input')[2].value)
+
+function typeInto(input: HTMLInputElement, value: string) {
+  act(() => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    setter.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
+describe('empty state', () => {
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['an object', {}],
+    ['a string', 'x'],
+    ['an empty array', []],
+    ['an array without objects', [1, 'a']],
+  ])('shows it for %s and Add works', (_n, value) => {
+    seed(value === undefined ? {} : { items: value })
+    mount()
+    expect(host!.textContent).toContain('No products yet.')
+    expect(rows()).toHaveLength(0)
+    click(byText('Add item'))
+    expect(rows()).toHaveLength(1)
+    const last = stored().at(-1)!
+    expect(Object.keys(last).sort()).toEqual(['alt', 'category', 'ctaText', 'ctaUrl', 'description', 'image', 'name', 'price'])
+  })
+})
+
+describe('rows', () => {
+  it('shows eight labelled fields in order for a sparse item', () => {
+    seed({ items: [{ name: 'A' }] })
+    mount()
+    const labels = Array.from(rows()[0].querySelectorAll('label')).map((l) => l.textContent)
+    expect(labels).toEqual(LABELS)
+  })
+
+  it('renders a lazy thumbnail only for an allowed image', () => {
+    seed({ items: [
+      { name: 'ok', image: 'https://img.example/a.png' },
+      { name: 'none' },
+      { name: 'bad', image: 'javascript:alert(1)' },
+    ] })
+    mount()
+    const [ok, none, bad] = rows()
+    const img = ok.querySelector('img')!
+    expect(img.getAttribute('loading')).toBe('lazy')
+    expect(img.getAttribute('src')).toBe('https://img.example/a.png')
+    expect(none.querySelector('img')).toBeNull()
+    expect(bad.querySelector('img')).toBeNull()
+  })
+
+  it('writes a string when an absent key is edited', () => {
+    seed({ items: [{ name: 'A' }] })
+    mount()
+    typeInto(rows()[0].querySelectorAll('input')[4], '12.50')
+    expect(stored()[0]).toEqual({ name: 'A', price: '12.50' })
+  })
+
+  it('shows a non-string value read-only', () => {
+    seed({ items: [{ name: 'A', price: 5 }] })
+    mount()
+    const price = rows()[0].querySelectorAll('input')[4]
+    expect(price.disabled).toBe(true)
+    expect(price.title).toContain('JSON panel')
+    expect(stored()[0].price).toBe(5)
+  })
+
+  it('moves, duplicates and removes', () => {
+    seed({ items: [{ name: 'A' }, { name: 'B' }, { name: 'C' }] })
+    mount()
+    expect(btn(rows()[0], 'Move up').disabled).toBe(true)
+    expect(btn(rows()[2], 'Move down').disabled).toBe(true)
+    click(btn(rows()[1], 'Move up'))
+    expect(stored().map((i) => i.name)).toEqual(['B', 'A', 'C'])
+    click(btn(rows()[0], 'Duplicate'))
+    expect(stored().map((i) => i.name)).toEqual(['B', 'B', 'A', 'C'])
+    click(btn(rows()[1], 'Remove'))
+    expect(stored().map((i) => i.name)).toEqual(['B', 'A', 'C'])
+  })
+
+  it('keeps the other entries untouched on an edit', () => {
+    const items = [{ name: 'A' }, { name: 'B' }]
+    seed({ items })
+    mount()
+    typeInto(rows()[0].querySelectorAll('input')[2], 'A2')
+    expect(stored()[1]).toBe(items[1])
+  })
+})
+
+describe('accessible names', () => {
+  it('gives every input a unique id and a label, and each action an item-specific name', () => {
+    seed({ items: [{ name: 'a' }, { name: 'b' }, { name: 'c' }] })
+    mount(() => Promise.resolve(null))
+    const inputs = Array.from(host!.querySelectorAll<HTMLInputElement>('[data-card-grid-item] input'))
+    expect(inputs).toHaveLength(24)
+    const ids = inputs.map((i) => i.id)
+    expect(ids.every(Boolean)).toBe(true)
+    expect(new Set(ids).size).toBe(24)
+    for (const input of inputs) expect(input.labels?.length).toBe(1)
+    expect(rows()[2].querySelectorAll('input')[2].labels![0].textContent).toBe('Name')
+    const names = Array.from(rows()[2].querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))
+    expect(names).toEqual([
+      'Move item 3 up', 'Move item 3 down', 'Duplicate item 3', 'Remove item 3', 'Choose image for item 3',
+    ])
+  })
+
+  it('labels each group section by its heading', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const sections = Array.from(host!.querySelectorAll('section'))
+    expect(sections).toHaveLength(2)
+    const ids = sections.map((sec) => sec.getAttribute('aria-labelledby'))
+    expect(new Set(ids).size).toBe(2)
+    sections.forEach((sec, n) => {
+      const heading = host!.ownerDocument.getElementById(ids[n]!)
+      expect(heading).toBe(sec.querySelector('h4'))
+    })
+  })
+})
+
+describe('search and grouping', () => {
+  it('narrows rows without changing stored order and disables reorder', () => {
+    seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }, { name: 'Blue Shoe' }] })
+    mount()
+    typeInto(search(), 'shoe')
+    expect(names()).toEqual(['Red Shoe', 'Blue Shoe'])
+    expect(host!.textContent).toContain('Reorder is off while searching or grouping.')
+    for (const r of rows()) {
+      expect(btn(r, 'Move up').disabled).toBe(true)
+      expect(btn(r, 'Move down').disabled).toBe(true)
+    }
+    expect(stored().map((i) => i.name)).toEqual(['Red Shoe', 'Cap', 'Blue Shoe'])
+    expect(host!.querySelectorAll('label').length).toBe(1 + 8 * 2)
+  })
+
+  it('groups by category with Uncategorised last, off by default', () => {
+    seed({ items: [
+      { name: 'a' }, { name: 'b', category: 'Hats' }, { name: 'c', category: ' hats ' }, { name: 'd', category: 'Bags' },
+    ] })
+    mount()
+    const toggle = byText('Group by category')
+    expect(toggle.getAttribute('aria-pressed')).toBe('false')
+    expect(host!.querySelectorAll('h4')).toHaveLength(0)
+    expect(host!.textContent).not.toContain('Reorder is off')
+    click(toggle)
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Hats', 'Bags', 'Uncategorised'])
+    expect(host!.textContent).toContain('Reorder is off while searching or grouping.')
+    for (const r of rows()) expect(btn(r, 'Move down').disabled).toBe(true)
+  })
+
+  it('keeps the same input mounted and focused while its category is edited under grouping', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = () => rows()[0].querySelectorAll('input')[5]
+    const first = input()
+    act(() => first.focus())
+    typeInto(first, 'Bags')
+    expect(stored()[0].category).toBe('Bags')
+    expect(input()).toBe(first)
+    expect(first.isConnected).toBe(true)
+    expect(document.activeElement).toBe(first)
+    typeInto(first, 'Bagsx')
+    expect(input()).toBe(first)
+    expect(document.activeElement).toBe(first)
+    act(() => first.blur())
+    // After focus leaves, the row joins its new group.
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Bagsx', 'Bags'])
+  })
+
+  it('keeps the freeze when focus moves to a button in the same row, then releases it', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = rows()[0].querySelectorAll('input')[5]
+    act(() => input.focus())
+    typeInto(input, 'Bags')
+    const dup = btn(rows()[0], 'Duplicate')
+    act(() => dup.focus())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Hats', 'Bags'])
+    expect(dup.isConnected).toBe(true)
+    expect(document.activeElement).toBe(dup)
+    act(() => dup.blur())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Bags'])
+  })
+
+  it('keeps the freeze when focus moves to a sibling input in the same row', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const inputs = rows()[0].querySelectorAll('input')
+    const category = inputs[5]
+    const next = inputs[6]
+    act(() => category.focus())
+    typeInto(category, 'Bags')
+    act(() => next.focus())
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['Hats', 'Bags'])
+    expect(next.isConnected).toBe(true)
+    expect(document.activeElement).toBe(next)
+  })
+
+  it('drops a stale freeze when the configuration is replaced while an input is focused', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    act(() => rows()[0].querySelectorAll('input')[2].focus())
+    act(() => seed({ items: [{ name: 'x', category: 'A' }, { name: 'y', category: 'B' }, { name: 'z', category: 'C' }] }))
+    expect(Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)).toEqual(['A', 'B', 'C'])
+    expect(rows()).toHaveLength(3)
+  })
+
+  const headings = () => Array.from(host!.querySelectorAll('h4')).map((h) => h.textContent)
+
+  it('keeps the freeze when the window loses focus (blur with no related target)', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    const input = rows()[0].querySelectorAll('input')[5]
+    act(() => input.focus())
+    typeInto(input, 'Bags')
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false)
+    act(() => input.blur())
+    expect(headings()).toEqual(['Hats', 'Bags'])
+    vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+    act(() => input.focus())
+    act(() => input.blur())
+    expect(headings()).toEqual(['Bags'])
+  })
+
+  it('prevents the default of mousedown on row buttons so the input keeps focus', () => {
+    seed({ items: [{ name: 'a' }, { name: 'b' }] })
+    mount(() => Promise.resolve(null))
+    const targets = [
+      btn(rows()[0], 'Duplicate'),
+      btn(rows()[0], 'Remove'),
+      btn(rows()[0], 'Move down'),
+      rows()[0].querySelector<HTMLButtonElement>('[data-image-pick]')!,
+    ]
+    for (const el of targets) {
+      const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      act(() => { el.dispatchEvent(event) })
+      expect(event.defaultPrevented).toBe(true)
+    }
+    const field = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    act(() => { rows()[0].querySelectorAll('input')[2].dispatchEvent(field) })
+    expect(field.defaultPrevented).toBe(false)
+  })
+
+  it('releases the freeze when the focused row is removed', () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount()
+    click(byText('Group by category'))
+    act(() => rows()[1].querySelectorAll('input')[2].focus())
+    act(() => useConfigStore.getState().updateBlockProps('cg-1', { items: [{ name: 'a', category: 'Hats' }] }))
+    expect(headings()).toEqual(['Hats'])
+  })
+
+  it('releases the freeze when a pending pick disables the focused row', async () => {
+    seed({ items: [{ name: 'a', category: 'Hats' }, { name: 'b', category: 'Bags' }] })
+    mount(() => new Promise<string | null>(() => {}))
+    click(byText('Group by category'))
+    const category = rows()[0].querySelectorAll('input')[5]
+    act(() => category.focus())
+    typeInto(category, 'Bags')
+    expect(headings()).toEqual(['Hats', 'Bags'])
+    click(rows()[0].querySelector<HTMLButtonElement>('[data-image-pick]')!)
+    await act(async () => { await Promise.resolve() })
+    expect(rows()[0].getAttribute('aria-busy')).toBe('true')
+    expect(headings()).toEqual(['Bags'])
+  })
+
+  it('keeps an edited row visible while its input has focus even if it stops matching the search', () => {
+    seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }] })
+    mount()
+    typeInto(search(), 'shoe')
+    expect(names()).toEqual(['Red Shoe'])
+    const input = rows()[0].querySelectorAll('input')[2]
+    act(() => input.focus())
+    typeInto(input, 'Red Boot')
+    expect(names()).toEqual(['Red Boot'])
+    expect(rows()[0].querySelectorAll('input')[2]).toBe(input)
+    expect(document.activeElement).toBe(input)
+    act(() => input.blur())
+    expect(names()).toEqual([])
+  })
+
+  it('add with a search active clears it and shows the new row', () => {
+    seed({ items: [{ name: 'Red Shoe' }, { name: 'Cap' }] })
+    mount()
+    typeInto(search(), 'shoe')
+    expect(rows()).toHaveLength(1)
+    click(byText('Add item'))
+    expect(search().value).toBe('')
+    expect(rows()).toHaveLength(3)
+  })
+})
+
+describe('store integration', () => {
+  it('recomputes the view on undo and redo', () => {
+    seed({ items: [{ name: 'A' }, { name: 'B' }] })
+    mount()
+    click(btn(rows()[0], 'Remove'))
+    expect(names()).toEqual(['B'])
+    act(() => useConfigStore.getState().undo())
+    expect(names()).toEqual(['A', 'B'])
+    act(() => useConfigStore.getState().redo())
+    expect(names()).toEqual(['B'])
+  })
+
+  it('keeps the block and items through validateSiteConfig', () => {
+    seed({ items: [{ name: 'A' }, { name: 'B' }] })
+    mount()
+    click(byText('Add item'))
+    click(btn(rows()[1], 'Duplicate'))
+    const { config } = useConfigStore.getState()
+    const result = validateSiteConfig(JSON.parse(JSON.stringify(config)))
+    const block = result.pages![0].blocks[0]
+    expect(block.type).toBe('card-grid')
+    expect(block.props.items).toEqual(stored())
+  })
+})
+
+describe('export parity', () => {
+  it('groups exactly like the exported filter buttons for the 50-item fixture', () => {
+    const items = makeFiftyItems()
+    seed({ items, display: 'filter' })
+    mount()
+    click(byText('Group by category'))
+    const editor = Array.from(host!.querySelectorAll<HTMLElement>('[data-card-grid-group]'))
+      .filter((g) => g.dataset.cardGridGroup !== '')
+      .map((g) => [g.dataset.cardGridGroup, g.querySelector('h4')!.textContent])
+
+    const html = exportSiteToHTML({
+      name: 'X',
+      blocks: [{ id: 'cg-1', type: 'card-grid', variant: 'product', props: { items, display: 'filter' } }],
+    })
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    const exported = Array.from(doc.querySelectorAll('[data-sb-filter-btn]'))
+      .filter((b) => b.getAttribute('data-sb-filter-btn') !== '')
+      .map((b) => [b.getAttribute('data-sb-filter-btn'), b.textContent])
+    expect(editor).toEqual(exported)
+    expect(editor).toHaveLength(11)
+  })
+})
+
+describe('image pick control', () => {
+  it('is absent without a hook', () => {
+    seed({ items: [{ name: 'A' }, { name: 'B' }] })
+    mount()
+    expect(host!.querySelectorAll('[data-image-pick]')).toHaveLength(0)
+  })
+
+  it('appears once per row on the image field with a hook', () => {
+    seed({ items: [{ name: 'A' }, { name: 'B' }] })
+    mount(async () => 'https://img.example/x.png')
+    expect(host!.querySelectorAll('[data-image-pick]')).toHaveLength(2)
+    for (const r of rows()) {
+      const first = r.querySelectorAll('input')[0]
+      expect(first.parentElement!.querySelector('[data-image-pick]')).not.toBeNull()
+    }
+  })
+})
