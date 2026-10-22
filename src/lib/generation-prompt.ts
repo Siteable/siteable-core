@@ -72,6 +72,7 @@ Every entry below lists the contents of that block's "props" object.
 17. gallery (variants: grid, masonry) - props: { title?, display?: "carousel" (only with 2+ images; omit for the default layout), images?: [{ src?, alt?, caption? }] }
 18. divider (variants: line, space, dots) - props: { height?, width? }
 19. banner (variants: ribbon, bar) - props: { text, linkText?, linkUrl? }
+20. card-grid (variants: product) - props: { title?, subtitle?, display?: "filter" (only with 2+ distinct categories; omit for the default layout), items: [{ image?, alt?, name, description?, price?, category?, ctaText?, ctaUrl? }] }
 
 Icons: Blocks, Code, Bot, Zap, Shield, Globe, Layers, Palette, Rocket, Star, Lock, Settings
 Fonts: DM Sans, Inter, Space Grotesk, Poppins, Manrope, Outfit, Plus Jakarta Sans, Sora, Nunito Sans, Work Sans, Rubik, Raleway
@@ -86,6 +87,9 @@ Buttons and images take real URLs — do not strip them out:
   upload and NO data: URI support. If you have no hosted image URL, OMIT the image
   prop entirely rather than inventing a path like "assets/hero.png" — an unknown
   prop is ignored, a broken one is worse.
+- card-grid: items[].image must be an https:// URL (omit it when you have none, the
+  card shows a placeholder); items[].ctaUrl is a real link URL and renders only when
+  items[].ctaText is also set. Never invent product items — an empty list is valid.
 
 ## Rules
 

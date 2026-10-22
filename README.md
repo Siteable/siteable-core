@@ -1,6 +1,6 @@
 # @siteable/core
 
-A visual website builder engine: 19 typed block components, a drag-edit canvas, theme
+A visual website builder engine: 20 typed block components, a drag-edit canvas, theme
 presets, AI generation, and a one-click HTML export. JSON is the source of truth — every
 edit produces clean, diffable JSON that humans and AI agents can both read and write.
 
@@ -156,6 +156,47 @@ Exported pages that contain a rendered carousel carry the same shared inline
 behaviour runtime as the navbar menu, the FAQ accordion and the tab set — one
 `<script>` per page, no external asset. With JavaScript disabled the controls
 are hidden and every slide is shown stacked in item order.
+
+### `card-grid` block: product cards with an optional category filter
+
+A `card-grid` block renders a grid of product cards. Its props are `title`,
+`subtitle`, `display` and `items`, where each item is
+`{ image?, alt?, name, description?, price?, category?, ctaText?, ctaUrl? }` and
+every value is a plain string. `price` is a free display string and is never
+parsed, so `'$12'` and `'Contact us'` are equally valid. The block has one
+variant, `product`, which is also what a missing or unknown `variant` renders.
+
+Each card shows, in this order: an image box, the category label, the name, the
+description and the price. A field that is empty is left out. A call to action
+is rendered only when both `ctaText` and `ctaUrl` are set and the URL passes the
+same link policy as every other block; in every other case no call-to-action
+element is rendered. The image box keeps a 4:3 shape and the image is lazy
+loaded and cropped to fit, set inline so it holds with scripts disabled. An item
+with no image, or whose image URL is not allowed, shows a placeholder, and the
+image `alt` falls back to the item name. All item text is escaped.
+
+An empty or missing `items` list renders nothing in the exported page and shows
+an empty state in the editor. A block added from the palette starts with an empty
+list, so it never ships sample products.
+
+With `display: 'filter'` and at least two distinct categories (compared after
+trimming and lower-casing; the first spelling is the label), the exported page
+adds a row of filter buttons: an "All" button, active by default, then one
+button per category in first-seen order. Clicking a button, or pressing Enter or
+Space on it, shows only the cards of that category; "All" shows every card,
+including uncategorised ones. The active button is exposed with `aria-pressed`,
+and filter grids on one page work independently. The editor canvas always shows
+every card and no buttons.
+
+The option is additive and opt-in. Any other `display` value, no `display`, or
+fewer than two distinct categories renders a plain grid with no buttons. The
+editor exposes it as a Display select on the block (Default layout / Category
+filter), and products are edited as a list on the block.
+
+Exported pages that contain a filter grid carry the same shared inline
+behaviour runtime as the navbar menu, the FAQ accordion, the tab set and the
+carousel — one `<script>` per page, no external asset. With JavaScript disabled
+the filter buttons are hidden and every card is shown.
 
 ### Server / worker usage (`@siteable/core/worker`)
 

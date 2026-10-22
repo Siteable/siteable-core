@@ -125,12 +125,13 @@ describe('block root id attributes', () => {
   })
 })
 
-describe('id injection through exportSiteToHTML for the six new block types', () => {
+describe('id injection through exportSiteToHTML for the newer block types', () => {
   it('the dispatcher attaches each new renderer root id via the full export path', () => {
     // The golden tests (tests/export-blocks-golden.test.ts) call the raw
     // renderers directly, bypassing `renderBlock`/`withBlockId`. This exercises
-    // the real dispatcher so the contract is proven for every new type too. All six
-    // renderers root on a `<div>`.
+    // the real dispatcher so the contract is proven for every newer type too.
+    // Every renderer here roots on a `<div>` except the card grid, which roots
+    // on a `<section>`.
     const config: SiteConfig = {
       name: 'x',
       blocks: [
@@ -140,6 +141,7 @@ describe('id injection through exportSiteToHTML for the six new block types', ()
         { id: 'gallery-1', type: 'gallery', variant: 'grid', props: { images: [{ src: 'https://cdn.example.com/a.png', alt: 'a' }] } },
         { id: 'divider-1', type: 'divider', variant: 'line', props: { height: 40 } },
         { id: 'banner-1', type: 'banner', variant: 'ribbon', props: { text: 'Hi' } },
+        { id: 'card-grid-1', type: 'card-grid', variant: 'product', props: { items: [{ name: 'One' }] } },
       ],
     }
     const html = exportSiteToHTML(config)
@@ -149,9 +151,10 @@ describe('id injection through exportSiteToHTML for the six new block types', ()
     expect(html).toContain('<div id="gallery-1"')
     expect(html).toContain('<div id="divider-1"')
     expect(html).toContain('<div id="banner-1"')
+    expect(html).toContain('<section id="card-grid-1"')
     // Each id appears exactly once across the document — a single resolvable
     // anchor target per block.
-    for (const id of ['content-1', 'image-1', 'video-1', 'gallery-1', 'divider-1', 'banner-1']) {
+    for (const id of ['content-1', 'image-1', 'video-1', 'gallery-1', 'divider-1', 'banner-1', 'card-grid-1']) {
       expect((html.match(new RegExp(`id="${id}"`, 'g')) || []).length).toBe(1)
     }
   })

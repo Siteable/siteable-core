@@ -66,6 +66,15 @@ const coverageConfig: SiteConfig = {
       variant: 'ribbon',
       props: { text: 'Hello World', linkText: 'More', linkUrl: '#' },
     },
+    {
+      id: 'b-card-grid',
+      type: 'card-grid',
+      variant: 'product',
+      props: {
+        title: 'Products',
+        items: [{ name: 'One', price: '$1', category: 'Shoes', ctaText: 'View', ctaUrl: 'https://x/i' }],
+      },
+    },
   ],
 }
 
@@ -138,5 +147,9 @@ describe('export block coverage', () => {
 
   it('renders banner block text', () => {
     expect(html).toContain('Hello World')
+  })
+
+  it('renders card grid block with the inline 4:3 image box', () => {
+    expect(html).toContain('aspect-ratio:4/3')
   })
 })

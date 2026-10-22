@@ -1,9 +1,9 @@
 /**
  * Behavior runtime for exported pages.
  *
- * Every page with a navbar, faq, tabs or carousel block gets ONE inline script
- * (never a separate asset) that wires the behaviors through delegated document
- * listeners and performs no initialization work of its own:
+ * Every page with a navbar, faq, tabs, carousel or filter-active card grid block
+ * gets ONE inline script (never a separate asset) that wires the behaviors through
+ * delegated document listeners and performs no initialization work of its own:
  *  - menu: `data-sb-menu-toggle` toggles the element its `aria-controls` names
  *    through `hidden`, so nothing animates, with `aria-expanded` mirroring it;
  *    Escape closes the panel owning focus (else every open panel) and focuses it.
@@ -14,6 +14,11 @@
  *  - carousel: `data-sb-carousel` pages one `data-sb-carousel-slide` at a time via
  *    prev/next; the ends do not loop (that control is `disabled`), Left/Right act
  *    only inside it, and no timer runs.
+ *  - filter: `data-sb-filter-btn` inside a `data-sb-filter` scope sets its own
+ *    `aria-pressed` and hides every `data-sb-category` card whose key differs; an
+ *    empty key shows them all, and each scope stays independent of the others.
+ *    `hidden` is what hides a card, so the renderer must keep display utilities
+ *    off the card element and give every card the attribute, empty when uncategorised.
  *
  * The script is a plain string, not a TS function, so the emitted bytes never depend on
  * the build toolchain: pages are compared byte-for-byte against frozen baselines and a
@@ -100,6 +105,12 @@ export const BEHAVIOR_RUNTIME_SOURCE = [
   'function showSlide(c,to,b){var s=slidesOf(c),i,n=s.length,p,x,o;if(!n)return;to=to<0?0:(to>n-1?n-1:to);for(i=0;i<n;i++)s[i].hidden=i!==to;p=c.querySelector(\'[data-sb-carousel-prev]\');x=c.querySelector(\'[data-sb-carousel-next]\');if(p)p.disabled=to===0;if(x)x.disabled=to===n-1;if(b&&b.disabled){o=b===p?x:p;if(o)o.focus()}}',
   "d.addEventListener('click',function(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'),c;if(!b)return;c=b.closest('[data-sb-carousel]');if(!c)return;showSlide(c,shown(slidesOf(c))+(b.hasAttribute('data-sb-carousel-next')?1:-1),b)});",
   "d.addEventListener('keydown',function(e){var k=e.key,t=e.target,c;if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||(k!=='ArrowLeft'&&k!=='ArrowRight'))return;c=t&&t.closest&&t.closest('[data-sb-carousel]');if(!c)return;var s=slidesOf(c),to=shown(s)+(k==='ArrowRight'?1:-1);if(to<0||to>s.length-1)return;e.preventDefault();showSlide(c,to,t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'))});",
+  "function filt(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-filter-btn]'),g,k,l,i;",
+  "if(!b||(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' '))return;g=b.closest('[data-sb-filter]');if(!g)return;",
+  "if(e.type==='keydown')e.preventDefault();k=b.getAttribute('data-sb-filter-btn');",
+  "l=g.querySelectorAll('[data-sb-filter-btn]');for(i=0;i<l.length;i++)l[i].setAttribute('aria-pressed',l[i]===b?'true':'false');",
+  "l=g.querySelectorAll('[data-sb-category]');for(i=0;i<l.length;i++)l[i].hidden=!!k&&l[i].getAttribute('data-sb-category')!==k}",
+  "d.addEventListener('click',filt);d.addEventListener('keydown',filt);",
   '})(document,window);',
 ].join('\n')
 
@@ -129,6 +140,13 @@ export const CAROUSEL_NOSCRIPT_CSS = [
 ].join('\n')
 
 export const carouselRules = CAROUSEL_NOSCRIPT_CSS // same literal, for the normalizers
+
+/**
+ * Script-less filter: with no script every card must stay visible, so the
+ * button row is dropped. `!important` beats any utility class, the same way the
+ * carousel controls are hidden.
+ */
+export const FILTER_NOSCRIPT_CSS = '[data-sb-filter-btn]{display:none!important}'
 
 /** True for a navbar or faq block — the two widgets the runtime shipped with. */
 function isMenuOrFaq(block: unknown): boolean {
@@ -167,10 +185,62 @@ export function isCarouselBlock(block: unknown): boolean {
   return Array.isArray(list) && list.length >= 2
 }
 
+/**
+ * Normalised category key: trimmed, lower-cased, with the characters that would
+ * need escaping inside an HTML attribute percent-encoded. Percent-encoding the
+ * reserved set keeps the mapping injective and total (it never throws, even on
+ * a lone surrogate), and the result carries no `&`, angle bracket or quote, so
+ * the renderer can place it inside a quoted attribute without escaping it again.
+ */
+export function cardGridCategoryKey(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[%&<>"'`]/g, (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase())
+}
+
+/**
+ * Distinct categories of a card-grid item list, in first-appearance order. Each
+ * entry carries the key and the first-seen spelling as its label; whitespace-
+ * only, non-string and non-object entries are skipped. The label is the raw
+ * authored text and must be escaped on output. Exported so the renderer builds
+ * its buttons from the same rule the predicate counts.
+ */
+export function cardGridCategories(items: unknown): Array<{ key: string; label: string }> {
+  if (!Array.isArray(items)) return []
+  const byKey = new Map<string, string>()
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue
+    const raw = (item as { category?: unknown }).category
+    if (typeof raw !== 'string') continue
+    const key = cardGridCategoryKey(raw)
+    if (!key || byKey.has(key)) continue
+    byKey.set(key, raw.trim())
+  }
+  return Array.from(byKey, ([key, label]) => ({ key, label }))
+}
+
+/**
+ * True for a card grid that renders as a filtered product grid: `display` must
+ * be exactly `filter` and the items must hold at least two distinct normalised
+ * non-empty categories — exported so markup, script emission and the no-script
+ * rules share one rule.
+ */
+export function isFilterCardGrid(block: unknown): boolean {
+  if (!block || typeof block !== 'object') return false
+  const candidate = block as { type?: unknown; props?: unknown }
+  if (candidate.type !== 'card-grid') return false
+  if (!candidate.props || typeof candidate.props !== 'object') return false
+  const props = candidate.props as { display?: unknown; items?: unknown }
+  if (props.display !== 'filter') return false
+  return cardGridCategories(props.items).length >= 2
+}
+
 /** True when a page document contains at least one behavior-owning block. */
 export function needsBehaviorRuntime(blocks: unknown): boolean {
   if (!Array.isArray(blocks)) return false
-  return blocks.some((block) => isMenuOrFaq(block) || isFeaturesTabSet(block) || isCarouselBlock(block))
+  return blocks.some((block) => isMenuOrFaq(block) || isFeaturesTabSet(block) || isCarouselBlock(block) || isFilterCardGrid(block))
 }
 
 /**
@@ -184,8 +254,9 @@ export function renderBehaviorScript(): string {
 
 /**
  * No-script fallback stylesheet, holding the rules only for the widgets the page
- * actually renders, in a fixed order (menu/faq, tabs, carousel). Called without a
- * block list it emits the menu and faq rules unconditionally — the exact 0.4.0 bytes.
+ * actually renders, in a fixed order (menu/faq, tabs, carousel, filter). Called
+ * without a block list it emits the menu and faq rules unconditionally — the
+ * exact 0.4.0 bytes.
  */
 export function renderBehaviorNoscript(blocks?: unknown): string {
   if (blocks === undefined) return '\n  <noscript><style>' + BEHAVIOR_NOSCRIPT_CSS + '</style></noscript>'
@@ -194,6 +265,7 @@ export function renderBehaviorNoscript(blocks?: unknown): string {
   if (blocks.some((block) => isMenuOrFaq(block))) rules.push(BEHAVIOR_NOSCRIPT_CSS)
   if (blocks.some((block) => isFeaturesTabSet(block))) rules.push(TABS_NOSCRIPT_CSS)
   if (blocks.some((block) => isCarouselBlock(block))) rules.push(carouselRules)
+  if (blocks.some((block) => isFilterCardGrid(block))) rules.push(FILTER_NOSCRIPT_CSS)
   if (rules.length === 0) return ''
   return '\n  <noscript><style>' + rules.join('\n') + '</style></noscript>'
 }

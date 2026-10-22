@@ -1,0 +1,249 @@
+{
+  "note": "Purpose-built input sites for the frozen 0.6.0 export baseline. Every entry is rendered by the 0.6.0 exporter and written to `<slug>.html` (single page) or `<slug>--<n>.html` (one file per page, in array order). Never regenerate the captured HTML. Content is generic placeholder text. The two-page entry deliberately carries a block type the 0.6.0 release does not know: only its second page is captured, because a later release adds that block type and this fixture then pins the bytes of every page that block does not touch.",
+  "sites": [
+    {
+      "slug": "navbar-only",
+      "note": "A navbar alone. The page carries the shared behavior script, so it is compared with the script element's text emptied on both sides and every other byte compared.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": ["Product", "Features"],
+              "ctaText": "Get Started"
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "hero-only",
+      "note": "A hero alone. No widget on the page owns a behavior, so it never carries the shared script and is compared byte for byte.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "hero-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "Baseline hero",
+              "subheadline": "Frozen 0.6.0 reference",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "navbar-faq-tabs-carousel",
+      "note": "One page carrying all three existing rule groups: a navbar and a faq block (menu/faq rules), a features block rendered as tabs, and a gallery block rendered as a carousel. Compared with the script text emptied on both sides, and with the no-script block asserted unchanged — no mask and no rule strip, so a later addition that widens the no-script block is caught here.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": ["Product", "Features"],
+              "ctaText": "Get Started"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "Questions",
+              "items": [
+                { "question": "What is this?", "answer": "A page with every rule group" }
+              ]
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "list",
+            "props": {
+              "title": "Features",
+              "display": "tabs",
+              "items": [
+                { "icon": "A", "title": "First feature", "description": "The first baseline feature" },
+                { "icon": "B", "title": "Second feature", "description": "The second baseline feature" },
+                { "icon": "C", "title": "Third feature", "description": "The third baseline feature" }
+              ]
+            }
+          },
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Image gallery",
+              "display": "carousel",
+              "images": [
+                { "src": "", "alt": "Image 1", "caption": "First caption" },
+                { "src": "", "alt": "Image 2", "caption": "Second caption" },
+                { "src": "", "alt": "Image 3", "caption": "Third caption" }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "two-page-filter",
+      "note": "Two pages. Page 1 holds a hero and a block type the 0.6.0 release does not know, with no widget that owns a behavior, so page 1's document can only gain the shared script from that block's own option in a later release. Page 2 holds a hero only and is the frozen reference: it must stay byte-identical for ever, because nothing on it can be affected. Captured as `two-page-filter--2.html`; page 1 is deliberately NOT captured.",
+      "multipage": true,
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "hero-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "Product catalog",
+              "subheadline": "Page one",
+              "primaryCta": "Browse",
+              "primaryCtaUrl": "https://example.com/browse"
+            }
+          },
+          {
+            "id": "cards-1",
+            "type": "card-grid",
+            "variant": "product",
+            "props": {
+              "title": "Shoes",
+              "subtitle": "Pick a category",
+              "display": "filter",
+              "items": [
+                {
+                  "image": "https://example.com/shoe-one.jpg",
+                  "alt": "Shoe one",
+                  "name": "Item 1",
+                  "description": "A first baseline product",
+                  "price": "$10",
+                  "category": "Running",
+                  "ctaText": "View",
+                  "ctaUrl": "https://example.com/item-1"
+                },
+                {
+                  "image": "",
+                  "alt": "",
+                  "name": "Item 2",
+                  "description": "A second baseline product",
+                  "price": "$20",
+                  "category": "Walking",
+                  "ctaText": "",
+                  "ctaUrl": ""
+                },
+                {
+                  "image": "https://example.com/shoe-three.jpg",
+                  "alt": "Shoe three",
+                  "name": "Item 3",
+                  "description": "A third baseline product",
+                  "price": "$30",
+                  "category": "Running",
+                  "ctaText": "View",
+                  "ctaUrl": "https://example.com/item-3"
+                }
+              ]
+            }
+          }
+        ],
+        "pages": [
+          {
+            "id": "page-catalog",
+            "name": "Catalog",
+            "path": "/",
+            "blocks": [
+              {
+                "id": "hero-1",
+                "type": "hero",
+                "variant": "gradient",
+                "props": {
+                  "headline": "Product catalog",
+                  "subheadline": "Page one",
+                  "primaryCta": "Browse",
+                  "primaryCtaUrl": "https://example.com/browse"
+                }
+              },
+              {
+                "id": "cards-1",
+                "type": "card-grid",
+                "variant": "product",
+                "props": {
+                  "title": "Shoes",
+                  "subtitle": "Pick a category",
+                  "display": "filter",
+                  "items": [
+                    {
+                      "image": "https://example.com/shoe-one.jpg",
+                      "alt": "Shoe one",
+                      "name": "Item 1",
+                      "description": "A first baseline product",
+                      "price": "$10",
+                      "category": "Running",
+                      "ctaText": "View",
+                      "ctaUrl": "https://example.com/item-1"
+                    },
+                    {
+                      "image": "",
+                      "alt": "",
+                      "name": "Item 2",
+                      "description": "A second baseline product",
+                      "price": "$20",
+                      "category": "Walking",
+                      "ctaText": "",
+                      "ctaUrl": ""
+                    },
+                    {
+                      "image": "https://example.com/shoe-three.jpg",
+                      "alt": "Shoe three",
+                      "name": "Item 3",
+                      "description": "A third baseline product",
+                      "price": "$30",
+                      "category": "Running",
+                      "ctaText": "View",
+                      "ctaUrl": "https://example.com/item-3"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "id": "page-plain",
+            "name": "Plain",
+            "path": "/plain/",
+            "blocks": [
+              {
+                "id": "hero-2",
+                "type": "hero",
+                "variant": "gradient",
+                "props": {
+                  "headline": "About us",
+                  "subheadline": "Page two",
+                  "primaryCta": "Contact",
+                  "primaryCtaUrl": "https://example.com/contact"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": null
+    }
+  ]
+}

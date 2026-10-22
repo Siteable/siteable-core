@@ -1,5 +1,5 @@
 /**
- * The XSS corpus against the six new renderers.
+ * The XSS corpus against the export-block renderers.
  *
  * Modules under test: `src/lib/export-blocks/render-*`
  * and the `exportSiteToHTML` URL sinks.
@@ -23,6 +23,7 @@ import { renderContent } from '../src/lib/export-blocks/render-content'
 import { renderImage } from '../src/lib/export-blocks/render-image'
 import { renderVideo } from '../src/lib/export-blocks/render-video'
 import { renderGallery } from '../src/lib/export-blocks/render-gallery'
+import { renderCardGrid } from '../src/lib/export-blocks/render-card-grid'
 import { renderDivider } from '../src/lib/export-blocks/render-divider'
 import { renderBanner } from '../src/lib/export-blocks/render-banner'
 
@@ -149,6 +150,41 @@ const RENDERERS: RendererCase[] = [
       })),
     ],
   },
+  {
+    type: 'card-grid',
+    render: renderCardGrid,
+    variants: ['product'],
+    scenarios: [
+      ...CORPUS.map((p) => ({ label: `title=${p}`, props: { title: p, items: [{ name: 'One' }] } })),
+      ...CORPUS.map((p) => ({
+        label: `subtitle=${p}`,
+        props: { subtitle: p, items: [{ name: 'One' }] },
+      })),
+      ...CORPUS.map((p) => ({
+        label: `items[].image=${p}`,
+        props: { items: [{ image: p, name: 'One' }] },
+        urlish: true as const,
+      })),
+      // `alt` is deliberately NOT a raw-matrix row: it only reaches output inside
+      // a real tag's attribute, where this matrix's handler regex reads the
+      // escaped payload as tag text. A no-image row would be vacuous instead, so
+      // the attribute position gets its own document-level test below.
+      ...CORPUS.map((p) => ({ label: `items[].name=${p}`, props: { items: [{ name: p }] } })),
+      ...CORPUS.map((p) => ({
+        label: `items[].description=${p}`,
+        props: { items: [{ name: 'One', description: p }] },
+      })),
+      ...CORPUS.map((p) => ({ label: `items[].price=${p}`, props: { items: [{ name: 'One', price: p }] } })),
+      ...CORPUS.map((p) => ({
+        label: `items[].category=${p}`,
+        props: { items: [{ name: 'One', category: p }] },
+      })),
+      ...CORPUS.map((p) => ({
+        label: `items[].ctaText=${p}`,
+        props: { items: [{ name: 'One', ctaText: p, ctaUrl: 'https://ok.example/x' }] },
+      })),
+    ],
+  },
 ]
 
 describe('corpus injected into every prop of every new renderer', () => {
@@ -239,11 +275,11 @@ describe('rejected URL sinks across the page export', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Widening: the corpus across ALL 19 block types, through the
-// real `exportSiteToHTML` path. The raw-renderer matrix above covers the six new
-// renderers prop-by-prop; the 13 pre-existing renderers are not individually
+// Widening: the corpus across ALL 20 block types, through the
+// real `exportSiteToHTML` path. The raw-renderer matrix above covers the seven
+// individually exported renderers prop-by-prop; the rest are not individually
 // exported, so this section exercises them (and re-exercises the new ones) end
-// to end. Together the two sections touch every one of the 19 declared types.
+// to end. Together the two sections touch every one of the 20 declared types.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -297,7 +333,7 @@ interface SinkCase {
 const URL_SUFFIX = 'https://ok.example/x'
 const IMG_SUFFIX = 'https://ok.example/x.png'
 
-/** Every URL-emitting prop across the 19 block types. */
+/** Every URL-emitting prop across the 20 block types. */
 const URL_SINKS: SinkCase[] = [
   { type: 'navbar', variant: 'default', sink: 'ctaUrl', withValue: (v) => ({ logo: 'Acme', links: [], ctaText: 'Go', ctaUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
   { type: 'navbar', variant: 'default', sink: 'logoImage', withValue: (v) => ({ logo: 'Acme', links: [], logoImage: v }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
@@ -316,6 +352,8 @@ const URL_SINKS: SinkCase[] = [
   { type: 'image', variant: 'grid', sink: 'images[].src', withValue: (v) => ({ images: [{ src: v, alt: 'a' }] }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
   { type: 'video', variant: 'youtube', sink: 'url', withValue: (v) => ({ url: v }), okValue: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', okMarker: 'src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"' },
   { type: 'gallery', variant: 'grid', sink: 'images[].src', withValue: (v) => ({ images: [{ src: v, alt: 'a' }] }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
+  { type: 'card-grid', variant: 'product', sink: 'items[].image', withValue: (v) => ({ items: [{ name: 'One', image: v }] }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
+  { type: 'card-grid', variant: 'product', sink: 'items[].ctaUrl', withValue: (v) => ({ items: [{ name: 'One', ctaText: 'View', ctaUrl: v }] }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
   { type: 'banner', variant: 'ribbon', sink: 'linkUrl', withValue: (v) => ({ text: 'T', linkText: 'Go', linkUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
 ]
 
@@ -373,8 +411,8 @@ interface TextCase {
  * corpus into a representative one. `divider` (the eighth no-URL type) has no
  * string prop that reaches output at all: `height` is coerced numerically and
  * `width` maps through a fixed allow-list, so it is asserted separately by
- * coercion below rather than vacuously here. Together with the 11 URL-sink
- * types and `divider`, all 19 declared types are exercised.
+ * coercion below rather than vacuously here. Together with the 12 URL-sink
+ * types and `divider`, all 20 declared types are exercised.
  */
 const TEXT_CASES: TextCase[] = [
   { type: 'features', variant: 'grid', prop: 'title', withValue: (v) => ({ title: v, items: [{ title: 'T', description: 'D' }] }) },
@@ -566,4 +604,62 @@ describe('the menu panel copy is escaped like the desktop row', () => {
     // A payload containing markup never opens a real script tag.
     if (payload.includes('<')) expect(html).not.toContain(payload)
   })
+})
+
+// The card grid image `alt` reaches output only inside an attribute, which the
+// raw-renderer matrix cannot judge: its handler regex reads the escaped payload
+// as tag text, and a no-image row would be vacuous. This test pins the
+// serialized attribute against a local oracle instead. `[^"]*` cannot cross a
+// quote, so an escaping failure both truncates the capture and reveals a
+// breakout, making the assertion fail on the real defect rather than on a
+// heuristic.
+describe('the card grid image alt is escaped in the attribute position', () => {
+  const IMG_ALT_RE = /<img\b[^>]*\balt="([^"]*)"/
+  const escapeAttr = (value: string): string =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+  /**
+   * Handler attributes on the PARSED document. The regex scanner used above
+   * cannot judge this position: an escaped payload sitting in a quoted
+   * attribute value reads as raw tag text to a regex, while the parser keeps it
+   * inside the attribute. A real handler is an attribute NAME.
+   */
+  const handlerAttributes = (html: string): string[] => {
+    const names: string[] = []
+    for (const element of new DOMParser().parseFromString(html, 'text/html').querySelectorAll('*')) {
+      for (const attribute of [...element.attributes]) {
+        if (/^on/i.test(attribute.name)) names.push(`${element.tagName}.${attribute.name}`)
+      }
+    }
+    return names
+  }
+
+  const render = (alt: string): string =>
+    exportSiteToHTML({
+      name: 'XSS',
+      blocks: [
+        {
+          id: 'c',
+          type: 'card-grid',
+          variant: 'product',
+          props: { items: [{ image: 'https://ok.example/x.png', alt, name: 'One' }] },
+        },
+      ],
+    })
+
+  for (const payload of CORPUS) {
+    it(`items[].alt ← ${JSON.stringify(payload)}`, () => {
+      const html = render(payload)
+      const msg = `items[].alt ← ${payload}`
+      expect(html, `${msg}: renderer blanked`).not.toContain('Unknown block type')
+      expect(handlerAttributes(html), `${msg}: injected handler`).toEqual([])
+      expect(countScripts(html), `${msg}: injected script`).toBe(countScripts(render('clean alt')))
+      expect(IMG_ALT_RE.exec(html)?.[1], `${msg}: attribute bytes`).toBe(escapeAttr(payload))
+    })
+  }
 })

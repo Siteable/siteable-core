@@ -46,6 +46,7 @@ export { ContentBlock } from './blocks/content/ContentBlock'
 export { ImageBlock } from './blocks/image/ImageBlock'
 export { VideoBlock } from './blocks/video/VideoBlock'
 export { GalleryBlock } from './blocks/gallery/GalleryBlock'
+export { CardGridBlock } from './blocks/card-grid/CardGridBlock'
 
 // ── Editor ──────────────────────────────────────────────────────────────────
 export { AgentPanel } from './editor/AgentPanel'

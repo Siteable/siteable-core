@@ -27,6 +27,7 @@ import { PropertiesPanel } from '../../src/editor/PropertiesPanel'
 import { useConfigStore } from '../../src/store/configStore'
 import {
   BEHAVIOR_CASES,
+  EDITOR_CASES,
   FIXTURE_BLOCKS,
   runCase,
   type BehaviorAdapter,
@@ -302,8 +303,11 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(BEHAVIOR_CASES.length).toBeGreaterThan(0)
     // The loop can only catch a behavior whose rows reached the table.
     expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'tabs')).toBe(true)
+    // Filter rows exist and are export-only, so the replay loop skips them.
+    expect(BEHAVIOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(true)
+    expect(EDITOR_CASES.some((behaviorCase) => behaviorCase.behavior === 'filter')).toBe(false)
 
-    const rows = BEHAVIOR_CASES.map((behaviorCase) => {
+    const rows = EDITOR_CASES.map((behaviorCase) => {
       const run = (side: 'editor' | 'exported'): Record<string, unknown> => {
         try {
           return runCase(side === 'editor' ? editorAdapter : exportAdapter, behaviorCase)
