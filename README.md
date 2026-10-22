@@ -221,13 +221,15 @@ key (pricing tiers, stats, FAQ) get no control, and plain string lists such as
 `logos` are not covered. Without the hook the URL inputs behave as before.
 
 While a pick is pending the field or row is locked. If the content changed in
-the meantime (the block, page or item is gone, an undo or redo happened, or the
-whole configuration was replaced), the result is discarded with a notice. The
+the meantime (the configuration was replaced with `setConfig`, or an undo or redo
+happened, the active page changed, the block was removed, or the row was
+replaced), the result is discarded with a notice. Changes made through other
+writers to the same field are not detected. The
 hook must settle: a promise that never resolves keeps the field locked.
 
 Notices use `sonner`, so mount `<Toaster />` in the host app. Hosts replace
 content with `setConfig`; `useConfigStore` exposes `configGeneration`, a counter
-that changes on every whole-configuration replacement.
+that changes on `setConfig`, undo and redo.
 
 ### Server / worker usage (`@siteable/core/worker`)
 
