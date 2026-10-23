@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 import type { BlockConfig } from '@/blocks/types'
 import { useImagePick } from '../image-pick/image-pick-context'
+import { CardGridBulkAddButton } from './card-grid-bulk-add-button'
 import { CardGridItemRow, type ItemRowActions } from './card-grid-item-row'
 import {
   addItem,
@@ -34,7 +35,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   const items = block.props.items
   const [query, setQuery] = useState('')
   const [grouped, setGrouped] = useState(false)
-  const [frozenState, setFrozen] = useState<{ sections: LayoutSection[]; generation: number } | null>(null)
+  const [frozenState, setFrozen] = useState<{ sections: LayoutSection[]; generation: number; length: number } | null>(null)
 
   // Callbacks read the latest list through a ref so rows can stay memoised.
   const itemsRef = useRef<unknown>(items)
@@ -69,8 +70,13 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
     ? groupItemRows(shown, items).map((g) => ({ key: g.key, label: g.label, indexes: g.rows.map((r) => r.rawIndex) }))
     : [{ key: null, label: null, indexes: shown.map((r) => r.rawIndex) }]
   const generation = useConfigStore((s) => s.configGeneration)
-  // A freeze from before a whole-configuration replacement, undo or redo is stale.
-  const frozen = frozenState !== null && frozenState.generation === generation ? frozenState.sections : null
+  const listLength = Array.isArray(items) ? items.length : 0
+  // A freeze from before a whole-configuration replacement, undo or redo is stale,
+  // and so is one taken before rows were appended (they would stay hidden).
+  const frozen =
+    frozenState !== null && frozenState.generation === generation && listLength <= frozenState.length
+      ? frozenState.sections
+      : null
   const layout = frozen ?? computed
   const groupIdBase = useId()
   const rowsRef = useRef<HTMLDivElement>(null)
@@ -120,7 +126,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
 
   const onRowsFocus = (e: FocusEvent<HTMLDivElement>) => {
     const tag = (e.target as HTMLElement).tagName
-    if (frozen === null && (tag === 'INPUT' || tag === 'TEXTAREA')) setFrozen({ sections: computed, generation })
+    if (frozen === null && (tag === 'INPUT' || tag === 'TEXTAREA')) setFrozen({ sections: computed, generation, length: listLength })
   }
 
   return (
@@ -171,6 +177,7 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
       >
         + Add item
       </button>
+      <CardGridBulkAddButton blockId={blockId} onBeforePick={() => setQuery('')} />
     </div>
   )
 }
