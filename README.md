@@ -233,6 +233,49 @@ Notices use `sonner`, so mount `<Toaster />` in the host app. Hosts replace
 content with `setConfig`; `useConfigStore` exposes `configGeneration`, a counter
 that changes on `setConfig`, undo and redo.
 
+### Adding many products from images (`onPickImages`)
+
+`<EditorLayout onPickImages={() => Promise<PickedImageEntry[] | null> | PickedImageEntry[] | null} />`
+is an optional hook that lets the host app hand over many images at once, for
+example from its own media library. `PickedImageEntry` is exported from the
+package entry: `{ url: string; name?: string }`.
+
+With the hook, the card-grid items editor shows a `+ Add from many images`
+button next to `+ Add item`. Supplying only this hook adds no single-image
+controls; `onPickImage` stays independent.
+
+- **Dismissed:** `null` or `[]` means nothing was chosen. Nothing changes and no
+  message is shown.
+- **Failed:** a rejection, a throw, a non-array result, more than 100 entries, or
+  no valid entry leaves the list unchanged and shows one generic error notice.
+- **Written:** one product row per valid entry, in the returned order, in a single
+  undo step. `image` is the trimmed URL; `name` and `alt` are the trimmed name, or
+  empty without one; the other fields are empty, and extra keys are carried over
+  as "+ Add item" does.
+- **Discarded:** if the content changed while the picker was open (a `setConfig`,
+  an undo or redo, a removed block or page), a notice is shown and nothing is
+  written. A result that arrives after the editor was unmounted is dropped
+  silently.
+
+Entries that are not plain objects, or whose `url` is not a string or is blank,
+are skipped; a `name` that is not a string or is blank counts as no name.
+
+Only one bulk pick can be pending per block; other blocks and single-image picks
+are independent. The returned promise MUST settle (resolve or reject) on every
+exit of the host's picker, including close, cancel and errors: while it is
+pending the button stays disabled for that block, and on a freshly loaded
+document nothing else releases it. After an undo a second click may call the
+hook again, so keep a single pending dialog.
+
+```tsx
+<EditorLayout
+  onPickImages={async () => [
+    { url: 'https://cdn.example.com/red-sneaker.webp', name: 'Red sneaker' },
+    { url: 'https://cdn.example.com/photo-02.jpg' },
+  ]}
+/>
+```
+
 ### Server / worker usage (`@siteable/core/worker`)
 
 The main entry re-exports the editor components and the zustand stores, so it
