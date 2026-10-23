@@ -66,7 +66,10 @@ describe('appendPickedItems', () => {
     const next = appendPickedItems(existing, images(2))
     const groups = groupItemRows(toItemRows(next), next)
     const last = groups[groups.length - 1]
+    expect(groups).toHaveLength(2)
+    expect(groups[0].rows).toHaveLength(1)
     expect(last.rows).toHaveLength(2)
+    expect(last.rows.map((row) => row.item.name)).toEqual(images(2).map((image) => image.name))
   })
 
   it('keeps a site config valid', () => {
