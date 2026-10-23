@@ -253,7 +253,7 @@ controls; `onPickImage` stays independent.
   empty without one; the other fields are empty, and extra keys are carried over
   as "+ Add item" does.
 - **Discarded:** if the content changed while the picker was open (a `setConfig`,
-  an undo or redo, a removed block or page), a notice is shown and nothing is
+  an undo or redo, a removed block or page, or a different active page), a notice is shown and nothing is
   written. A result that arrives after the editor was unmounted is dropped
   silently.
 
