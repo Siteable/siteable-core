@@ -85,6 +85,11 @@ export function CardGridItemsEditor({ block, label }: { block: BlockConfig; labe
   // since the browser fires no blur in that case.
   useEffect(() => {
     if (frozenState === null) return
+    // A freeze that went stale is cleared for good, so it cannot come back later.
+    if (frozen === null) {
+      setFrozen(null)
+      return
+    }
     const active = document.activeElement
     if (!rowsRef.current || !active || !rowsRef.current.contains(active)) setFrozen(null)
   })
