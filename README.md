@@ -260,6 +260,9 @@ controls; `onPickImage` stays independent.
 Entries that are not plain objects, or whose `url` is not a string or is blank,
 are skipped; a `name` that is not a string or is blank counts as no name.
 
+The editor only stores the trimmed `url` and never fetches it or checks its scheme,
+so return URLs you trust and validate them in your picker before resolving.
+
 Only one bulk pick can be pending per block; other blocks and single-image picks
 are independent. The returned promise MUST settle (resolve or reject) on every
 exit of the host's picker, including close, cancel and errors: while it is
