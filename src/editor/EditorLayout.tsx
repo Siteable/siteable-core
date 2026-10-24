@@ -6,6 +6,7 @@ import { LeftSidebar } from './LeftSidebar'
 import { Canvas } from './Canvas'
 import { RightSidebar } from './RightSidebar'
 import { ImagePickProvider } from './image-pick/image-pick-context'
+import type { BulkPickHook } from './image-pick/run-bulk-image-pick'
 import { JsonDrawer } from './JsonDrawer'
 import { VersionHistory } from './VersionHistory'
 import { GenerationOverlay } from './GenerationOverlay'
@@ -30,6 +31,8 @@ export interface EditorLayoutProps {
   onServerFallback?: (prompt: string, signal?: AbortSignal) => Promise<SiteConfig>
   /** Host picker for one image; resolves to its URL, or null when nothing was chosen. */
   onPickImage?: () => Promise<string | null>
+  /** Host picker for many images; resolves to a list of entries, or null when nothing was chosen. The promise must settle on every exit of the picker. */
+  onPickImages?: BulkPickHook
 }
 
 function useAutoSaveToProject(onConfigChange?: EditorLayoutProps['onConfigChange']) {
@@ -169,7 +172,7 @@ function EditorEmptyState({ onCreate, onExit }: Pick<EditorLayoutProps, 'onCreat
   )
 }
 
-export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject, onExit, onServerFallback, onPickImage }: EditorLayoutProps = {}) {
+export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject, onExit, onServerFallback, onPickImage, onPickImages }: EditorLayoutProps = {}) {
   useAutoSaveToProject(onConfigChange)
   useGenerationOrchestration(onConfigChange, onRename, onServerFallback)
   const previewMode = useEditorStore((s) => s.previewMode)
@@ -180,7 +183,7 @@ export function EditorLayout({ onConfigChange, onRename, onCreate, activeProject
   }
 
   return (
-    <ImagePickProvider onPickImage={onPickImage}>
+    <ImagePickProvider onPickImage={onPickImage} onPickImages={onPickImages}>
       <div className="h-full flex flex-col relative">
         <div className="flex-1 flex overflow-hidden">
           {!previewMode && <LeftSidebar />}

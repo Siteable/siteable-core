@@ -61,6 +61,7 @@ export {
   EditorLayout,
   type EditorLayoutProps,
 } from './editor/EditorLayout'
+export type { PickedImageEntry } from './editor/image-pick/picked-image-entries'
 export { GenerationOverlay } from './editor/GenerationOverlay'
 export { JsonDrawer } from './editor/JsonDrawer'
 export { LayersPanel } from './editor/LayersPanel'

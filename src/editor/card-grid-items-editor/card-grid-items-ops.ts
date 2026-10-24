@@ -3,6 +3,7 @@
  * plain objects stay where they are; untouched entries keep their identity.
  */
 import { createCardGridItem } from './card-grid-item-fields'
+import type { PickedImage } from '../image-pick/picked-image-entries'
 
 export type ItemRecord = Record<string, unknown>
 export interface ItemRow {
@@ -28,6 +29,20 @@ export function toItemRows(items: unknown): ItemRow[] {
 export function addItem(items: unknown): unknown[] {
   const list = asList(items)
   return [...list, createCardGridItem(list.find(isItemRecord))]
+}
+
+/**
+ * Append one new product per picked image, in order. Each row gets its own
+ * template (extra keys carried over from the first plain-object entry), with
+ * the image url, and the name also used as alt text.
+ */
+export function appendPickedItems(items: unknown, images: readonly PickedImage[]): unknown[] {
+  const list = asList(items)
+  const first = list.find(isItemRecord)
+  return [
+    ...list,
+    ...images.map(({ url, name }) => ({ ...createCardGridItem(first), image: url, name, alt: name })),
+  ]
 }
 
 export function removeItemAt(items: unknown, index: number): unknown[] {
