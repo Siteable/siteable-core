@@ -118,9 +118,13 @@ exportSitePages(config, { siteUrl: 'https://example.com' })
 `siteUrl` must be a plain `http(s)` origin: `http://` or `https://` plus a host
 and optional port, with at most one trailing `/` (for example
 `https://example.com`, `http://localhost:3000`, `https://[::1]`). Anything else
-is ignored, never repaired: credentials, a backslash, quotes, angle brackets,
-whitespace, any path (including `/.`, `/..` and `/%2e`), a query, a fragment, or
-a malformed scheme such as `https:example.com`.
+is ignored: credentials, a backslash, quotes, angle brackets, inner whitespace,
+any path (including `/.`, `/..` and `/%2e`), a query, a fragment, or a malformed
+scheme such as `https:example.com`. Surrounding whitespace is trimmed. The host
+of a valid value is normalized by the URL parser (lowercased, percent-decoded,
+internationalized names converted to punycode, IPv4 shorthand expanded, a
+default port dropped), so the canonical URL may differ in spelling from what you
+passed.
 
 - **With a valid `siteUrl`:** each page gets `<link rel="canonical">` (origin plus
   the page path), and the JSON-LD `Organization` and `WebSite` entries carry

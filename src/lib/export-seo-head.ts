@@ -25,10 +25,14 @@ const STRICT_ORIGIN_RE = /^https?:\/\/[^\s@\\"'<>?#/]+\/?$/i
  * `https://[::1]`. The result is the normalized origin.
  *
  * Rejected (returns ''): any other scheme, userinfo (`@`), backslashes, quotes,
- * angle brackets, whitespace, a path (including `/.`, `/..` and `/%2e`), a
- * query, a fragment, and forms such as `https:a.example`. The raw string is
- * checked BEFORE URL parsing, so the WHATWG parser never repairs a bad value
- * into a plausible one.
+ * angle brackets, inner whitespace, a path (including `/.`, `/..` and `/%2e`),
+ * a query, a fragment, and forms such as `https:a.example`. The raw string is
+ * checked BEFORE URL parsing, so the parser cannot turn a malformed shape into
+ * a plausible one. Leading and trailing whitespace is trimmed first.
+ *
+ * The host of an accepted value is normalized by the URL parser: it is
+ * lowercased, percent-decoded, converted to punycode (IDN) and rewritten to a
+ * canonical IPv4 form, and a default port is dropped.
  */
 export function normalizeSiteUrl(raw: unknown): string {
   if (typeof raw !== 'string') return ''
