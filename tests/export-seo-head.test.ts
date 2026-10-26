@@ -78,6 +78,16 @@ describe('canonical link', () => {
     expect(exportSiteToHTML(site([]))).not.toContain('rel="canonical"')
     expect(exportSiteToHTML(site([]), { siteUrl: 'javascript:x' })).not.toContain('canonical')
   })
+  it.each(['javascript:x', 'https://u:p@a.example', 'https://a.example/x?y', 'ftp://a.example'])(
+    'omits canonical and structured-data urls but keeps twitter tags for site url %j',
+    (siteUrl) => {
+      const html = exportSiteToHTML(site([]), { siteUrl })
+      expect(html).not.toContain('rel="canonical"')
+      expect(html).not.toMatch(/"url"\s*:/)
+      expect(html).toContain('twitter:card')
+      expect(html).toContain('twitter:title')
+    },
+  )
   it('uses the origin plus the page path', () => {
     expect(renderCanonical('https://a.example', '/about')).toContain(
       'href="https://a.example/about"',
