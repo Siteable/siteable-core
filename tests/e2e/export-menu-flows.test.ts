@@ -10,7 +10,7 @@
  * This file covers the flows the shared table does not, so it adds only the
  * markup/configs those flows need.
  */
-import { stripSeo } from '../helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from '../helpers/seo-head-allowed-diff'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -245,9 +245,9 @@ describe('exported navbar flows', () => {
       'utf8',
     )
 
-    expect(stripSeo(html)).toBe(golden)
+    expect(stripSeoExpecting(html)).toBe(golden)
     expect(html).not.toContain('data-sb-runtime')
-    expect(stripSeo(html)).not.toContain('<noscript>')
+    expect(stripSeoExpecting(html)).not.toContain('<noscript>')
   })
 
   it('keeps hostile link labels inert in the opened panel', () => {

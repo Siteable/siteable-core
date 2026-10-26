@@ -11,7 +11,7 @@
  * suite and stay exactly as strict: a payload that reaches a tag position is an
  * injection whether or not the block renders tabs.
  */
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
@@ -82,7 +82,7 @@ const CLEAN = tabPage(['One', 'Two'], ['First', 'Second'])
 function expectInert(html: string, msg: string): void {
   expect(html, `${msg}: renderer blanked`).toContain('role="tablist"')
   // The font link's fixed inline onload is a permitted head addition; remove it before scanning.
-  expect(stripSeo(html).match(HANDLER_RE) ?? [], `${msg}: injected handler`).toEqual([])
+  expect(stripSeoExpecting(html).match(HANDLER_RE) ?? [], `${msg}: injected handler`).toEqual([])
   expect(countScripts(html), `${msg}: injected script`).toBe(countScripts(CLEAN))
   const ids = [...html.matchAll(/\sid="(sb_tabs_[^"]+)"/g)]
   expect(ids.length, `${msg}: no generated ids`).toBeGreaterThan(0)

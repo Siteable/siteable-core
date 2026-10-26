@@ -30,7 +30,7 @@ import { describe, it, expect } from 'vitest'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import { exportSiteToHTML } from '../src/lib/export-html'
 import { exportSitePages } from '../src/lib/export-site-pages'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
@@ -111,7 +111,7 @@ describe('byte identity against the frozen 0.6.0 export (strict)', () => {
   it.each(STRICT_SITES)('%s matches %s byte for byte', (slug, file) => {
     const site = findSite(slug)
     const fresh = site.multipage ? renderPage2(site) : renderPage(site)
-    expect(stripSeo(fresh)).toBe(readFixture(file))
+    expect(stripSeoExpecting(fresh)).toBe(readFixture(file))
     // Implied by byte identity; named so the guarantee is asserted.
     expect(fresh).not.toContain('data-sb-runtime')
   })
@@ -127,7 +127,7 @@ describe('byte identity against the frozen 0.6.0 export (strict)', () => {
 
 describe('byte identity against the frozen 0.6.0 export (script text only)', () => {
   it.each(SCRIPT_SITES)('%s matches once the script text is emptied', (slug) => {
-    const fresh = stripRuntimeScriptText(stripSeo(renderPage(findSite(slug))))
+    const fresh = stripRuntimeScriptText(stripSeoExpecting(renderPage(findSite(slug))))
     const frozen = stripRuntimeScriptText(readFixture(`${slug}.html`))
 
     expect(fresh.counts.scripts, 'fresh runtime script element').toBe(1)
@@ -137,7 +137,7 @@ describe('byte identity against the frozen 0.6.0 export (script text only)', () 
 
   it('the no-script block of the combined page survives the strip unchanged', () => {
     const rules = /<noscript><style>[\s\S]*?<\/style><\/noscript>/
-    const fresh = stripRuntimeScriptText(stripSeo(renderPage(findSite('navbar-faq-tabs-carousel')))).html
+    const fresh = stripRuntimeScriptText(stripSeoExpecting(renderPage(findSite('navbar-faq-tabs-carousel')))).html
     const frozen = stripRuntimeScriptText(readFixture('navbar-faq-tabs-carousel.html')).html
 
     expect(fresh.match(rules)?.[0]).toBeDefined()

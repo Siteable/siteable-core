@@ -20,7 +20,7 @@ import { exportSitePages } from '../src/lib/export-site-pages'
 import { renderCardGrid } from '../src/lib/export-blocks/render-card-grid'
 import { toCardGridItems } from '../src/lib/card-grid-items'
 import { BEHAVIOR_NOSCRIPT_CSS } from '../src/lib/export-behavior-runtime'
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import { noScriptText } from './helpers/tab-set-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
@@ -40,7 +40,7 @@ function injectedHandlers(html: string): string[] {
   const found: string[] = []
   // The non-blocking font link carries one fixed inline onload that belongs to
   // the permitted head additions; it is removed before the scan.
-  for (const element of parse(stripSeo(html)).querySelectorAll('*')) {
+  for (const element of parse(stripSeoExpecting(html)).querySelectorAll('*')) {
     for (const attribute of [...element.attributes]) {
       if (/^on/i.test(attribute.name)) found.push(`${element.tagName}.${attribute.name}=${attribute.value}`)
     }
@@ -405,7 +405,7 @@ describe('per-page emission', () => {
   it('adds no script and no no-script block to a page with only plain grids', () => {
     const html = rendered({ items: COMPLETE_ITEMS })
     expect(html).not.toContain('<script data-sb-runtime')
-    expect(stripSeo(html)).not.toContain('<noscript>')
+    expect(stripSeoExpecting(html)).not.toContain('<noscript>')
   })
 
   it('adds only the shipped menu and faq rules on a navbar page with a plain grid', () => {
@@ -432,7 +432,7 @@ describe('per-page emission', () => {
     expect(pages[0].html.match(/<script data-sb-runtime>/g) ?? []).toHaveLength(1)
     expect(noScriptText(pages[0].html)).toBe(FILTER_RULE)
     expect(pages[1].html).not.toContain('<script data-sb-runtime')
-    expect(stripSeo(pages[1].html)).not.toContain('<noscript>')
+    expect(stripSeoExpecting(pages[1].html)).not.toContain('<noscript>')
     expect(pages[1].html).not.toContain('data-sb-filter')
   })
 })

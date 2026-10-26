@@ -13,7 +13,7 @@
  * compare against the frozen 0.4.0 export load their inputs through the baseline
  * helper, so the document compared is the one the fixture was captured from.
  */
-import { stripSeo } from '../helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from '../helpers/seo-head-allowed-diff'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -399,7 +399,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
 
     // A page without tabs holds no tab markup and no tab rule.
     const plain = render(findSite('features-no-display'))
-    expect(stripSeo(plain)).not.toContain('<noscript>')
+    expect(stripSeoExpecting(plain)).not.toContain('<noscript>')
     expect(plain).not.toContain('data-sb-tab-panel')
     expect(plain).not.toContain('[data-sb-tablist]')
 
@@ -499,7 +499,7 @@ describe('tabs option: editor parity and no-script guarantees', () => {
     expect(preview(container).querySelector('[role="tablist"]')).toBeNull()
 
     // The same site without the option exports exactly its 0.4.0 capture.
-    expect(stripSeo(exportSiteToHTML(useConfigStore.getState().config))).toBe(
+    expect(stripSeoExpecting(exportSiteToHTML(useConfigStore.getState().config))).toBe(
       fixtureHtml('features-no-display.html'),
     )
   })

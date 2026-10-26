@@ -20,6 +20,8 @@
  * given). `outOfSet` lists anything of that kind left in the document so a
  * strict caller can fail on it.
  */
+import { expect } from 'vitest'
+
 export interface SeoHeadCounts {
   twitter: number
   jsonLd: number
@@ -73,6 +75,25 @@ export function stripSeoHeadAdditions(input: string): SeoHeadResult {
   const outOfSet: string[] = []
   if (/<link rel="canonical"/.test(html)) outOfSet.push('canonical')
   return { html, counts, outOfSet }
+}
+
+/**
+ * Counts every full exported page carries today: one structured-data script, the
+ * non-blocking font pair, and the two Twitter tags (card and title).
+ */
+export const FULL_PAGE_SEO_COUNTS: Partial<SeoHeadCounts> = { twitter: 2, jsonLd: 1, fontLinks: 1 }
+
+/**
+ * Normalize like `stripSeo`, but fail when the strip counts differ from the
+ * expectation, so a dropped or extra head addition is caught at the frozen call
+ * site instead of being silently stripped. Defaults to a full exported page;
+ * keys given in `expected` override the default, and only keys present are
+ * asserted.
+ */
+export function stripSeoExpecting(html: string, expected: Partial<SeoHeadCounts> = {}): string {
+  const result = stripSeoHeadAdditions(html)
+  expect(result.counts).toMatchObject({ ...FULL_PAGE_SEO_COUNTS, ...expected })
+  return result.html
 }
 
 /** Shorthand for call sites that only need the normalized document. */

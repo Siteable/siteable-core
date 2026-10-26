@@ -20,7 +20,7 @@ import {
   fixtureHtml,
   render as renderRaw,
 } from './helpers/export-baseline-0.4.0-inputs'
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import {
   maskCarouselSections,
   reduceCarouselForComparison,
@@ -30,9 +30,9 @@ import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
 import type { BaselineSite } from './helpers/export-baseline-0.4.0-inputs'
 
 /** Renders drop the permitted head and image additions the frozen goldens predate. */
-const render = (entry: Parameters<typeof renderRaw>[0]): string => stripSeo(renderRaw(entry))
+const render = (entry: Parameters<typeof renderRaw>[0]): string => stripSeoExpecting(renderRaw(entry))
 const exportSitePages = (...args: Parameters<typeof exportSitePagesRaw>) =>
-  exportSitePagesRaw(...args).map((page) => ({ ...page, html: stripSeo(page.html) }))
+  exportSitePagesRaw(...args).map((page) => ({ ...page, html: stripSeoExpecting(page.html) }))
 
 const parse = (doc: string): Document => new DOMParser().parseFromString(doc, 'text/html')
 

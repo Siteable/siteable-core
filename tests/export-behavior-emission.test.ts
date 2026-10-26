@@ -24,7 +24,7 @@ import {
   BEHAVIOR_RUNTIME_SOURCE,
   BEHAVIOR_NOSCRIPT_CSS,
 } from '../src/lib/export-behavior-runtime'
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
 const site = (blocks: BlockConfig[]): SiteConfig => ({ name: 'Site', blocks })
@@ -199,7 +199,7 @@ describe('per-page emission', () => {
         posthogKey: 'phc_nobehavior_key',
       },
     }
-    const html = stripSeo(exportSiteToHTML(config, options))
+    const html = stripSeoExpecting(exportSiteToHTML(config, options))
     const golden = readFileSync(
       resolve(import.meta.dirname, 'fixtures/export-no-behavior-0.3.2.html'),
       'utf8',
@@ -310,7 +310,7 @@ describe('handler hygiene', () => {
     }
     // The non-blocking font link carries one fixed inline onload; it is part of
     // the permitted head additions and is removed before the scan.
-    const html = stripSeo(exportSiteToHTML(site([navbar('n'), faq(), contact])))
+    const html = stripSeoExpecting(exportSiteToHTML(site([navbar('n'), faq(), contact])))
     const handlers = [...html.matchAll(HANDLER_RE)].map((m) => m[1].toLowerCase())
     // The allowlist branch must actually be exercised, not vacuously empty.
     expect(handlers).toContain('onsubmit')

@@ -9,7 +9,7 @@
  *
  * then re-run without the env var to confirm the committed fixtures match.
  */
-import { stripSeo } from './helpers/seo-head-allowed-diff'
+import { stripSeo, stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import { describe, it, expect } from 'vitest'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -192,6 +192,16 @@ if (UPDATE && process.env.CI) {
 }
 
 describe('golden markup for the export-block renderers', () => {
+  // Image attributes each fragment gains (2 per image tag: decoding + loading).
+  const IMG_ATTRS: Record<string, number> = {
+    'image-hero-image': 2,
+    'image-side-by-side': 2,
+    'image-grid': 2,
+    'gallery-grid': 2,
+    'gallery-masonry': 2,
+    'card-grid-product': 4,
+  }
+
   for (const c of CASES) {
     it(`${c.type}-${c.variant}`, () => {
       const actual = c.render({ id: 'b', type: c.type, variant: c.variant, props: c.props })
@@ -207,7 +217,10 @@ describe('golden markup for the export-block renderers', () => {
       // Image loading hints are a permitted addition. Both sides pass through
       // the normalizer because the card grid golden already carried one hint.
       const expected = readFileSync(file, 'utf8')
-      expect(stripSeo(actual)).toBe(stripSeo(expected))
+      // A fragment carries no head additions; only image hints are added.
+      const name = `${c.type}-${c.variant}`
+      const actualCounts = { twitter: 0, jsonLd: 0, fontLinks: 0, imgAttrs: IMG_ATTRS[name] ?? 0 }
+      expect(stripSeoExpecting(actual, actualCounts)).toBe(stripSeo(expected))
     })
   }
 })
