@@ -17,7 +17,6 @@
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
-import { stripSeo } from './helpers/seo-head-allowed-diff'
 import { EXPORT_XSS_CORPUS } from './helpers/injection-corpus'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
 import type { BlockConfig, BlockType, SiteConfig } from '../src/blocks/types'
@@ -288,10 +287,14 @@ describe('rejected URL sinks across the page export', () => {
 // so the detector is no narrower than the raw-renderer check.
 const HANDLER_ATTR_RE = /<[a-zA-Z][^>]*[^\w](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
 const LEGIT_HANDLER_ATTRS = new Set(['onsubmit="return false"'])
-// The font link's fixed inline onload is a permitted head addition; it is
-// removed before scanning so only handlers in the content are judged.
+// The font link's fixed inline onload is the ONLY permitted head addition that
+// looks like a handler. That exact literal is removed from the RAW document
+// before scanning (nothing else is normalized, so a breakout out of the
+// structured-data script stays visible to every scan below).
+const FONT_ONLOAD_LITERAL = `onload="this.onload=null;this.rel='stylesheet'"`
+const withoutFontOnload = (html: string): string => html.split(FONT_ONLOAD_LITERAL).join('')
 const injectedHandlers = (html: string): string[] =>
-  [...stripSeo(html).matchAll(HANDLER_ATTR_RE)]
+  [...withoutFontOnload(html).matchAll(HANDLER_ATTR_RE)]
     .map((match) => `${match[1]}=${match[2]}`)
     .filter((attr) => !LEGIT_HANDLER_ATTRS.has(attr))
 
@@ -623,7 +626,7 @@ describe('the card grid image alt is escaped in the attribute position', () => {
    */
   const handlerAttributes = (html: string): string[] => {
     const names: string[] = []
-    for (const element of new DOMParser().parseFromString(stripSeo(html), 'text/html').querySelectorAll('*')) {
+    for (const element of new DOMParser().parseFromString(withoutFontOnload(html), 'text/html').querySelectorAll('*')) {
       for (const attribute of [...element.attributes]) {
         if (/^on/i.test(attribute.name)) names.push(`${element.tagName}.${attribute.name}`)
       }
@@ -652,6 +655,43 @@ describe('the card grid image alt is escaped in the attribute position', () => {
       expect(handlerAttributes(html), `${msg}: injected handler`).toEqual([])
       expect(countScripts(html), `${msg}: injected script`).toBe(countScripts(render('clean alt')))
       expect(IMG_ALT_RE.exec(html)?.[1], `${msg}: attribute bytes`).toBe(escapeAttr(payload))
+    })
+  }
+})
+
+describe('structured data stays inert for every corpus payload (raw document scan)', () => {
+  // Site name, FAQ text and the logo URL all flow into the JSON-LD script. The
+  // RAW document is scanned (no head normalization), so a payload that closes
+  // the script element or opens a comment shows up as an extra script.
+  const render = (payload: string): string =>
+    exportSiteToHTML({
+      name: payload,
+      blocks: [
+        { id: 'n', type: 'navbar', variant: 'simple', props: { logo: 'Brand', logoImage: `https://ok.example/${payload}.png` } },
+        { id: 'f', type: 'faq', variant: 'accordion', props: { items: [{ question: payload, answer: payload }] } },
+      ],
+    })
+  const clean = render('clean')
+
+  it('positive control — the clean render carries exactly one structured-data script', () => {
+    expect(clean.match(/<script type="application\/ld\+json">/g)).toHaveLength(1)
+  })
+
+  for (const payload of CORPUS) {
+    it(`payload ${JSON.stringify(payload)} neither adds a script nor opens a handler`, () => {
+      const html = render(payload)
+      expect(html.match(/<script type="application\/ld\+json">/g)).toHaveLength(1)
+      expect(countScripts(html), 'injected script').toBe(countScripts(clean))
+      expect((html.match(/<\/script/gi) ?? []).length, 'script closers').toBe((clean.match(/<\/script/gi) ?? []).length)
+      // Judged on the PARSED document: escaped payload text inside a quoted
+      // attribute (og:title and friends) is inert, a real handler is a name.
+      const handlers: string[] = []
+      for (const element of new DOMParser().parseFromString(withoutFontOnload(html), 'text/html').querySelectorAll('*')) {
+        for (const attribute of [...element.attributes]) {
+          if (/^on/i.test(attribute.name)) handlers.push(`${element.tagName}.${attribute.name}`)
+        }
+      }
+      expect(handlers).toEqual([])
     })
   }
 })
