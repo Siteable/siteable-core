@@ -12,6 +12,7 @@
  * suite and stay exactly as strict: a payload that reaches a tag position is an
  * injection whether or not the block renders a carousel.
  */
+import { stripSeo } from './helpers/seo-head-allowed-diff'
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
@@ -89,7 +90,8 @@ function expectInert(html: string, clean: string, msg: string): void {
   // escaped its sink would be caught wherever it landed. Read through the DOM
   // rather than a regex over the source — an escaped `onerror=` sitting inside
   // a quoted attribute VALUE is inert text, and a source regex would flag it.
-  const doc = new DOMParser().parseFromString(html, 'text/html')
+  // The font link's fixed inline onload is a permitted head addition; remove it before scanning.
+  const doc = new DOMParser().parseFromString(stripSeo(html), 'text/html')
   for (const element of doc.querySelectorAll('*')) {
     for (const attribute of element.attributes) {
       expect(attribute.name, `${msg}: handler attribute on ${element.tagName}`).not.toMatch(/^on/i)

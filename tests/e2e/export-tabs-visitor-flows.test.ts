@@ -12,6 +12,7 @@
  * against the frozen 0.4.0 export load their inputs through the baseline helper,
  * so the document compared is the one the fixture was captured from.
  */
+import { stripSeo } from '../helpers/seo-head-allowed-diff'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { exportSiteToHTML } from '../../src/lib/export-html'
 import { exportSitePages } from '../../src/lib/export-site-pages'
@@ -215,10 +216,10 @@ describe('exported tab-set visitor flows', () => {
   it('renders one item as the default layout, byte-identical to 0.4.0', () => {
     const html = render(findSite('features-tabs-one-item'))
 
-    expect(html).toBe(fixtureHtml('features-tabs-one-item.html'))
+    expect(stripSeo(html)).toBe(fixtureHtml('features-tabs-one-item.html'))
     expect(html).not.toContain('role="tablist"')
     expect(html).not.toContain('data-sb-runtime')
-    expect(html).not.toContain('<noscript>')
+    expect(stripSeo(html)).not.toContain('<noscript>')
     // The default renderer really ran: the item is a grid card.
     expect(html).toContain('Only feature')
     expect(html).toContain('xl:grid-cols-3')
@@ -227,10 +228,10 @@ describe('exported tab-set visitor flows', () => {
   it('renders every hostile display value as the default layout', () => {
     const html = render(findSite('features-hostile-display'))
 
-    expect(html).toBe(fixtureHtml('features-hostile-display.html'))
+    expect(stripSeo(html)).toBe(fixtureHtml('features-hostile-display.html'))
     expect(html).not.toContain('role="tablist"')
     expect(html).not.toContain('data-sb-runtime')
-    expect(html).not.toContain('<noscript>')
+    expect(stripSeo(html)).not.toContain('<noscript>')
     // Seven blocks, seven default grid layouts, and the injection-shaped value
     // never reaches the bytes as markup.
     expect(count(html, 'xl:grid-cols-3')).toBe(7)
@@ -337,10 +338,10 @@ describe('exported tab-set visitor flows', () => {
     expect(pages).toHaveLength(2)
 
     // Page 2 is exactly its frozen 0.4.0 capture.
-    expect(pages[1].html).toBe(fixtureHtml('two-page-tabs--2.html'))
+    expect(stripSeo(pages[1].html)).toBe(fixtureHtml('two-page-tabs--2.html'))
     expect(pages[1].html).not.toContain('data-sb-runtime')
     expect(pages[1].html).not.toContain('sb_tabs_')
-    expect(pages[1].html).not.toContain('<noscript>')
+    expect(stripSeo(pages[1].html)).not.toContain('<noscript>')
 
     // Page 1 carries one script, the tab rules, and the first set id.
     expect(count(pages[0].html, '<script data-sb-runtime>')).toBe(1)

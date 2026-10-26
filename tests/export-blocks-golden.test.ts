@@ -9,6 +9,7 @@
  *
  * then re-run without the env var to confirm the committed fixtures match.
  */
+import { stripSeo } from './helpers/seo-head-allowed-diff'
 import { describe, it, expect } from 'vitest'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -203,8 +204,10 @@ describe('golden markup for the export-block renderers', () => {
         return
       }
 
+      // Image loading hints are a permitted addition. Both sides pass through
+      // the normalizer because the card grid golden already carried one hint.
       const expected = readFileSync(file, 'utf8')
-      expect(actual).toBe(expected)
+      expect(stripSeo(actual)).toBe(stripSeo(expected))
     })
   }
 })

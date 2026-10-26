@@ -10,6 +10,7 @@ import {
   renderJsonLd,
   renderFontLinks,
 } from '../src/lib/export-seo-head'
+import { themePresets } from '../src/lib/theme-presets'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
 const block = (type: string, props: Record<string, unknown> = {}, id = type): BlockConfig =>
@@ -188,6 +189,19 @@ describe('font links', () => {
     expect(html).toContain('rel="preconnect" href="https://fonts.googleapis.com"')
     expect(html).toContain('rel="preconnect" href="https://fonts.gstatic.com"')
   })
+  it.each(themePresets.map((preset) => [preset.id, preset] as const))(
+    'theme preset %s: preload, onload switch and noscript share one url, with no blocking stylesheet',
+    (_id, preset) => {
+      const html = exportSiteToHTML({ name: 'S', theme: preset.theme, blocks: [] })
+      const preloads = [...html.matchAll(/<link rel="preload" as="style" href="([^"]+)" onload="([^"]+)"/g)]
+      expect(preloads).toHaveLength(1)
+      const [, url, onload] = preloads[0]
+      expect(onload).toBe("this.onload=null;this.rel='stylesheet'")
+      expect([...html.matchAll(/<noscript><link rel="stylesheet" href="([^"]+)" \/><\/noscript>/g)].map((m) => m[1])).toEqual([url])
+      const outsideNoscript = html.replace(/<noscript>[\s\S]*?<\/noscript>/g, '')
+      expect(outsideNoscript).not.toContain(`rel="stylesheet" href="${url}"`)
+    },
+  )
   it('emits the url unchanged', () => {
     expect(renderFontLinks('https://f.example/css?a=1&b=2')).toContain('href="https://f.example/css?a=1&b=2"')
   })

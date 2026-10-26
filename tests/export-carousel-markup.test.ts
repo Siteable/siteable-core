@@ -22,6 +22,7 @@ import {
   fixtureHtml,
   render,
 } from './helpers/export-baseline-0.4.0-inputs'
+import { stripSeo } from './helpers/seo-head-allowed-diff'
 import { noScriptText } from './helpers/tab-set-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../src/blocks/types'
 
@@ -415,13 +416,13 @@ describe('hostile props never throw and never leak a value', () => {
 
 describe('a block without the option keeps the default renderer', () => {
   it('testimonials without display is byte-identical to the frozen default page', () => {
-    expect(render(findSite('testimonials-no-display'))).toBe(
+    expect(stripSeo(render(findSite('testimonials-no-display')))).toBe(
       fixtureHtml('testimonials-no-display.html'),
     )
   })
 
   it('gallery without display is byte-identical to the frozen default page', () => {
-    expect(render(findSite('gallery-no-display'))).toBe(fixtureHtml('gallery-no-display.html'))
+    expect(stripSeo(render(findSite('gallery-no-display')))).toBe(fixtureHtml('gallery-no-display.html'))
   })
 
   it('the default gallery renderer bytes appear verbatim when the option is absent', () => {

@@ -16,11 +16,12 @@
 import { describe, it, expect } from 'vitest'
 import { gzipSync } from 'node:zlib'
 import {
-  exportSitePages,
+  exportSitePages as exportSitePagesRaw,
   findSite,
   fixtureHtml,
-  render,
+  render as renderRaw,
 } from './helpers/export-baseline-0.4.0-inputs'
+import { stripSeo } from './helpers/seo-head-allowed-diff'
 import {
   hasLegacyNoScriptRules,
   maskTabSections,
@@ -32,6 +33,11 @@ import {
   TABS_NOSCRIPT_CSS,
 } from '../src/lib/export-behavior-runtime'
 import type { BaselineSite } from './helpers/export-baseline-0.4.0-inputs'
+
+/** Renders drop the permitted head and image additions the frozen goldens predate. */
+const render = (entry: Parameters<typeof renderRaw>[0]): string => stripSeo(renderRaw(entry))
+const exportSitePages = (...args: Parameters<typeof exportSitePagesRaw>) =>
+  exportSitePagesRaw(...args).map((page) => ({ ...page, html: stripSeo(page.html) }))
 
 /**
  * Reduce a FRESH tab page to the bytes it must keep, asserting the strip counts

@@ -17,6 +17,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { exportSiteToHTML } from '../src/lib/export-html'
+import { stripSeo } from './helpers/seo-head-allowed-diff'
 import { EXPORT_XSS_CORPUS } from './helpers/injection-corpus'
 import { BEHAVIOR_RUNTIME_SOURCE } from '../src/lib/export-behavior-runtime'
 import type { BlockConfig, BlockType, SiteConfig } from '../src/blocks/types'
@@ -287,8 +288,10 @@ describe('rejected URL sinks across the page export', () => {
 // so the detector is no narrower than the raw-renderer check.
 const HANDLER_ATTR_RE = /<[a-zA-Z][^>]*[^\w](on[a-z]+)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi
 const LEGIT_HANDLER_ATTRS = new Set(['onsubmit="return false"'])
+// The font link's fixed inline onload is a permitted head addition; it is
+// removed before scanning so only handlers in the content are judged.
 const injectedHandlers = (html: string): string[] =>
-  [...html.matchAll(HANDLER_ATTR_RE)]
+  [...stripSeo(html).matchAll(HANDLER_ATTR_RE)]
     .map((match) => `${match[1]}=${match[2]}`)
     .filter((attr) => !LEGIT_HANDLER_ATTRS.has(attr))
 
@@ -620,7 +623,7 @@ describe('the card grid image alt is escaped in the attribute position', () => {
    */
   const handlerAttributes = (html: string): string[] => {
     const names: string[] = []
-    for (const element of new DOMParser().parseFromString(html, 'text/html').querySelectorAll('*')) {
+    for (const element of new DOMParser().parseFromString(stripSeo(html), 'text/html').querySelectorAll('*')) {
       for (const attribute of [...element.attributes]) {
         if (/^on/i.test(attribute.name)) names.push(`${element.tagName}.${attribute.name}`)
       }
