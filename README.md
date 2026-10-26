@@ -105,6 +105,36 @@ normalizes page 1 to `/`, so About's content is served at `/` and `/about` no
 longer exists. If page paths are meaningful to your callers, compare the page
 list before and after validation rather than assuming it is preserved.
 
+### SEO head and `siteUrl`
+
+`exportSitePages` and `exportSiteToHTML` accept an optional `siteUrl` in
+`ExportSiteOptions`: the public origin of the published site, for example
+`https://example.com`.
+
+```ts
+exportSitePages(config, { siteUrl: 'https://example.com' })
+```
+
+`siteUrl` must be a plain `http(s)` origin. A value with credentials, a path, a
+query or a fragment is ignored, never repaired.
+
+- **With a valid `siteUrl`:** each page gets `<link rel="canonical">` (origin plus
+  the page path), and the JSON-LD `Organization` and `WebSite` entries carry
+  `url`.
+- **Without it:** no canonical link is emitted and the JSON-LD entries have no
+  `url`. Everything below is still emitted.
+- **Always:** Twitter card tags (`summary_large_image` when an image exists), one
+  JSON-LD script with `Organization` and `WebSite` (and `FAQPage` when a page has
+  usable FAQ items), and image hints: `decoding="async"` on every image,
+  `loading="lazy"` on all but the logo and the first hero image, and
+  `fetchpriority="high"` on that first hero image.
+- **Fonts no longer block rendering.** The Google Fonts stylesheet loads through
+  `rel="preload"` and switches to a stylesheet on load, with a `<noscript>`
+  fallback.
+
+Republishing a site changes the HTML of existing pages (new head tags and image
+attributes), so expect a diff on the first export after upgrading.
+
 ### `features` block: opt-in tab layout
 
 A `features` block takes an optional `display` prop. With `display: 'tabs'`
