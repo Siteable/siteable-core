@@ -115,8 +115,12 @@ list before and after validation rather than assuming it is preserved.
 exportSitePages(config, { siteUrl: 'https://example.com' })
 ```
 
-`siteUrl` must be a plain `http(s)` origin. A value with credentials, a path, a
-query or a fragment is ignored, never repaired.
+`siteUrl` must be a plain `http(s)` origin: `http://` or `https://` plus a host
+and optional port, with at most one trailing `/` (for example
+`https://example.com`, `http://localhost:3000`, `https://[::1]`). Anything else
+is ignored, never repaired: credentials, a backslash, quotes, angle brackets,
+whitespace, any path (including `/.`, `/..` and `/%2e`), a query, a fragment, or
+a malformed scheme such as `https:example.com`.
 
 - **With a valid `siteUrl`:** each page gets `<link rel="canonical">` (origin plus
   the page path), and the JSON-LD `Organization` and `WebSite` entries carry
@@ -127,7 +131,9 @@ query or a fragment is ignored, never repaired.
   JSON-LD script with `Organization` and `WebSite` (and `FAQPage` when a page has
   usable FAQ items), and image hints: `decoding="async"` on every image,
   `loading="lazy"` on all but the logo and the first hero image, and
-  `fetchpriority="high"` on that first hero image.
+  `fetchpriority="high"` on that first hero image. That applies to the first
+  image emitted by a `hero` block (split variant); the hero-image variant of an
+  `image` block stays lazy.
 - **Fonts no longer block rendering.** The Google Fonts stylesheet loads through
   `rel="preload"` and switches to a stylesheet on load, with a `<noscript>`
   fallback.

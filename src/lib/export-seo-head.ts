@@ -10,20 +10,33 @@ import { escapeHtml } from './html-escape'
 import { scriptLiteral } from './script-literal'
 
 /**
+ * Raw shape of an accepted site URL: `http://` or `https://` (any case), an
+ * authority free of `@`, `\`, quotes, angle brackets, whitespace, `/`, `?` and
+ * `#`, and at most one trailing `/`.
+ */
+const STRICT_ORIGIN_RE = /^https?:\/\/[^\s@\\"'<>?#/]+\/?$/i
+
+/**
  * Reduce a consumer-supplied site URL to a bare origin, or '' when it is not a
- * plain http(s) origin. Userinfo, a path, a query and a fragment all make the
- * value invalid (it is dropped, never repaired), so a bad value cannot leak
- * into a canonical link or structured data.
+ * plain http(s) origin.
+ *
+ * Accepted: `http(s)://host[:port]` with an optional single trailing `/`, e.g.
+ * `https://a.example`, `HTTPS://A.Example`, `http://localhost:3000`,
+ * `https://[::1]`. The result is the normalized origin.
+ *
+ * Rejected (returns ''): any other scheme, userinfo (`@`), backslashes, quotes,
+ * angle brackets, whitespace, a path (including `/.`, `/..` and `/%2e`), a
+ * query, a fragment, and forms such as `https:a.example`. The raw string is
+ * checked BEFORE URL parsing, so the WHATWG parser never repairs a bad value
+ * into a plausible one.
  */
 export function normalizeSiteUrl(raw: unknown): string {
   if (typeof raw !== 'string') return ''
   const value = raw.trim()
-  if (!value || value.includes('?') || value.includes('#')) return ''
+  if (!STRICT_ORIGIN_RE.test(value)) return ''
   try {
     const url = new URL(value)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return ''
-    if (url.username || url.password) return ''
-    if (url.pathname !== '/') return ''
     return url.origin
   } catch {
     return ''
