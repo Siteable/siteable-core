@@ -51,6 +51,7 @@ import {
   render,
 } from './helpers/export-baseline-0.4.0-inputs'
 import { stripRuntimeScriptText } from './helpers/behavior-runtime-allowed-diff'
+import { stripSeoExpecting } from './helpers/seo-head-allowed-diff'
 import { reduceCarouselForComparison } from './helpers/carousel-allowed-diff'
 import { reduceForComparison } from './helpers/tab-set-allowed-diff'
 
@@ -169,11 +170,11 @@ function renderCorpus(file: string): string {
 
 describe('byte identity against the frozen 0.4.0 export (strict)', () => {
   it.each(STRICT_CORPUS)('%s.html is byte-identical', (file) => {
-    expect(renderCorpus(file)).toBe(fixtureHtml(`${file}.html`))
+    expect(stripSeoExpecting(renderCorpus(file))).toBe(fixtureHtml(`${file}.html`))
   })
 
   it.each(STRICT_SITES)('%s is byte-identical', (slug) => {
-    expect(render(findSite(slug))).toBe(fixtureHtml(`${slug}.html`))
+    expect(stripSeoExpecting(render(findSite(slug)))).toBe(fixtureHtml(`${slug}.html`))
   })
 
   it('two-page-tabs--2.html is byte-identical', () => {
@@ -182,7 +183,7 @@ describe('byte identity against the frozen 0.4.0 export (strict)', () => {
     const entry = findSite('two-page-tabs')
     const pages = exportSitePages(entry.config, entry.options ?? undefined)
     expect(pages).toHaveLength(2)
-    expect(pages[1].html).toBe(fixtureHtml('two-page-tabs--2.html'))
+    expect(stripSeoExpecting(pages[1].html)).toBe(fixtureHtml('two-page-tabs--2.html'))
   })
 
   it('two-page-carousel--2.html is byte-identical', () => {
@@ -190,7 +191,7 @@ describe('byte identity against the frozen 0.4.0 export (strict)', () => {
     const entry = findSite('two-page-carousel')
     const pages = exportSitePages(entry.config, entry.options ?? undefined)
     expect(pages).toHaveLength(2)
-    expect(pages[1].html).toBe(fixtureHtml('two-page-carousel--2.html'))
+    expect(stripSeoExpecting(pages[1].html)).toBe(fixtureHtml('two-page-carousel--2.html'))
   })
 
   it.each(['testimonials-no-display', 'gallery-no-display', 'carousels-one-item', 'carousels-hostile-display'])(
@@ -210,7 +211,9 @@ describe('byte identity against the frozen 0.4.0 export (strict)', () => {
 
 describe('byte identity against the frozen 0.4.0 export (script-text-tolerant)', () => {
   function expectTolerantMatch(renderFresh: () => string, file: string) {
-    const fresh = stripRuntimeScriptText(renderFresh())
+    // corpus-05 carries an image, so it also emits the two image Twitter tags.
+    const twitter = file === 'corpus-05.html' ? 4 : 2
+    const fresh = stripRuntimeScriptText(stripSeoExpecting(renderFresh(), { twitter }))
     const frozen = stripRuntimeScriptText(fixtureHtml(file))
 
     expect(fresh.html).toBe(frozen.html)
@@ -258,7 +261,7 @@ describe('byte identity against the frozen 0.4.0 export (script-text- and carous
     reduceCarouselForComparison(html, ['t-1'], 'combo')
 
   it('matches once the script text is emptied, the carousel masked and its rules removed', () => {
-    const fresh = reduce(render(findSite(CAROUSEL_TOLERANT_SITE)))
+    const fresh = reduce(stripSeoExpecting(render(findSite(CAROUSEL_TOLERANT_SITE))))
     const frozen = reduce(fixtureHtml(`${CAROUSEL_TOLERANT_SITE}.html`))
 
     expect(fresh.counts.scripts, 'runtime script element').toBe(1)
@@ -286,7 +289,7 @@ describe('byte identity against the frozen 0.4.0 export (tab-set-tolerant)', () 
    * asserted: it is the side that must show the expected population.
    */
   function expectTabSetMatch(fresh: string, file: string, ids: string[]) {
-    const reduced = reduceForComparison(fresh, ids, 'tabs-only')
+    const reduced = reduceForComparison(stripSeoExpecting(fresh), ids, 'tabs-only')
     const frozen = reduceForComparison(fixtureHtml(file), ids, 'tabs-only')
 
     expect(reduced.counts.scripts, `${file}: runtime script element`).toBe(1)

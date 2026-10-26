@@ -17,6 +17,7 @@ import {
   stripLegacyFaq,
   stripRuntimeScriptText,
 } from './behavior-runtime-allowed-diff'
+import { stripSeo } from './seo-head-allowed-diff'
 import type { BlockConfig, SiteConfig } from '../../src/blocks/types'
 
 const FIXTURE = resolve(import.meta.dirname, '../fixtures/export-legacy-baseline.html')
@@ -58,7 +59,7 @@ const baselineConfig: SiteConfig = {
 
 describe('stripRuntimeAdditions — exact permitted set only', () => {
   it('removes the runtime, the noscript block, the menu attributes and the panels', () => {
-    const html = exportSiteToHTML(baselineConfig)
+    const html = stripSeo(exportSiteToHTML(baselineConfig))
     const { html: stripped, counts } = stripRuntimeAdditions(html)
 
     expect(stripped).not.toContain('data-sb-runtime')
@@ -92,7 +93,7 @@ describe('stripRuntimeAdditions — exact permitted set only', () => {
       options?: { settings?: Record<string, string> }
     }
     const fresh = stripRuntimeAdditions(
-      exportSiteToHTML(entry.config, entry.options ?? undefined),
+      stripSeo(exportSiteToHTML(entry.config, entry.options ?? undefined)),
     ).html
     const legacy = stripLegacyFaq(readFileSync(resolve(dir, `${slug}.html`), 'utf8')).html
 

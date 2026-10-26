@@ -46,6 +46,7 @@ import {
   stripLegacyFaq,
   stripRuntimeAdditions,
 } from './helpers/behavior-runtime-allowed-diff'
+import { stripSeoHeadAdditions } from './helpers/seo-head-allowed-diff'
 import type { SiteConfig } from '../src/blocks/types'
 
 const baselineConfig: SiteConfig = {
@@ -347,6 +348,8 @@ const baselineSettings = {
 
 const FIXTURE_PATH = resolve(import.meta.dirname, 'fixtures/export-legacy-baseline.html')
 
+const SEO_COUNTS = { twitter: 4, jsonLd: 1, imgAttrs: 7, fontLinks: 1, cssStyle: 0 }
+
 describe('legacy export byte-identity', () => {
   it('fresh export differs from the frozen baseline ONLY by the permitted additions', () => {
     const baseline = readFileSync(FIXTURE_PATH, 'utf8')
@@ -355,7 +358,8 @@ describe('legacy export byte-identity', () => {
     // the permitted runtime additions and then every injected id from the fresh
     // export must reproduce the baseline once its legacy FAQ additions are
     // removed, so the ONLY differences are the permitted sets.
-    const normalized = stripRuntimeAdditions(actual)
+    const seo = stripSeoHeadAdditions(actual)
+    const normalized = stripRuntimeAdditions(seo.html)
     const runtime = normalized.counts
     const normalizedActual = normalized.html.replace(/ id="[^"]*"/g, '')
     const normalizedBaseline = stripLegacyFaq(baseline).html
@@ -363,12 +367,13 @@ describe('legacy export byte-identity', () => {
     // ...and the additions were actually present (guards against a no-op):
     expect(actual).not.toBe(baseline)
     expect(runtime).toEqual({ scripts: 1, noscript: 1, toggleAttrs: 2, panels: 2 })
+    expect(seo.counts).toEqual(SEO_COUNTS)
     // Teeth: an unrelated settings change is a failure, not a near match.
     const mutated = exportSiteToHTML(baselineConfig, {
       settings: { ...baselineSettings, gaId: 'G-MUTATED' },
     })
     expect(
-      stripRuntimeAdditions(mutated).html.replace(/ id="[^"]*"/g, '')
+      stripRuntimeAdditions(stripSeoHeadAdditions(mutated).html).html.replace(/ id="[^"]*"/g, '')
     ).not.toBe(normalizedBaseline)
     const insertedIds = (actual.match(/ id="[^"]*"/g) || []).filter(
       (id) => !id.includes('sb_menu_')

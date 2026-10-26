@@ -12,6 +12,7 @@
  * (re-exporting the fixtures). The parity row replays that table in the React
  * preview and in the exported page and compares the outcomes.
  */
+import { stripSeoHeadAdditions } from '../helpers/seo-head-allowed-diff'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -288,10 +289,13 @@ describe('safety and packaging', () => {
     )
     expect(page.querySelectorAll('script')).toHaveLength(clean.querySelectorAll('script').length)
     expect(
-      Array.from(page.querySelectorAll('script')).some((script) =>
+      Array.from(page.querySelectorAll('script:not([type="application/ld+json"])')).some((script) =>
         (script.textContent ?? '').includes('alert('),
       ),
     ).toBe(false)
+    // The structured-data script is data, never executed: it must stay valid JSON.
+    const ld = page.querySelector('script[type="application/ld+json"]')
+    expect(() => JSON.parse(ld?.textContent ?? '')).not.toThrow()
 
     // The runtime still drives the injected row, and the payload stays text.
     mount(page)
@@ -426,7 +430,7 @@ describe('legacy fixtures', () => {
     for (const slug of ['01-blocks-only-every-block-type', '05-single-page-home-with-settings']) {
       const loaded = entry(slug)
       const actual = exportSiteToHTML(loaded.config, loaded.options ?? undefined)
-      const { html, counts } = stripRuntimeAdditions(actual)
+      const { html, counts } = stripRuntimeAdditions(stripSeoHeadAdditions(actual).html)
       const frozen = readFileSync(resolve(corpusDir, `${slug}.html`), 'utf8')
 
       expect(html, `${slug}: diff outside the permitted set`).toBe(stripLegacyFaq(frozen).html)

@@ -1,5 +1,6 @@
 import type { BlockConfig } from '@/blocks/types'
 import { escapeHtml } from '@/lib/html-escape'
+import { imgHintAttrs } from '@/lib/export-img-hints'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { defaultImageGridItems } from '@/lib/block-default-content'
 
@@ -33,7 +34,7 @@ export function renderImage(block: BlockConfig): string {
 
   if (block.variant === 'side-by-side') {
     const imgHtml = srcOk
-      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-full object-cover rounded-lg" />`
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-full object-cover rounded-lg"${imgHintAttrs('lazy')} />`
       : placeholder('w-full h-64 md:h-80 rounded-lg')
     const imageCellClass = imageSide === 'right' ? 'md:order-2' : ''
     const textCellClass = imageSide === 'right' ? 'md:order-1' : ''
@@ -63,7 +64,7 @@ export function renderImage(block: BlockConfig): string {
         const imgSrc = typeof img.src === 'string' ? img.src : ''
         const imgAlt = typeof img.alt === 'string' ? img.alt : ''
         const inner = isAllowedUrl(imgSrc, { image: true })
-          ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(imgAlt)}" class="w-full h-full object-cover" />`
+          ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(imgAlt)}" class="w-full h-full object-cover"${imgHintAttrs('lazy')} />`
           : placeholder('w-full h-full')
         return `        <div class="aspect-square rounded-lg overflow-hidden">${inner}</div>`
       })
@@ -78,7 +79,7 @@ ${cells}
 
   // hero-image (default)
   const heroImgHtml = srcOk
-    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-64 md:h-96 object-cover" />`
+    ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-64 md:h-96 object-cover"${imgHintAttrs('lazy')} />`
     : placeholder('w-full h-64 md:h-96')
   const overlayTitle = title
     ? `<h2 class="text-2xl md:text-3xl font-bold mb-2">${escapeHtml(title)}</h2>`

@@ -17,6 +17,7 @@
  *   # plus the generator, render each config with OUT_DIR set to a scratch dir
  *   diff -r /tmp/out-020 /tmp/out-021        # must be empty
  */
+import { stripSeoHeadAdditions } from './helpers/seo-head-allowed-diff'
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -309,8 +310,17 @@ describe('legacy corpus byte-identity', () => {
    * attributes, the menu panels, and the removed legacy FAQ additions. Counts
    * are asserted so a no-op normalizer cannot pass.
    */
+  /** Remove the permitted head/image additions; every page must carry the card meta and one json-ld script. */
+  const dropSeo = (actual: string, entry: CorpusEntry): string => {
+    const { html, counts } = stripSeoHeadAdditions(actual)
+    expect(counts.jsonLd, `${entry.slug}: json-ld script`).toBe(1)
+    expect(counts.twitter, `${entry.slug}: twitter metas`).toBeGreaterThan(0)
+    expect(counts.fontLinks, `${entry.slug}: font link`).toBe(1)
+    return html
+  }
+
   const expectPermittedDiff = (actual: string, entry: CorpusEntry): void => {
-    const { html, counts } = stripRuntimeAdditions(actual)
+    const { html, counts } = stripRuntimeAdditions(dropSeo(actual, entry))
     expect(html, `${entry.slug}: diff outside the permitted set`).toBe(
       stripLegacyFaq(snapshot(entry.slug)).html,
     )
@@ -341,7 +351,7 @@ describe('legacy corpus byte-identity', () => {
     (_slug, entry) => {
       const actual = exportSiteToHTML(entry.config, entry.options ?? undefined)
       if (!hasBehaviorBlock(entry)) {
-        expect(actual).toBe(snapshot(entry.slug))
+        expect(dropSeo(actual, entry)).toBe(snapshot(entry.slug))
         return
       }
       expectPermittedDiff(actual, entry)
@@ -355,7 +365,7 @@ describe('legacy corpus byte-identity', () => {
       expect(docs).toHaveLength(1)
       expect(docs[0].path).toBe('/')
       if (!hasBehaviorBlock(entry)) {
-        expect(docs[0].html).toBe(snapshot(entry.slug))
+        expect(dropSeo(docs[0].html, entry)).toBe(snapshot(entry.slug))
         return
       }
       expectPermittedDiff(docs[0].html, entry)
