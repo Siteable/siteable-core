@@ -41,7 +41,7 @@ export function exportSitePages(
   // `pages` is treated as absent, which is exactly what `exportSiteToHTML`'s
   // `homeBlocks` does, so the two entry points agree on page 1.
   if (!Array.isArray(pages) || pages.length === 0) {
-    return [{ path: '/', html: renderDocument(config, config.blocks, options) }]
+    return [{ path: '/', html: renderDocument(config, config.blocks, options, '/') }]
   }
 
   const list = pages as Array<{ path?: string; blocks?: BlockConfig[] } | null | undefined>
@@ -58,6 +58,6 @@ export function exportSitePages(
     // publish with a TypeError from inside the renderer. `validateSiteConfig`
     // always materializes an array, so this is a boundary guard, not a
     // normalizer — same reasoning as `raw ?? ''` in `page-path.ts`.
-    html: renderDocument(config, page?.blocks ?? [], options),
+    html: renderDocument(config, page?.blocks ?? [], options, paths[index]),
   }))
 }

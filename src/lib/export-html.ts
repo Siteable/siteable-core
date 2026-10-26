@@ -3,6 +3,14 @@ import { resolveTheme } from '@/lib/theme-presets'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { escapeHtml } from './html-escape'
 import { scriptLiteral } from './script-literal'
+import {
+  normalizeSiteUrl,
+  renderCanonical,
+  renderFontLinks,
+  renderJsonLd,
+  renderTwitterMeta,
+  type JsonLdFaq,
+} from './export-seo-head'
 import { prop } from './render-prop'
 import { renderLink } from './render-link'
 import { toLinkItem } from './link-item'
@@ -41,6 +49,12 @@ export interface ExportSiteSettings {
 
 export interface ExportSiteOptions {
   settings?: ExportSiteSettings
+  /**
+   * Public origin of the published site (for example `https://example.com`).
+   * Used for canonical links and structured-data URLs. Anything that is not a
+   * plain http(s) origin (userinfo, path, query or fragment) is ignored.
+   */
+  siteUrl?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -979,6 +993,28 @@ const defaultFaqs: FaqItem[] = [
   },
 ]
 
+/**
+ * FAQ items and first navbar logo of a page body, read the same way the block
+ * renderers read them so structured data always matches the visible markup.
+ */
+function collectSeoSources(body: BlockConfig[]): { faqs: JsonLdFaq[]; logo: string } {
+  const faqs: JsonLdFaq[] = []
+  let logo = ''
+  let sawNavbar = false
+  for (const block of body) {
+    if (!block || typeof block !== 'object' || !block.props) continue
+    if (block.type === 'faq') {
+      const items = prop<unknown>(block.props, 'items', defaultFaqs)
+      if (Array.isArray(items)) faqs.push(...(items as JsonLdFaq[]))
+    } else if (block.type === 'navbar' && !sawNavbar) {
+      sawNavbar = true
+      const raw = prop<unknown>(block.props, 'logoImage', '')
+      if (typeof raw === 'string' && raw && isAllowedUrl(raw)) logo = raw
+    }
+  }
+  return { faqs, logo }
+}
+
 function renderFaq(block: BlockConfig): string {
   const title = escapeHtml(
     prop(block.props, 'title', 'Frequently Asked Questions')
@@ -1337,6 +1373,7 @@ export function renderDocument(
   config: SiteConfig,
   blocks: BlockConfig[],
   options?: ExportSiteOptions,
+  pagePath = '/',
 ): string {
   // `blocks` is guarded HERE rather than only at each call site, because
   // this is the one function both public entry points pass it through. An earlier
@@ -1387,6 +1424,18 @@ export function renderDocument(
   const ogImageMeta = ogImage
     ? `  <meta property="og:image" content="${escapeHtml(ogImage)}" />\n`
     : ''
+  const siteOrigin = normalizeSiteUrl(options?.siteUrl)
+  const seo = collectSeoSources(body)
+  const seoHead =
+    renderCanonical(siteOrigin, pagePath) +
+    renderTwitterMeta({ title: ogTitle, description: ogDescription, image: ogImage }) +
+    renderJsonLd({
+      name: (settings?.siteName || config.name || pageTitle).trim(),
+      origin: siteOrigin,
+      logo: seo.logo,
+      faqs: seo.faqs,
+    })
+
   const faviconLink = faviconUrl
     ? `  <link rel="icon" href="${escapeHtml(faviconUrl)}" />\n`
     : ''
@@ -1423,12 +1472,12 @@ export function renderDocument(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(pageTitle)}</title>
 ${descriptionMeta}  <meta property="og:title" content="${escapeHtml(ogTitle)}" />
-${ogDescriptionMeta}${ogImageMeta}${faviconLink}
+${ogDescriptionMeta}${ogImageMeta}${seoHead}${faviconLink}
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="${fontUrl}" />
+${renderFontLinks(fontUrl)}
 
   <!-- Tailwind CSS (Play CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
