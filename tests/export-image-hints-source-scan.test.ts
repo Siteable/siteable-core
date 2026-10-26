@@ -21,10 +21,20 @@ describe('exporter <img> literals', () => {
       const lines = readFileSync(file, 'utf8').split('\n')
       lines.forEach((line, i) => {
         if (/^\s*(\/\/|\*|\/\*)/.test(line)) return
-        if (!/`[^`]*<img\s/.test(line) && !/^\s*[?:]?\s*`<img\s/.test(line)) return
+        // `<img` followed by whitespace or the end of the line, inside any
+        // quote style (backtick, single or double).
+        if (!/<img(\s|$)/.test(line)) return
         if (!line.includes('imgHintAttrs(')) offenders.push(`${file}:${i + 1}`)
       })
     }
     expect(offenders).toEqual([])
+  })
+
+  it('the pattern catches every quote style and a line-ending <img', () => {
+    const pattern = /<img(\s|$)/
+    for (const line of ["`<img src=x>`", "'<img src=x>'", '"<img src=x>"', '`<img', "'<img", '"<img', 'x + `<img\t']) {
+      expect(pattern.test(line), line).toBe(true)
+    }
+    expect(pattern.test('`<image-grid>`')).toBe(false)
   })
 })
