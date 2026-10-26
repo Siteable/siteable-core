@@ -1,5 +1,6 @@
 import type { BlockConfig } from '@/blocks/types'
 import { escapeHtml } from '@/lib/html-escape'
+import { imgHintAttrs } from '@/lib/export-img-hints'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { cardGridCategoryKey, cardGridCategories, isFilterCardGrid } from '@/lib/export-behavior-runtime'
 import { cardImageAlt, isPresent, toCardGridItems, type CardGridItem } from '@/lib/card-grid-items'
@@ -44,7 +45,7 @@ const FILTER_BUTTON_CLASS =
 
 function media(item: CardGridItem): string {
   if (isAllowedUrl(item.image, { image: true })) {
-    return `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(cardImageAlt(item))}" style="${IMAGE_STYLE}" loading="lazy" />`
+    return `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(cardImageAlt(item))}" style="${IMAGE_STYLE}"${imgHintAttrs('lazy')} />`
   }
   return `<div class="${PLACEHOLDER_CLASS}">${IMAGE_ICON_24}</div>`
 }

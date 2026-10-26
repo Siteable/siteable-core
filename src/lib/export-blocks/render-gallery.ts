@@ -1,5 +1,6 @@
 import type { BlockConfig } from '@/blocks/types'
 import { escapeHtml } from '@/lib/html-escape'
+import { imgHintAttrs } from '@/lib/export-img-hints'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { defaultGalleryImages } from '@/lib/block-default-content'
 
@@ -44,7 +45,7 @@ export function renderGallery(block: BlockConfig): string {
       const tall = isMasonry && i % 3 === 0
       const inner =
         src && isAllowedUrl(src, { image: true })
-          ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-full object-cover" />`
+          ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" class="w-full h-full object-cover"${imgHintAttrs('lazy')} />`
           : `<div class="w-full h-full min-h-[140px] bg-gradient-to-br from-bg-3 to-bg-4 flex items-center justify-center">${IMAGE_ICON_24}</div>`
       const captionHtml = caption
         ? `<div class="px-3 py-2 bg-bg-2 text-[11px] text-text-2">${escapeHtml(caption)}</div>`

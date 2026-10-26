@@ -1,5 +1,6 @@
 import type { BlockConfig } from '@/blocks/types'
 import { escapeHtml } from '@/lib/html-escape'
+import { imgHintAttrs } from '@/lib/export-img-hints'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { prop } from '@/lib/render-prop'
 import { defaultTestimonials } from '@/lib/block-default-content'
@@ -62,7 +63,7 @@ export function renderTestimonialsCarousel(block: BlockConfig, regionId: string)
     const ratingHtml = rating > 0 ? `\n            ${stars(rating)}` : ''
     const picture =
       avatar && isAllowedUrl(avatar)
-        ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />`
+        ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(name)}" class="w-9 h-9 rounded-full object-cover border border-border-default"${imgHintAttrs('lazy')} />`
         : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(name)}</div>`
 
     const n = index + 1

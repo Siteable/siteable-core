@@ -2,6 +2,7 @@ import type { SiteConfig, BlockConfig } from '@/blocks/types'
 import { resolveTheme } from '@/lib/theme-presets'
 import { isAllowedUrl } from '@/lib/url-policy'
 import { escapeHtml } from './html-escape'
+import { imgHintAttrs } from '@/lib/export-img-hints'
 import { scriptLiteral } from './script-literal'
 import {
   normalizeSiteUrl,
@@ -212,7 +213,7 @@ function renderNavbar(block: BlockConfig, panelId: string): string {
       : `<button class="${NAV_CTA_CLASS}">${ctaText}</button>`
 
   const logoHtml = logoImage && logoImageOk
-    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-8 w-auto object-contain" />`
+    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-8 w-auto object-contain"${imgHintAttrs('logo')} />`
     : `<div class="w-8 h-8 rounded-lg bg-green/10 flex items-center justify-center"><div class="w-4 h-4 rounded-full bg-green"></div></div>`
 
   return `  <nav class="px-6 md:px-10 py-4 flex items-center justify-between">
@@ -272,7 +273,7 @@ ${secondaryHtml}
   </section>`
 }
 
-function renderHeroSplit(block: BlockConfig): string {
+function renderHeroSplit(block: BlockConfig, claimPriority: () => boolean): string {
   const badge = prop<string>(block.props, 'badge', '')
   const headline = escapeHtml(prop(block.props, 'headline', ''))
   const subheadline = escapeHtml(prop(block.props, 'subheadline', ''))
@@ -298,7 +299,7 @@ function renderHeroSplit(block: BlockConfig): string {
   const heroImageOk = isAllowedUrl(heroImage)
 
   const imageHtml = heroImage && heroImageOk
-    ? `          <img src="${escapeHtml(heroImage)}" alt="" class="absolute inset-0 w-full h-full object-cover" />`
+    ? `          <img src="${escapeHtml(heroImage)}" alt="" class="absolute inset-0 w-full h-full object-cover"${imgHintAttrs(claimPriority() ? 'priority' : 'lazy')} />`
     : `          <div class="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent"></div>
           <div class="absolute inset-6 border border-dashed border-border-default rounded-lg flex items-center justify-center text-text-3 text-sm">Preview</div>`
 
@@ -355,10 +356,10 @@ ${secondaryHtml}
   </section>`
 }
 
-function renderHero(block: BlockConfig): string {
+function renderHero(block: BlockConfig, claimPriority: () => boolean): string {
   switch (block.variant) {
     case 'split':
-      return renderHeroSplit(block)
+      return renderHeroSplit(block, claimPriority)
     case 'gradient':
       return renderHeroGradient(block)
     default:
@@ -696,7 +697,7 @@ function renderFooterSimple(block: BlockConfig): string {
     .join('\n')
 
   const footerLogoHtml = logoImage && logoImageOk
-    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-6 w-auto object-contain" />`
+    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-6 w-auto object-contain"${imgHintAttrs('lazy')} />`
     : `<div class="w-6 h-6 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3 h-3 rounded-full bg-green"></div></div>`
 
   return `  <footer class="px-6 md:px-10 py-8 border-t border-border-subtle">
@@ -762,7 +763,7 @@ ${colLinks}
     .join('\n')
 
   const mcLogoHtml = logoImage && logoImageOk
-    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-7 w-auto object-contain" />`
+    ? `<img src="${escapeHtml(logoImage)}" alt="${logo}" class="h-7 w-auto object-contain"${imgHintAttrs('lazy')} />`
     : `<div class="w-7 h-7 rounded-md bg-green/10 flex items-center justify-center"><div class="w-3.5 h-3.5 rounded-full bg-green"></div></div>`
 
   return `  <footer class="px-6 md:px-10 py-12 border-t border-border-subtle">
@@ -871,7 +872,7 @@ function renderTestimonials(block: BlockConfig): string {
           <p class="text-[13px] text-text-1 leading-relaxed mb-4 italic">"${escapeHtml(item.quote)}"</p>
 ${ratingHtml}
           <div class="flex items-center gap-3 mt-4 pt-4 border-t border-border-subtle">
-            ${item.avatar && isAllowedUrl(item.avatar) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default" />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
+            ${item.avatar && isAllowedUrl(item.avatar) ? `<img src="${escapeHtml(item.avatar)}" alt="${escapeHtml(item.name)}" class="w-9 h-9 rounded-full object-cover border border-border-default"${imgHintAttrs('lazy')} />` : `<div class="w-9 h-9 rounded-full bg-bg-4 border border-border-default flex items-center justify-center text-[11px] font-semibold text-text-2">${initials(item.name)}</div>`}
             <div>
               <div class="text-[12.5px] font-semibold">${escapeHtml(item.name)}</div>
               <div class="text-[11px] text-text-3">${escapeHtml(item.role)}</div>
@@ -1080,7 +1081,7 @@ function renderTeam(block: BlockConfig): string {
   const cards = members
     .map(
       (m) => `        <div class="text-center group">
-          ${m.avatar && isAllowedUrl(m.avatar) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30" />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
+          ${m.avatar && isAllowedUrl(m.avatar) ? `<img src="${escapeHtml(m.avatar)}" alt="${escapeHtml(m.name)}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-border-default mb-3 transition-all group-hover:border-green/30"${imgHintAttrs('lazy')} />` : `<div class="w-20 h-20 mx-auto rounded-full bg-bg-3 border-2 border-border-default flex items-center justify-center text-xl font-bold text-text-3 mb-3 transition-all group-hover:border-green/30">${initials(m.name)}</div>`}
           <h3 class="text-sm font-semibold">${escapeHtml(m.name)}</h3>
           <p class="text-[11px] text-text-3 mt-0.5">${escapeHtml(m.role)}</p>
         </div>`
@@ -1231,6 +1232,8 @@ interface EmitIds {
   menu: number
   tabs: number
   carousels: number
+  /** Count of hero `<img>` actually emitted; the first one claims fetch priority. */
+  heroImages: number
 }
 
 function renderBlock(
@@ -1249,7 +1252,7 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
         escapeHtml(`${MENU_PANEL_ID_PREFIX}${++ids.menu}`)
       )
     case 'hero':
-      return renderHero(block)
+      return renderHero(block, () => ids.heroImages++ === 0)
     case 'features':
       // The opt-in tab layout diverges here and nowhere else, so a page without
       // the option keeps the default renderer's bytes exactly.
@@ -1392,7 +1395,7 @@ export function renderDocument(
   const needs = needsBehaviorRuntime(body)
 
   const seenIds = new Set<string>()
-  const emitIds: EmitIds = { menu: 0, tabs: 0, carousels: 0 }
+  const emitIds: EmitIds = { menu: 0, tabs: 0, carousels: 0, heroImages: 0 }
   const blocksHtml = body.map((b) => renderBlock(b, seenIds, emitIds)).join('\n\n')
 
   const pageTitle = (settings?.seoTitle || settings?.siteName || config.name || 'Website').trim()
