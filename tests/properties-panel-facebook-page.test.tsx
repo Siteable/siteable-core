@@ -88,6 +88,15 @@ function type(el: HTMLInputElement, text: string): void {
   }
 }
 
+/** Set the whole value in one input event, the way a paste does. */
+function paste(el: HTMLInputElement, text: string): void {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+  act(() => {
+    setter.call(el, text)
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+}
+
 const blur = (el: HTMLInputElement) =>
   act(() => {
     el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
@@ -207,7 +216,7 @@ describe('facebook feed commit on blur or Enter', () => {
 describe('facebook feed title', () => {
   it.each(FACEBOOK_PAGE_TITLE_CORPUS.slice(0, 12).map((t, i) => [i, t] as const))('renders hostile title %i as plain text', (_i, title) => {
     const c = render({ url: ACME, title: '', height: '500' })
-    type(titleInput(c), title)
+    paste(titleInput(c), title)
     const preview = c.querySelector('[data-testid="preview"]')!
     expect(preview.querySelector('script')).toBeNull()
     expect(preview.querySelector('[onerror],[onload],[onclick]')).toBeNull()
