@@ -241,6 +241,41 @@ behaviour runtime as the navbar menu, the FAQ accordion, the tab set and the
 carousel — one `<script>` per page, no external asset. With JavaScript disabled
 the filter buttons are hidden and every card is shown.
 
+### `facebook-page` block: Facebook Page timeline embed
+
+A `facebook-page` block shows the public timeline of a Facebook Page in an
+`<iframe>`. Its props are `title` (optional heading), `url` and `height`.
+The block has one variant, `default`.
+
+```ts
+import { facebookPageEmbedUrl } from '@siteable/core'
+
+facebookPageEmbedUrl('https://www.facebook.com/acme', 600) // plugin URL, or null
+```
+
+`url` must be an `https` address on `facebook.com`, `www.facebook.com` or
+`m.facebook.com` with a Page path (`/acme`) or `profile.php?id=<digits>`. Any
+other address, including a reserved path such as `/sharer`, is refused and the
+block renders a placeholder instead of a frame. The frame `src` is always built
+by `facebookPageEmbedUrl`, never copied from the stored value, with fixed plugin
+options: timeline tab, small header, adapt to container width, cover photo
+shown, no facepile, plugin width 340. The frame is capped at 340 px and centred,
+so it fits a 390 px phone.
+
+`height` defaults to 500 and is clamped to 70-800; a non-integer value falls
+back to 500. The frame uses `loading="lazy"` and sends
+`referrerpolicy="strict-origin-when-cross-origin"`, so Facebook only receives the
+site origin. No script is added to the page.
+
+The Page must be public. An accepted address can still show Facebook's own empty
+state, for example for a private Page or a non-Page path. When the frame loads,
+the visitor's browser contacts Facebook, so cookie and consent handling is the
+site owner's call. A site that sets a `frame-src` policy must allow
+`https://www.facebook.com`.
+
+In the editor the URL field shows "may not show a Page timeline" when the
+address would render the placeholder. `url` and `height` apply on blur or Enter.
+
 ### Image picking in the editor (`onPickImage`)
 
 `<EditorLayout onPickImage={() => Promise<string | null>} />` is an optional
