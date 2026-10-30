@@ -73,6 +73,7 @@ Every entry below lists the contents of that block's "props" object.
 18. divider (variants: line, space, dots) - props: { height?, width? }
 19. banner (variants: ribbon, bar) - props: { text, linkText?, linkUrl? }
 20. card-grid (variants: product) - props: { title?, subtitle?, display?: "filter" (only with 2+ distinct categories; omit for the default layout), items: [{ image?, alt?, name, description?, price?, category?, ctaText?, ctaUrl? }] }
+21. facebook-page (variants: default) - props: { url, title?, height? }
 
 Icons: Blocks, Code, Bot, Zap, Shield, Globe, Layers, Palette, Rocket, Star, Lock, Settings
 Fonts: DM Sans, Inter, Space Grotesk, Poppins, Manrope, Outfit, Plus Jakarta Sans, Sora, Nunito Sans, Work Sans, Rubik, Raleway
@@ -90,6 +91,9 @@ Buttons and images take real URLs — do not strip them out:
 - card-grid: items[].image must be an https:// URL (omit it when you have none, the
   card shows a placeholder); items[].ctaUrl is a real link URL and renders only when
   items[].ctaText is also set. Never invent product items — an empty list is valid.
+- facebook-page: url is the public Page address, https://www.facebook.com/<page>; omit the
+  block when you do not know it. height is a whole number from 70 to 800 written as digits
+  (default 500).
 
 ## Rules
 

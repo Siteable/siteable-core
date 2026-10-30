@@ -19,6 +19,7 @@ export type BlockType =
   | 'video'
   | 'gallery'
   | 'card-grid'
+  | 'facebook-page'
 
 export type BlockVariant = string
 

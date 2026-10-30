@@ -75,6 +75,12 @@ const coverageConfig: SiteConfig = {
         items: [{ name: 'One', price: '$1', category: 'Shoes', ctaText: 'View', ctaUrl: 'https://x/i' }],
       },
     },
+    {
+      id: 'b-facebook-page',
+      type: 'facebook-page',
+      variant: 'default',
+      props: { url: 'https://www.facebook.com/acme', title: 'Follow us' },
+    },
   ],
 }
 
@@ -151,5 +157,10 @@ describe('export block coverage', () => {
 
   it('renders card grid block with the inline 4:3 image box', () => {
     expect(html).toContain('aspect-ratio:4/3')
+  })
+
+  it('renders facebook page block with its embed iframe', () => {
+    expect(html).toContain('src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Facme&amp;')
+    expect(html).toContain('title="Follow us"')
   })
 })

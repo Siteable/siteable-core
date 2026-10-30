@@ -19,6 +19,7 @@ import { defaultPricingTiers } from './block-default-content'
 import { renderContent } from './export-blocks/render-content'
 import { renderImage } from './export-blocks/render-image'
 import { renderVideo } from './export-blocks/render-video'
+import { renderFacebookPage } from './export-blocks/render-facebook-page'
 import { renderGallery } from './export-blocks/render-gallery'
 import { renderCardGrid } from './export-blocks/render-card-grid'
 import { renderDivider } from './export-blocks/render-divider'
@@ -1295,6 +1296,8 @@ function renderBlockMarkup(block: BlockConfig, ids: EmitIds): string {
         : renderGallery(block)
     case 'card-grid':
       return renderCardGrid(block)
+    case 'facebook-page':
+      return renderFacebookPage(block)
     case 'divider':
       return renderDivider(block)
     case 'banner':

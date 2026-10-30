@@ -184,6 +184,16 @@ export const blockMetadata: BlockMeta[] = [
     defaultProps: { title: '', subtitle: '', display: '', items: [] },
   },
   {
+    type: 'facebook-page',
+    label: 'Facebook Feed',
+    description: 'Facebook Page timeline embed',
+    category: 'Media',
+    variants: ['default'],
+    // Height is a STRING so validated configs keep the typed value and one shared
+    // clamp decides the final frame height on every path.
+    defaultProps: { url: '', title: '', height: '500' },
+  },
+  {
     type: 'divider',
     label: 'Divider',
     description: 'Visual separator between sections',

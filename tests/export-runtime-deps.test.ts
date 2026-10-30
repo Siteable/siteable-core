@@ -47,6 +47,7 @@ const ATOM_MODULES = [
   'src/lib/export-blocks/render-gallery.ts',
   'src/lib/export-blocks/render-image.ts',
   'src/lib/export-blocks/render-video.ts',
+  'src/lib/export-blocks/render-facebook-page.ts',
 ]
 
 /**
@@ -57,6 +58,7 @@ const GUARDED_MODULES = [
   'src/lib/url-policy.ts',
   'src/lib/page-path.ts',
   'src/lib/export-behavior-runtime.ts',
+  'src/lib/facebook-page-embed.ts',
 ]
 
 /** Repo root, anchored to this test file rather than `process.cwd()`. */
