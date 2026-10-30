@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filtered catalog</title>
+  <meta property="og:title" content="Filtered catalog" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Filtered catalog" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Filtered catalog"},{"@type":"WebSite","name":"Filtered catalog"}]}</script>
+
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" /></noscript>
+
+  <!-- Tailwind CSS (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'bg-0': '#09090b',
+            'bg-1': '#0f0f12',
+            'bg-2': '#18181b',
+            'bg-3': '#1e1e23',
+            'bg-4': '#27272a',
+            'bg-5': '#303036',
+            'text-0': '#fafafa',
+            'text-1': '#a1a1aa',
+            'text-2': '#71717a',
+            'text-3': '#52525b',
+            'green': {
+              DEFAULT: '#22c55e',
+              dim: '#16a34a',
+            },
+            'border-default': '#2a2a2f',
+            'border-subtle': '#1f1f24',
+            'border-hover': '#3a3a3f',
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', '-apple-system', 'system-ui', 'sans-serif'],
+            display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          borderRadius: {
+            DEFAULT: '8px',
+            lg: '12px',
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Theme CSS Custom Properties -->
+  <style>
+    :root {
+      --color-bg-0: #09090b;
+      --color-bg-1: #0f0f12;
+      --color-bg-2: #18181b;
+      --color-bg-3: #1e1e23;
+      --color-bg-4: #27272a;
+      --color-bg-5: #303036;
+      --color-text-0: #fafafa;
+      --color-text-1: #a1a1aa;
+      --color-text-2: #71717a;
+      --color-text-3: #52525b;
+      --color-green: #22c55e;
+      --color-green-dim: #16a34a;
+      --color-border-default: #2a2a2f;
+      --color-border-subtle: #1f1f24;
+      --color-border-hover: #3a3a3f;
+      --font-sans: "DM Sans", -apple-system, system-ui, sans-serif;
+      --font-display: "Space Grotesk", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+      --radius-default: 8px;
+      --radius-lg: 12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: "DM Sans", -apple-system, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    .faq-content {
+      transition: max-height 0.2s ease, padding-bottom 0.2s ease;
+    }
+
+    .faq-chevron {
+      transition: transform 0.2s ease;
+    }
+  </style>
+
+
+  <noscript><style>[data-sb-filter-btn]{display:none!important}</style></noscript>
+</head>
+<body>
+
+  <section id="hero-catalog" class="px-6 md:px-10 py-20 md:py-32 text-center relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-green/5 via-transparent to-transparent pointer-events-none"></div>
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-green/[0.08] rounded-full blur-[100px] pointer-events-none"></div>
+      <div class="relative z-10">
+
+        <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] mb-4 max-w-3xl mx-auto text-text-0">Product catalog</h1>
+        <p class="text-text-2 text-base md:text-lg leading-relaxed max-w-xl mx-auto mb-8">Filtered products</p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a href="https://example.com/browse" class="px-6 py-3 rounded-lg bg-green text-black text-sm font-semibold hover:bg-green-dim transition-all inline-flex items-center gap-2">Browse</a>
+
+        </div>
+      </div>
+  </section>
+
+  <section id="cards-filter" class="px-6 md:px-10 py-12 md:py-16">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-2xl font-semibold mb-2 text-center">Shoes</h2>
+      <p class="text-text-2 mb-6 text-center">Pick a category</p>
+      <div data-sb-filter>
+        <div class="flex flex-wrap gap-2 justify-center mb-6">
+          <button type="button" data-sb-filter-btn="" aria-pressed="true" class="min-h-[32px] min-w-[32px] px-3 py-1.5 rounded-full border border-border-default bg-bg-2 text-sm text-text-2 transition-colors hover:border-border-hover aria-pressed:bg-green/10 aria-pressed:border-green aria-pressed:text-green">All</button>
+          <button type="button" data-sb-filter-btn="running" aria-pressed="false" class="min-h-[32px] min-w-[32px] px-3 py-1.5 rounded-full border border-border-default bg-bg-2 text-sm text-text-2 transition-colors hover:border-border-hover aria-pressed:bg-green/10 aria-pressed:border-green aria-pressed:text-green">Running</button>
+          <button type="button" data-sb-filter-btn="walking" aria-pressed="false" class="min-h-[32px] min-w-[32px] px-3 py-1.5 rounded-full border border-border-default bg-bg-2 text-sm text-text-2 transition-colors hover:border-border-hover aria-pressed:bg-green/10 aria-pressed:border-green aria-pressed:text-green">Walking</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <article data-sb-category="running" class="rounded-lg overflow-hidden border border-border-default bg-bg-1">
+            <div style="aspect-ratio:4/3;overflow:hidden" class="bg-bg-3"><img src="https://example.com/shoe-one.jpg" alt="Shoe one" style="width:100%;height:100%;object-fit:cover" decoding="async" loading="lazy" /></div>
+            <div class="p-4 flex flex-col gap-1"><div class="text-[11px] font-semibold uppercase tracking-widest text-green mb-1">Running</div><h3 class="text-lg font-semibold text-text-0">Item 1</h3><p class="text-sm text-text-2">A first baseline product</p><div class="text-base font-semibold text-text-0 mt-1">$10</div><a href="https://example.com/item-1" class="text-sm font-medium text-green hover:text-green-dim">View</a></div>
+          </article>
+          <article data-sb-category="walking" class="rounded-lg overflow-hidden border border-border-default bg-bg-1">
+            <div style="aspect-ratio:4/3;overflow:hidden" class="bg-bg-3"><div class="w-full h-full bg-gradient-to-br from-bg-3 to-bg-4 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-text-3"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div></div>
+            <div class="p-4 flex flex-col gap-1"><div class="text-[11px] font-semibold uppercase tracking-widest text-green mb-1">Walking</div><h3 class="text-lg font-semibold text-text-0">Item 2</h3><p class="text-sm text-text-2">A second baseline product</p><div class="text-base font-semibold text-text-0 mt-1">$20</div></div>
+          </article>
+          <article data-sb-category="running" class="rounded-lg overflow-hidden border border-border-default bg-bg-1">
+            <div style="aspect-ratio:4/3;overflow:hidden" class="bg-bg-3"><img src="https://example.com/shoe-three.jpg" alt="Shoe three" style="width:100%;height:100%;object-fit:cover" decoding="async" loading="lazy" /></div>
+            <div class="p-4 flex flex-col gap-1"><div class="text-[11px] font-semibold uppercase tracking-widest text-green mb-1">Running</div><h3 class="text-lg font-semibold text-text-0">Item 3</h3><p class="text-sm text-text-2">A third baseline product</p><div class="text-base font-semibold text-text-0 mt-1">$30</div><a href="https://example.com/item-3" class="text-sm font-medium text-green hover:text-green-dim">View</a></div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <script data-sb-runtime>(function(d,w){
+function rm(){return !!(w.matchMedia&&w.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function panelOf(b){return d.getElementById(b.getAttribute('aria-controls')||'')}
+function setMenu(b,open){var p=panelOf(b);if(!p)return;
+b.setAttribute('aria-expanded',open?'true':'false');p.hidden=!open}
+function faq(btn){
+var content=btn.nextElementSibling,chevron=btn.querySelector('.faq-chevron');
+var isOpen=btn.getAttribute('aria-expanded')==='true';
+var section=btn.closest('section');
+var items=section?section.querySelectorAll('[aria-expanded]'):[];
+for(var i=0;i<items.length;i++){
+var b=items[i],n=b.nextElementSibling,c=b.querySelector('.faq-chevron');
+b.setAttribute('aria-expanded','false');
+if(n){n.style.maxHeight='0';n.style.paddingBottom='0';if(rm())n.style.transition='none'}
+if(c){c.style.transform='';c.classList.remove('text-green');
+c.classList.remove('rotate-180');c.classList.add('text-text-3');
+if(rm())c.style.transition='none'}
+}
+if(!isOpen){
+btn.setAttribute('aria-expanded','true');
+if(content){content.style.maxHeight='500px';content.style.paddingBottom='1rem';
+if(rm())content.style.transition='none'}
+if(chevron){chevron.style.transform='rotate(180deg)';chevron.classList.add('text-green');
+chevron.classList.remove('text-text-3');if(rm())chevron.style.transition='none'}
+}
+}
+d.addEventListener('click',function(e){
+var t=e.target;if(!t||!t.closest)return;
+var b=t.closest('[data-sb-menu-toggle]');
+if(b){setMenu(b,b.getAttribute('aria-expanded')!=='true');return}
+b=t.closest('button');var n=b&&b.nextElementSibling;
+if(n&&n.classList.contains('faq-content'))faq(b);
+});
+d.addEventListener('keydown',function(e){
+if(e.key!=='Escape')return;
+var list=d.querySelectorAll('[data-sb-menu-toggle][aria-expanded="true"]');
+if(!list.length)return;
+var active=d.activeElement,focus=null,i,p;
+for(i=0;i<list.length;i++){
+p=panelOf(list[i]);
+if(active&&(list[i]===active||(p&&p.contains(active))))focus=list[i];
+}
+if(focus){setMenu(focus,false);focus.focus();return}
+// The editor only receives Escape from inside its own nav, so it never
+// reaches this close-all fallback. It is a superset, not a divergence.
+for(i=0;i<list.length;i++)setMenu(list[i],false);
+list[0].focus();
+});
+function tabsOf(t){var l=t.closest('[data-sb-tablist]');
+return l?l.querySelectorAll('[data-sb-tab]'):[]}
+function selectTab(t,move){var l=tabsOf(t),i,x,p,on;
+for(i=0;i<l.length;i++){
+x=l[i];on=x===t;
+x.setAttribute('aria-selected',on?'true':'false');x.tabIndex=on?0:-1;
+p=d.getElementById(x.getAttribute('aria-controls')||'');if(p)p.hidden=!on}
+if(move)t.focus()}
+d.addEventListener('click',function(e){
+var t=e.target,b=t&&t.closest&&t.closest('[data-sb-tab]');
+if(b)selectTab(b,false)});
+d.addEventListener('keydown',function(e){
+if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;var t=e.target,b=t&&t.closest&&t.closest('[data-sb-tab]');if(!b)return;
+var l=tabsOf(b),n=l.length,i=Array.prototype.indexOf.call(l,b),k=e.key,j=-1;
+if(!n)return;
+if(k==='ArrowRight')j=(i+1)%n;else if(k==='ArrowLeft')j=(i-1+n)%n;
+else if(k==='Home')j=0;else if(k==='End')j=n-1;
+if(j<0)return;e.preventDefault();selectTab(l[j],true)});
+function slidesOf(c){return c?c.querySelectorAll('[data-sb-carousel-slide]'):[]}function shown(s){var i;for(i=0;i<s.length;i++)if(!s[i].hidden)return i;return 0}
+function showSlide(c,to,b){var s=slidesOf(c),i,n=s.length,p,x,o;if(!n)return;to=to<0?0:(to>n-1?n-1:to);for(i=0;i<n;i++)s[i].hidden=i!==to;p=c.querySelector('[data-sb-carousel-prev]');x=c.querySelector('[data-sb-carousel-next]');if(p)p.disabled=to===0;if(x)x.disabled=to===n-1;if(b&&b.disabled){o=b===p?x:p;if(o)o.focus()}}
+d.addEventListener('click',function(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'),c;if(!b)return;c=b.closest('[data-sb-carousel]');if(!c)return;showSlide(c,shown(slidesOf(c))+(b.hasAttribute('data-sb-carousel-next')?1:-1),b)});
+d.addEventListener('keydown',function(e){var k=e.key,t=e.target,c;if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||(k!=='ArrowLeft'&&k!=='ArrowRight'))return;c=t&&t.closest&&t.closest('[data-sb-carousel]');if(!c)return;var s=slidesOf(c),to=shown(s)+(k==='ArrowRight'?1:-1);if(to<0||to>s.length-1)return;e.preventDefault();showSlide(c,to,t.closest('[data-sb-carousel-prev],[data-sb-carousel-next]'))});
+function filt(e){var t=e.target,b=t&&t.closest&&t.closest('[data-sb-filter-btn]'),g,k,l,i;
+if(!b||(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' '))return;g=b.closest('[data-sb-filter]');if(!g)return;
+if(e.type==='keydown')e.preventDefault();k=b.getAttribute('data-sb-filter-btn');
+l=g.querySelectorAll('[data-sb-filter-btn]');for(i=0;i<l.length;i++)l[i].setAttribute('aria-pressed',l[i]===b?'true':'false');
+l=g.querySelectorAll('[data-sb-category]');for(i=0;i<l.length;i++)l[i].hidden=!!k&&l[i].getAttribute('data-sb-category')!==k}
+d.addEventListener('click',filt);d.addEventListener('keydown',filt);
+})(document,window);</script>
+</body>
+</html>

@@ -264,11 +264,11 @@ describe('rejected URL sinks across the page export', () => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Widening: the corpus across ALL 20 block types, through the
+// Widening: the corpus across ALL 21 block types, through the
 // real `exportSiteToHTML` path. The raw-renderer matrix above covers the seven
 // individually exported renderers prop-by-prop; the rest are not individually
 // exported, so this section exercises them (and re-exercises the new ones) end
-// to end. Together the two sections touch every one of the 20 declared types.
+// to end. Together the two sections touch every one of the 21 declared types.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
@@ -328,7 +328,7 @@ interface SinkCase {
 const URL_SUFFIX = 'https://ok.example/x'
 const IMG_SUFFIX = 'https://ok.example/x.png'
 
-/** Every URL-emitting prop across the 20 block types. */
+/** Every URL-emitting prop across the 21 block types. */
 const URL_SINKS: SinkCase[] = [
   { type: 'navbar', variant: 'default', sink: 'ctaUrl', withValue: (v) => ({ logo: 'Acme', links: [], ctaText: 'Go', ctaUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
   { type: 'navbar', variant: 'default', sink: 'logoImage', withValue: (v) => ({ logo: 'Acme', links: [], logoImage: v }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
@@ -350,6 +350,7 @@ const URL_SINKS: SinkCase[] = [
   { type: 'card-grid', variant: 'product', sink: 'items[].image', withValue: (v) => ({ items: [{ name: 'One', image: v }] }), okValue: IMG_SUFFIX, okMarker: `src="${IMG_SUFFIX}"` },
   { type: 'card-grid', variant: 'product', sink: 'items[].ctaUrl', withValue: (v) => ({ items: [{ name: 'One', ctaText: 'View', ctaUrl: v }] }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
   { type: 'banner', variant: 'ribbon', sink: 'linkUrl', withValue: (v) => ({ text: 'T', linkText: 'Go', linkUrl: v }), okValue: URL_SUFFIX, okMarker: `href="${URL_SUFFIX}"` },
+  { type: 'facebook-page', variant: 'default', sink: 'url', withValue: (v) => ({ url: v }), okValue: 'https://www.facebook.com/acme', okMarker: 'src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Facme&amp;' },
 ]
 
 describe('URL sinks across every renderer, via exportSiteToHTML', () => {
@@ -407,7 +408,7 @@ interface TextCase {
  * string prop that reaches output at all: `height` is coerced numerically and
  * `width` maps through a fixed allow-list, so it is asserted separately by
  * coercion below rather than vacuously here. Together with the 12 URL-sink
- * types and `divider`, all 20 declared types are exercised.
+ * types and `divider`, all 21 declared types are exercised.
  */
 const TEXT_CASES: TextCase[] = [
   { type: 'features', variant: 'grid', prop: 'title', withValue: (v) => ({ title: v, items: [{ title: 'T', description: 'D' }] }) },

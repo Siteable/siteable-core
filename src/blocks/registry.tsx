@@ -21,6 +21,7 @@ import { ImageBlock } from './image/ImageBlock'
 import { VideoBlock } from './video/VideoBlock'
 import { GalleryBlock } from './gallery/GalleryBlock'
 import { CardGridBlock } from './card-grid/CardGridBlock'
+import { FacebookPageBlock } from './facebook-page/FacebookPageBlock'
 
 // Error boundary for individual blocks
 class BlockErrorBoundary extends Component<
@@ -80,6 +81,7 @@ const blockRenderers: Record<string, React.ComponentType<{ block: BlockConfig }>
   video: VideoBlock,
   gallery: GalleryBlock,
   'card-grid': CardGridBlock,
+  'facebook-page': FacebookPageBlock,
 }
 
 export function RenderBlock({ block }: { block: BlockConfig }): ReactNode {

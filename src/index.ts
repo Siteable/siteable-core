@@ -47,6 +47,7 @@ export { ImageBlock } from './blocks/image/ImageBlock'
 export { VideoBlock } from './blocks/video/VideoBlock'
 export { GalleryBlock } from './blocks/gallery/GalleryBlock'
 export { CardGridBlock } from './blocks/card-grid/CardGridBlock'
+export { FacebookPageBlock } from './blocks/facebook-page/FacebookPageBlock'
 
 // ── Editor ──────────────────────────────────────────────────────────────────
 export { AgentPanel } from './editor/AgentPanel'
@@ -125,6 +126,9 @@ export { isAllowedUrl, type UrlPolicyOptions } from './lib/url-policy'
 
 // ── Lib — video embed (one embeddability decision for editor, exporter, consumers)
 export { extractYouTubeId, extractVimeoId, videoEmbedUrl } from './lib/video-embed'
+
+// ── Lib — Facebook Page embed (one embeddability decision for editor, exporter, consumers)
+export { facebookPageEmbedUrl } from './lib/facebook-page-embed'
 
 // ── Lib — templates (smart-fallback site templates) ─────────────────────────
 export {

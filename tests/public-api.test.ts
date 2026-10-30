@@ -16,6 +16,8 @@ import { describe, it, expect } from 'vitest'
 import { isAllowedUrl as isAllowedUrlViaLib } from '../src/lib/url-policy'
 import * as pagePath from '../src/lib/page-path'
 import * as videoEmbed from '../src/lib/video-embed'
+import * as facebookPageEmbed from '../src/lib/facebook-page-embed'
+import { renderFacebookPage } from '../src/lib/export-blocks/render-facebook-page'
 import { exportSitePages as exportSitePagesViaLib } from '../src/lib/export-site-pages'
 import type { SiteConfig } from '../src/blocks/types'
 import { renderVideo } from '../src/lib/export-blocks/render-video'
@@ -192,6 +194,40 @@ describe('public API barrel — video embed surface', () => {
     for (const [url, variant] of cases) {
       const html = renderVideo({ id: 'v', type: 'video', variant, props: { url } } as never)
       expect(html.includes('<iframe'), `${variant}:${url}`).toBe(barrel.videoEmbedUrl(url, variant) !== null)
+    }
+  })
+})
+
+// Consumers that validate imported configs must ask the engine whether a
+// Facebook Feed address embeds, not re-derive the rules and drift from the
+// renderer. The height clamp stays an internal detail.
+describe('public API barrel — facebook page embed surface', () => {
+  it('re-exports facebookPageEmbedUrl by identity', () => {
+    expect(barrel.facebookPageEmbedUrl).toBe(facebookPageEmbed.facebookPageEmbedUrl)
+  })
+
+  it('does not expose the height clamp', () => {
+    expect('clampFacebookPageHeight' in barrel).toBe(false)
+  })
+
+  it('exports the facebook page block component', () => {
+    expect(typeof barrel.FacebookPageBlock).toBe('function')
+  })
+
+  it('agrees with the export renderer: an iframe is emitted iff facebookPageEmbedUrl is non-null', () => {
+    const urls = [
+      'https://www.facebook.com/acme',
+      'https://facebook.com/acme/',
+      'https://m.facebook.com/profile.php?id=123',
+      'https://www.facebook.com/plugins',
+      'https://example.com/acme',
+      'http://facebook.com/acme',
+      '',
+      '   ',
+    ]
+    for (const url of urls) {
+      const html = renderFacebookPage({ id: 'f', type: 'facebook-page', variant: 'default', props: { url } } as never)
+      expect(html.includes('<iframe'), url).toBe(barrel.facebookPageEmbedUrl(url) !== null)
     }
   })
 })

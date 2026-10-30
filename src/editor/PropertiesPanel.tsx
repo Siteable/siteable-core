@@ -8,12 +8,13 @@ import { ImageUrlField } from './image-pick/image-url-field'
 import { ImagePickButton } from './image-pick/image-pick-button'
 import { useImagePick } from './image-pick/image-pick-context'
 import { isImageRowKey } from './image-pick/image-row-keys'
+import { FacebookPageDraftField } from './facebook-page-url-field'
 import { CardGridItemsEditor } from './card-grid-items-editor/card-grid-items-editor'
 
 interface FieldDef {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links' | 'image' | 'card-grid-items'
+  type: 'text' | 'textarea' | 'select' | 'array-strings' | 'array-items' | 'array-links' | 'image' | 'card-grid-items' | 'facebook-page-url' | 'facebook-page-height'
   options?: string[]
   /** Display text per option value; a missing value renders the value itself. */
   optionLabels?: Record<string, string>
@@ -45,6 +46,11 @@ const ITEM_KEY_LABELS: Record<string, string> = {
 }
 
 const blockFields: Partial<Record<BlockType, { sections: { title: string; fields: FieldDef[] }[] }>> = {
+  'facebook-page': { sections: [{ title: 'Content', fields: [
+    { key: 'url', label: 'Page URL', type: 'facebook-page-url' },
+    { key: 'title', label: 'Title', type: 'text' },
+    { key: 'height', label: 'Height (px, 70-800)', type: 'facebook-page-height' },
+  ] }] },
   navbar: {
     sections: [
       {
@@ -401,7 +407,6 @@ function withoutKey(props: Record<string, unknown>, key: string): Record<string,
 }
 
 function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }) {
-  const updateBlockProps = useConfigStore((s) => s.updateBlockProps)
   const updateBlock = useConfigStore((s) => s.updateBlock)
   const imagePick = useImagePick()
 
@@ -423,7 +428,7 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
       updateBlock(block.id, { props: withoutKey(block.props, field.key) })
       return
     }
-    updateBlockProps(block.id, { [field.key]: newValue })
+    useConfigStore.getState().updateBlockProps(block.id, { [field.key]: newValue })
   }
 
   switch (field.type) {
@@ -566,6 +571,10 @@ function PropertyField({ field, block }: { field: FieldDef; block: BlockConfig }
         </div>
       )
     }
+
+    case 'facebook-page-url':
+    case 'facebook-page-height':
+      return <FacebookPageDraftField label={field.label} value={value} onChange={onChange} showEmbedFlag={field.type === 'facebook-page-url'} />
 
     case 'image':
       return <ImageUrlField block={block} fieldKey={field.key} label={field.label} value={value} onChange={onChange} />

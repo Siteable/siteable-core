@@ -1,7 +1,7 @@
 /**
  * Whole-export performance and purity.
  *
- *   - a 20-block config exported 100 times completes under the 500 ms total
+ *   - a 21-block config exported 100 times completes under the 500 ms total
  *     budget.
  *   - two consecutive exports of the same config are byte-identical (purity).
  *
@@ -45,6 +45,7 @@ const DENSE_CONFIG: SiteConfig = {
     { id: 'p-divider', type: 'divider', variant: 'line', props: { height: 60, width: 'full' } },
     { id: 'p-banner', type: 'banner', variant: 'ribbon', props: { text: 'New!', linkText: 'More', linkUrl: 'https://x/more' } },
     { id: 'p-card-grid', type: 'card-grid', variant: 'product', props: { title: 'Products', items: [{ image: 'https://x/p.png', alt: 'p', name: 'One', description: 'A product', price: '$1', category: 'Shoes', ctaText: 'View', ctaUrl: 'https://x/item' }] } },
+    { id: 'p-facebook-page', type: 'facebook-page', variant: 'default', props: { url: 'https://www.facebook.com/acme', title: 'Follow us', height: '500' } },
   ],
 }
 
@@ -52,7 +53,7 @@ const BUDGET_MS = 500
 const RUNS = 100
 
 describe('export performance', () => {
-  it('renders all 20 block types (the benchmark is non-vacuous)', () => {
+  it('renders all 21 block types (the benchmark is non-vacuous)', () => {
     const html = exportSiteToHTML(DENSE_CONFIG)
     expect(html).not.toContain('Unknown block type')
     // Every declared block contributes markup.
@@ -60,9 +61,10 @@ describe('export performance', () => {
     expect(html).toContain('Gallery')
     expect(html).toContain('New!')
     expect(html).toContain('aspect-ratio:4/3')
+    expect(html).toContain('plugins/page.php')
   })
 
-  it(`exports the 20-block config ${RUNS}x within the ${BUDGET_MS} ms budget`, () => {
+  it(`exports the 21-block config ${RUNS}x within the ${BUDGET_MS} ms budget`, () => {
     // Warm-up: let V8 JIT the render path and lazily-init modules before timing.
     exportSiteToHTML(DENSE_CONFIG)
 
@@ -73,7 +75,7 @@ describe('export performance', () => {
 
     expect(
       total,
-      `${RUNS} exports of a 20-block config took ${total.toFixed(1)} ms ` +
+      `${RUNS} exports of a 21-block config took ${total.toFixed(1)} ms ` +
         `(${perExport.toFixed(3)} ms/export); the budget is ${BUDGET_MS} ms total. ` +
         'A failure here is usually a loaded machine, not a regression — re-run on an ' +
         'idle box before treating it as one.'
