@@ -1,0 +1,645 @@
+{
+  "note": "Input fixtures for the frozen export baseline captured from the released exporter version.",
+  "sites": [
+    {
+      "slug": "every-block-type",
+      "note": "Freezes the export of a single page that uses every block type the exporter knows.",
+      "config": {
+        "name": "Corpus One",
+        "blocks": [
+          {
+            "id": "n-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "logoImage": "https://cdn.example.com/logo.png",
+              "links": [
+                "Product",
+                "Pricing"
+              ],
+              "ctaText": "Start",
+              "ctaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "h-1",
+            "type": "hero",
+            "variant": "centered",
+            "props": {
+              "badge": "New",
+              "headline": "Ship faster",
+              "subheadline": "Corpus one",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start",
+              "secondaryCta": "Docs",
+              "secondaryCtaUrl": "https://example.com/docs"
+            }
+          },
+          {
+            "id": "h-2",
+            "type": "hero",
+            "variant": "split",
+            "props": {
+              "headline": "Split hero",
+              "heroImage": "https://cdn.example.com/hero.png",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "grid",
+            "props": {
+              "label": "Features",
+              "title": "Everything",
+              "items": [
+                {
+                  "icon": "A",
+                  "title": "Alpha",
+                  "description": "First"
+                },
+                {
+                  "icon": "B",
+                  "title": "Beta",
+                  "description": "Second"
+                }
+              ]
+            }
+          },
+          {
+            "id": "p-1",
+            "type": "pricing",
+            "variant": "simple",
+            "props": {
+              "title": "Pricing",
+              "tiers": [
+                {
+                  "name": "Free",
+                  "price": "$0",
+                  "features": [
+                    "One"
+                  ],
+                  "ctaText": "Start"
+                },
+                {
+                  "name": "Pro",
+                  "price": "$20",
+                  "features": [
+                    "One",
+                    "Two"
+                  ],
+                  "ctaText": "Go",
+                  "featured": true
+                }
+              ]
+            }
+          },
+          {
+            "id": "c-1",
+            "type": "cta",
+            "variant": "simple",
+            "props": {
+              "headline": "Ready?",
+              "buttonText": "Sign up",
+              "buttonUrl": "https://example.com/signup"
+            }
+          },
+          {
+            "id": "t-1",
+            "type": "testimonials",
+            "variant": "cards",
+            "props": {
+              "title": "Loved",
+              "items": [
+                {
+                  "quote": "Great",
+                  "name": "Ada",
+                  "role": "CTO",
+                  "rating": 5
+                }
+              ]
+            }
+          },
+          {
+            "id": "s-1",
+            "type": "stats",
+            "variant": "grid",
+            "props": {
+              "title": "Numbers",
+              "items": [
+                {
+                  "value": "1k+",
+                  "label": "Users"
+                }
+              ]
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "FAQ",
+              "items": [
+                {
+                  "question": "What?",
+                  "answer": "A corpus fixture"
+                }
+              ]
+            }
+          },
+          {
+            "id": "tm-1",
+            "type": "team",
+            "variant": "grid",
+            "props": {
+              "title": "Team",
+              "members": [
+                {
+                  "name": "Ada",
+                  "role": "CTO"
+                }
+              ]
+            }
+          },
+          {
+            "id": "ct-1",
+            "type": "contact",
+            "variant": "form",
+            "props": {
+              "title": "Contact"
+            }
+          },
+          {
+            "id": "nl-1",
+            "type": "newsletter",
+            "variant": "simple",
+            "props": {
+              "title": "Newsletter",
+              "buttonText": "Subscribe"
+            }
+          },
+          {
+            "id": "lc-1",
+            "type": "logocloud",
+            "variant": "default",
+            "props": {
+              "title": "Trusted by",
+              "logos": [
+                "Vercel",
+                "Stripe"
+              ]
+            }
+          },
+          {
+            "id": "cn-1",
+            "type": "content",
+            "variant": "prose",
+            "props": {
+              "title": "Content",
+              "body": "Some **markdown** body text."
+            }
+          },
+          {
+            "id": "im-1",
+            "type": "image",
+            "variant": "default",
+            "props": {
+              "src": "https://cdn.example.com/a.png",
+              "alt": "An image"
+            }
+          },
+          {
+            "id": "vd-1",
+            "type": "video",
+            "variant": "youtube",
+            "props": {
+              "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+              "title": "A video"
+            }
+          },
+          {
+            "id": "vd-2",
+            "type": "video",
+            "variant": "vimeo",
+            "props": {
+              "url": "https://vimeo.com/76979871"
+            }
+          },
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Gallery",
+              "images": [
+                {
+                  "src": "https://cdn.example.com/1.png",
+                  "alt": "One"
+                },
+                {
+                  "src": "https://cdn.example.com/2.png",
+                  "alt": "Two"
+                }
+              ]
+            }
+          },
+          {
+            "id": "d-1",
+            "type": "divider",
+            "variant": "default",
+            "props": {}
+          },
+          {
+            "id": "b-1",
+            "type": "banner",
+            "variant": "default",
+            "props": {
+              "text": "A banner",
+              "url": "https://example.com/banner"
+            }
+          },
+          {
+            "id": "ft-1",
+            "type": "footer",
+            "variant": "simple",
+            "props": {
+              "logo": "Acme",
+              "copyright": "(c) 2026 Acme",
+              "links": [
+                "Privacy",
+                "Terms"
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "single-page-with-settings",
+      "note": "Freezes the export of a single page site that carries site settings.",
+      "config": {
+        "name": "Corpus Five",
+        "pages": [
+          {
+            "id": "page-home",
+            "name": "Home",
+            "path": "/",
+            "blocks": [
+              {
+                "id": "h-1",
+                "type": "hero",
+                "variant": "gradient",
+                "props": {
+                  "headline": "With settings",
+                  "primaryCta": "Start",
+                  "primaryCtaUrl": "https://example.com/start"
+                }
+              },
+              {
+                "id": "q-1",
+                "type": "faq",
+                "variant": "accordion",
+                "props": {
+                  "title": "FAQ",
+                  "items": [
+                    {
+                      "question": "Why settings?",
+                      "answer": "Freezes the shell branches"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "blocks": [
+          {
+            "id": "h-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "With settings",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "FAQ",
+              "items": [
+                {
+                  "question": "Why settings?",
+                  "answer": "Freezes the shell branches"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "options": {
+        "settings": {
+          "siteName": "Acme",
+          "siteDescription": "A site description",
+          "seoTitle": "Acme — corpus five",
+          "seoDescription": "A frozen legacy export with settings",
+          "language": "English",
+          "faviconUrl": "https://cdn.example.com/favicon.ico",
+          "ogImageUrl": "https://cdn.example.com/og.png",
+          "gaId": "G-CORPUS05",
+          "posthogKey": "phc_corpus_five"
+        }
+      },
+      "multipage": true
+    },
+    {
+      "slug": "navbar-faq-tabs-carousel",
+      "note": "Freezes the export of a page that uses the navigation, question, tabbed and carousel blocks.",
+      "config": {
+        "name": "Site",
+        "blocks": [
+          {
+            "id": "nav-1",
+            "type": "navbar",
+            "variant": "default",
+            "props": {
+              "logo": "Acme",
+              "links": [
+                "Product",
+                "Features"
+              ],
+              "ctaText": "Get Started"
+            }
+          },
+          {
+            "id": "q-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "Questions",
+              "items": [
+                {
+                  "question": "What is this?",
+                  "answer": "A page with every rule group"
+                }
+              ]
+            }
+          },
+          {
+            "id": "f-1",
+            "type": "features",
+            "variant": "list",
+            "props": {
+              "title": "Features",
+              "display": "tabs",
+              "items": [
+                {
+                  "icon": "A",
+                  "title": "First feature",
+                  "description": "The first baseline feature"
+                },
+                {
+                  "icon": "B",
+                  "title": "Second feature",
+                  "description": "The second baseline feature"
+                },
+                {
+                  "icon": "C",
+                  "title": "Third feature",
+                  "description": "The third baseline feature"
+                }
+              ]
+            }
+          },
+          {
+            "id": "g-1",
+            "type": "gallery",
+            "variant": "grid",
+            "props": {
+              "title": "Image gallery",
+              "display": "carousel",
+              "images": [
+                {
+                  "src": "",
+                  "alt": "Image 1",
+                  "caption": "First caption"
+                },
+                {
+                  "src": "",
+                  "alt": "Image 2",
+                  "caption": "Second caption"
+                },
+                {
+                  "src": "",
+                  "alt": "Image 3",
+                  "caption": "Third caption"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "card-grid-filter",
+      "note": "Freezes the export of a page whose card grid uses the filtered display.",
+      "config": {
+        "name": "Filtered catalog",
+        "blocks": [
+          {
+            "id": "hero-catalog",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "Product catalog",
+              "subheadline": "Filtered products",
+              "primaryCta": "Browse",
+              "primaryCtaUrl": "https://example.com/browse"
+            }
+          },
+          {
+            "id": "cards-filter",
+            "type": "card-grid",
+            "variant": "product",
+            "props": {
+              "title": "Shoes",
+              "subtitle": "Pick a category",
+              "display": "filter",
+              "items": [
+                {
+                  "image": "https://example.com/shoe-one.jpg",
+                  "alt": "Shoe one",
+                  "name": "Item 1",
+                  "description": "A first baseline product",
+                  "price": "$10",
+                  "category": "Running",
+                  "ctaText": "View",
+                  "ctaUrl": "https://example.com/item-1"
+                },
+                {
+                  "image": "",
+                  "alt": "",
+                  "name": "Item 2",
+                  "description": "A second baseline product",
+                  "price": "$20",
+                  "category": "Walking",
+                  "ctaText": "",
+                  "ctaUrl": ""
+                },
+                {
+                  "image": "https://example.com/shoe-three.jpg",
+                  "alt": "Shoe three",
+                  "name": "Item 3",
+                  "description": "A third baseline product",
+                  "price": "$30",
+                  "category": "Running",
+                  "ctaText": "View",
+                  "ctaUrl": "https://example.com/item-3"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "options": null
+    },
+    {
+      "slug": "two-page",
+      "note": "Freezes both pages of a site that publishes two pages.",
+      "config": {
+        "name": "Two page reference",
+        "pages": [
+          {
+            "id": "page-home",
+            "name": "Home",
+            "path": "/",
+            "blocks": [
+              {
+                "id": "nav-1",
+                "type": "navbar",
+                "variant": "default",
+                "props": {
+                  "logo": "Acme",
+                  "links": [
+                    "Product",
+                    "About"
+                  ],
+                  "ctaText": "Get Started",
+                  "ctaUrl": "https://example.com/start"
+                }
+              },
+              {
+                "id": "hero-1",
+                "type": "hero",
+                "variant": "centered",
+                "props": {
+                  "headline": "A frozen home page",
+                  "subheadline": "First of two pages",
+                  "primaryCta": "Start",
+                  "primaryCtaUrl": "https://example.com/start"
+                }
+              }
+            ]
+          },
+          {
+            "id": "page-about",
+            "name": "About",
+            "path": "/about",
+            "blocks": [
+              {
+                "id": "hero-2",
+                "type": "hero",
+                "variant": "split",
+                "props": {
+                  "headline": "About this site",
+                  "subheadline": "Second of two pages",
+                  "primaryCta": "Contact",
+                  "primaryCtaUrl": "https://example.com/contact"
+                }
+              },
+              {
+                "id": "features-1",
+                "type": "features",
+                "variant": "list",
+                "props": {
+                  "title": "What is included",
+                  "display": "list",
+                  "items": [
+                    {
+                      "icon": "A",
+                      "title": "First point",
+                      "description": "The first point of the page"
+                    },
+                    {
+                      "icon": "B",
+                      "title": "Second point",
+                      "description": "The second point of the page"
+                    },
+                    {
+                      "icon": "C",
+                      "title": "Third point",
+                      "description": "The third point of the page"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": null,
+      "multipage": true
+    },
+    {
+      "slug": "site-with-url",
+      "note": "Freezes the export of a page published under a public URL, so its canonical link and structured data are populated.",
+      "config": {
+        "name": "Site with a URL",
+        "blocks": [
+          {
+            "id": "hero-1",
+            "type": "hero",
+            "variant": "gradient",
+            "props": {
+              "headline": "A site with a public URL",
+              "subheadline": "Canonical links and structured data",
+              "primaryCta": "Start",
+              "primaryCtaUrl": "https://example.com/start"
+            }
+          },
+          {
+            "id": "faq-1",
+            "type": "faq",
+            "variant": "accordion",
+            "props": {
+              "title": "Questions",
+              "items": [
+                {
+                  "question": "Why a URL?",
+                  "answer": "A URL populates the canonical link and the structured data"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "options": {
+        "siteUrl": "https://example.com",
+        "settings": {
+          "siteName": "Acme",
+          "siteDescription": "A frozen reference site",
+          "seoTitle": "Acme",
+          "seoDescription": "A frozen reference site",
+          "language": "English"
+        }
+      }
+    }
+  ]
+}
