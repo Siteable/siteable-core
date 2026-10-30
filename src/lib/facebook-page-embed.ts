@@ -64,6 +64,22 @@ export const RESERVED_SEGMENTS: readonly string[] = [
   'help',
   'policies',
   'privacy',
+  'sharer.php',
+  'login.php',
+  'photo',
+  'photo.php',
+  'photos',
+  'reel',
+  'reels',
+  'stories',
+  'story.php',
+  'permalink.php',
+  'hashtag',
+  'search',
+  'settings',
+  'messages',
+  'notifications',
+  'ads',
 ]
 
 /**

@@ -431,6 +431,86 @@ export const FACEBOOK_PAGE_URL_CORPUS: FacebookPageUrlCase[] = [
     expected: null,
     note: 'reserved section segment is refused',
   },
+  {
+    input: 'https://www.facebook.com/sharer.php/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/login.php/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/photo/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/photo.php/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/photos/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/reel/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/reels/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/stories/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/story.php/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/permalink.php/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/hashtag/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/search/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/settings/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/messages/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/notifications/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
+  {
+    input: 'https://www.facebook.com/ads/x?fbid=1',
+    expected: null,
+    note: 'reserved non-Page section segment is refused',
+  },
 
   // --- refused: profile.php without a usable id ---
   {

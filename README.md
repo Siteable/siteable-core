@@ -255,8 +255,8 @@ facebookPageEmbedUrl('https://www.facebook.com/acme', 600) // plugin URL, or nul
 
 `url` must be an `https` address on `facebook.com`, `www.facebook.com` or
 `m.facebook.com` with a Page path (`/acme`) or `profile.php?id=<digits>`. Any
-other address, including a reserved path such as `/sharer`, is refused and the
-block renders a placeholder instead of a frame. The frame `src` is always built
+other address, including a site-section path such as `/sharer` or `/photo`, is
+refused and the block renders a placeholder instead of a frame. The frame `src` is always built
 by `facebookPageEmbedUrl`, never copied from the stored value, with fixed plugin
 options: timeline tab, small header, adapt to container width, cover photo
 shown, no facepile, plugin width 340. The frame is 340 px wide inside a 342 px
