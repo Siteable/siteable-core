@@ -105,9 +105,10 @@ test.describe('a Page timeline on a wide screen', () => {
   test.use({ viewport: { width: 1280, height: 800 } })
 
   test('the frame is 340 px wide and centred', async ({ page }) => {
-    await routeFacebook(page)
+    const facebook = await routeFacebook(page)
     await page.setContent(pageHtml(PAGE_URL), { waitUntil: 'load' })
     await expectCdnStylesApplied(page, '40px')
+    await expect.poll(() => facebook.hits()).toBeGreaterThanOrEqual(1)
     const box = await page.locator('iframe').boundingBox()
     const client = await page.evaluate(() => document.documentElement.clientWidth)
     // The capped element is the bordered container (340 px); the frame fills its
@@ -134,5 +135,6 @@ test.describe('when the stylesheet CDN is blocked', () => {
     const box = await page.locator('iframe').boundingBox()
     const client = await page.evaluate(() => document.documentElement.clientWidth)
     expect(box!.x + box!.width).toBeLessThanOrEqual(client)
+    expect(box!.width, 'the inline cap must hold without the stylesheet').toBeLessThanOrEqual(340)
   })
 })
