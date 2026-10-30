@@ -118,8 +118,8 @@ describe('facebook feed editor and export agreement', () => {
 
     expect(editor.iframe === null).toBe(exported.iframe === null)
     expect(editor.iframe).toEqual(exported.iframe)
-    expect(editor.maxWidth).toBe('340px')
-    expect(exported.maxWidth).toBe('340px')
+    expect(editor.maxWidth).toBe('342px')
+    expect(exported.maxWidth).toBe('342px')
     expect(editor.marginLeft).toBe('auto')
     expect(editor.marginRight).toBe('auto')
     expect(exported.marginLeft).toBe('auto')

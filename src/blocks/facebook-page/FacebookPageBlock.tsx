@@ -3,12 +3,15 @@ import type { BlockConfig } from '../types'
 import { clampFacebookPageHeight, facebookPageEmbedUrl } from '@/lib/facebook-page-embed'
 
 const FRAME_WIDTH = 340
+// The bordered container is 2 px wider than the frame so its content box,
+// which the frame fills, is exactly the plugin width (1 px border each side).
+const CONTAINER_MAX_WIDTH = FRAME_WIDTH + 2
 
 function Placeholder() {
   return (
     <div
       className="w-full aspect-video bg-gradient-to-br from-bg-3 to-bg-4 rounded-lg flex items-center justify-center"
-      style={{ maxWidth: FRAME_WIDTH, margin: '0 auto' }}
+      style={{ maxWidth: CONTAINER_MAX_WIDTH, margin: '0 auto' }}
     >
       <div className="w-14 h-14 rounded-full bg-bg-5/50 border border-border-default flex items-center justify-center">
         <ThumbsUp size={24} className="text-text-3" />
@@ -35,7 +38,7 @@ export function FacebookPageBlock({ block }: { block: BlockConfig }) {
       {embedUrl ? (
         <div
           className="reveal-scale reveal-d2 w-full rounded-lg overflow-hidden border border-border-default"
-          style={{ maxWidth: FRAME_WIDTH, margin: '0 auto' }}
+          style={{ maxWidth: CONTAINER_MAX_WIDTH, margin: '0 auto' }}
         >
           <iframe
             src={embedUrl}

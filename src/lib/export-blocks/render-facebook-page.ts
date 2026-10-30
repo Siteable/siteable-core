@@ -25,8 +25,8 @@ export function renderFacebookPage(block: BlockConfig): string {
     : ''
 
   const body = embedUrl
-    ? `      <div class="w-full rounded-lg overflow-hidden border border-border-default" style="max-width:340px;margin:0 auto"><iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(title || 'Facebook Page')}" width="340" height="${height}" style="display:block;width:100%;border:0" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
-    : `      <div class="w-full aspect-video bg-gradient-to-br from-bg-3 to-bg-4 rounded-lg flex items-center justify-center" style="max-width:340px;margin:0 auto"><div class="w-14 h-14 rounded-full bg-bg-5/50 border border-border-default flex items-center justify-center">${THUMBS_UP_ICON}</div></div>`
+    ? `      <div class="w-full rounded-lg overflow-hidden border border-border-default" style="max-width:342px;margin:0 auto"><iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(title || 'Facebook Page')}" width="340" height="${height}" style="display:block;width:100%;border:0" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`
+    : `      <div class="w-full aspect-video bg-gradient-to-br from-bg-3 to-bg-4 rounded-lg flex items-center justify-center" style="max-width:342px;margin:0 auto"><div class="w-14 h-14 rounded-full bg-bg-5/50 border border-border-default flex items-center justify-center">${THUMBS_UP_ICON}</div></div>`
 
   return `  <div class="px-6 md:px-10 py-12 md:py-16">
 ${titleHtml}

@@ -259,8 +259,8 @@ other address, including a reserved path such as `/sharer`, is refused and the
 block renders a placeholder instead of a frame. The frame `src` is always built
 by `facebookPageEmbedUrl`, never copied from the stored value, with fixed plugin
 options: timeline tab, small header, adapt to container width, cover photo
-shown, no facepile, plugin width 340. The frame is capped at 340 px and centred,
-so it fits a 390 px phone.
+shown, no facepile, plugin width 340. The frame is 340 px wide inside a 342 px
+bordered box, centred, so it fits a 390 px phone.
 
 `height` defaults to 500 and is clamped to 70-800; a non-integer value falls
 back to 500. The frame uses `loading="lazy"` and sends

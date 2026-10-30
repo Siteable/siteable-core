@@ -62,10 +62,10 @@ describe('facebook page block markup', () => {
     }
   })
 
-  it('caps the container width at 340px and centres it', () => {
+  it('caps the container at 342px so the bordered frame is 340px wide, and centres it', () => {
     const frame = iframes(page(feedBlock({ url: PAGE_URL })))[0]
     const style = frame.parentElement?.getAttribute('style') ?? ''
-    expect(style).toContain('max-width:340px')
+    expect(style).toContain('max-width:342px')
     expect(style).toContain('margin:0 auto')
   })
 
@@ -108,7 +108,7 @@ describe('facebook page block markup', () => {
       const html = page(feedBlock({ url, title: 'Feed' }))
       expect(iframes(html), url).toHaveLength(0)
       expect(html, url).toContain('bg-gradient-to-br')
-      expect(html, url).toContain('max-width:340px')
+      expect(html, url).toContain('max-width:342px')
     }
   })
 

@@ -81,7 +81,7 @@ test.describe('a Page timeline at phone width', () => {
     const client = await page.evaluate(() => document.documentElement.clientWidth)
     expect(box!.x).toBeGreaterThanOrEqual(0)
     expect(box!.x + box!.width).toBeLessThanOrEqual(client)
-    expect(box!.width).toBeLessThanOrEqual(340)
+    expect(Math.abs(box!.width - 340), 'the frame is exactly the plugin width').toBeLessThanOrEqual(1)
   })
 
   test('an address that does not embed renders a placeholder and no frame request', async ({
@@ -111,11 +111,9 @@ test.describe('a Page timeline on a wide screen', () => {
     await expect.poll(() => facebook.hits()).toBeGreaterThanOrEqual(1)
     const box = await page.locator('iframe').boundingBox()
     const client = await page.evaluate(() => document.documentElement.clientWidth)
-    // The capped element is the bordered container (340 px); the frame fills its
-    // content box, so it is 340 minus the two 1 px borders.
-    const container = await page.locator('iframe').locator('xpath=..').boundingBox()
-    expect(Math.abs(container!.width - 340)).toBeLessThanOrEqual(1)
-    expect(Math.abs(box!.width - (container!.width - 2))).toBeLessThanOrEqual(1)
+    // The bordered container is capped at 342 px so the frame inside its 1 px
+    // borders is exactly the 340 px the plugin lays its content out at.
+    expect(Math.abs(box!.width - 340)).toBeLessThanOrEqual(1)
     expect(Math.abs(box!.x + box!.width / 2 - client / 2)).toBeLessThanOrEqual(1)
   })
 })
@@ -135,6 +133,6 @@ test.describe('when the stylesheet CDN is blocked', () => {
     const box = await page.locator('iframe').boundingBox()
     const client = await page.evaluate(() => document.documentElement.clientWidth)
     expect(box!.x + box!.width).toBeLessThanOrEqual(client)
-    expect(box!.width, 'the inline cap must hold without the stylesheet').toBeLessThanOrEqual(340)
+    expect(box!.width, 'the inline cap must hold without the stylesheet').toBeLessThanOrEqual(342)
   })
 })
