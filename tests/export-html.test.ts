@@ -38,6 +38,26 @@ describe('exportSiteToHTML', () => {
     expect(html).toMatch(/rel="icon" href="https:\/\/cdn\.example\.com\/favicon\.ico"/)
   })
 
+  it.each([
+    ['vi', 'vi'],
+    ['Vietnamese', 'vi'],
+    ['vi-VN', 'vi'],
+    ['  VIETNAMESE ', 'vi'],
+    ['English', 'en'],
+    ['German', 'de'],
+    ['Spanish', 'es'],
+    ['French', 'fr'],
+    ['Klingon', 'en'],
+    ['', 'en'],
+  ])('maps settings language %j to lang="%s"', (language, expected) => {
+    const html = exportSiteToHTML(baseConfig, { settings: { language } })
+    expect(html).toContain(`<html lang="${expected}">`)
+  })
+
+  it('defaults to lang="en" when no language is set', () => {
+    expect(exportSiteToHTML(baseConfig)).toContain('<html lang="en">')
+  })
+
   it('injects analytics snippets when keys are provided', () => {
     const html = exportSiteToHTML(baseConfig, {
       settings: {

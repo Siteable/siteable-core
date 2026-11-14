@@ -104,6 +104,7 @@ function normalizeLanguage(value?: string): string {
   if (normalized === 'german' || normalized.startsWith('de')) return 'de'
   if (normalized === 'spanish' || normalized.startsWith('es')) return 'es'
   if (normalized === 'french' || normalized.startsWith('fr')) return 'fr'
+  if (normalized === 'vietnamese' || normalized.startsWith('vi')) return 'vi'
   return 'en'
 }
 
